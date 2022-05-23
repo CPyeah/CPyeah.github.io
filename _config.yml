@@ -67,8 +67,8 @@ index_generator:
 
 # Category & Tag
 default_category: uncategorized
-category_map: developer english work
-tag_map: Java Redis ElasticSearch MySQL
+category_map: developer
+tag_map: Java
 
 # Metadata elements
 ## https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
