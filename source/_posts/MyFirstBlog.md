@@ -7,4 +7,4 @@ tags:
 ---
 这是一个测试Blog。
 
-![image.png](./assets/image.png)[](https://)
+![image.png](../images[](https://)/image.png)[](https://)
