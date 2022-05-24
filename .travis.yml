@@ -9,6 +9,8 @@ branches:
 script:
   - hexo clean
   - hexo generate # generate static files
+  - hexo new page tags
+  - hexo new page categories
 deploy:
   provider: pages
   skip-cleanup: true
