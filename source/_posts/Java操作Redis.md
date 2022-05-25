@@ -139,7 +139,13 @@ list是redis中列表的数据结构。说实话，在工作中使用的比较�
 	}
 ```
 
-我们可以把redis中的list，在Java中，当成ArrayList操作。 使用简单方便。
+我们可以把redis中的list，在Java中，当成LinkedList操作（插入、删除快；查找慢）。 使用简单方便。
+
+list的底层是一个叫快速列表的数据结构（quick list）。
+
+如果所示，它是由ziplist组成，ziplist是压缩列表，是紧凑的，再用link给串起来。
+
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/image.png)
 
 ### hash
 
@@ -159,6 +165,8 @@ hash，map，dict，说的都是一个东西，在Java中，我们叫做`HashMap
 使用和Java无二。 当我们使用Map缓存数据时候，我们可以部分的获取一些字段，不用把整个对象都拿出来。
 
 注意：一整个Map能设置过期删除。Map中单独的key-value是设置不了过期删除的。
+
+和Java中`HashMap`不同的是，扩容rehash的过程中，redis当中是渐进式的，可能同时出现两个map。
 
 ### set
 
@@ -180,7 +188,7 @@ redis中的set和Java中的HashSet类型。使用方法也类似。
 
 工作中使用的也不错，可以计算一些UV。
 
-zset
+### zset
 
 sort set，排序集合，redis特色结构。
 
@@ -204,14 +212,15 @@ sort set，排序集合，redis特色结构。
 
 zset底层使用的跳跃表（skip list），具体后面再说。
 
-主要的作用是可以做一些排行榜，像微博热搜。
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/1653463112036-image.png)
 
+主要的作用是可以做一些排行榜，像微博热搜。
 
 ---
 
 这篇文章我们讲到了如果搭建一个redis环境，并使用`redisson`对redis做一些基本操作。
 
-在下一篇文章中，我们将讲到redis中的一个高级数据结构。
+在下一篇文章中，我们将讲到redis中的一些高级数据结构。
 
 - 位图
 - 布隆过滤器
@@ -219,4 +228,4 @@ zset底层使用的跳跃表（skip list），具体后面再说。
 - 分布式锁
 - 限流器
 - HyperLogLog
-- [](https://)Geo
+- Geo
