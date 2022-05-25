@@ -22,6 +22,8 @@ Redis是目前最流行的缓存数据库，完全基于内存操作，速度非
 - 熟悉redis的五大基本数据类型
 - 熟悉使用redis的高级数据结构及其应用
 
+<!--more-->
+
 ## 使用Docker搭建redis环境
 
 使用Docker搭建环境非常方便。 在本地安装好Docker后，使用`docker compose`可以方便快捷但搭好环境。
