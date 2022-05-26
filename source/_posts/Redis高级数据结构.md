@@ -1,6 +1,6 @@
 ---
 title: Redis高级数据结构
-date: 2022-04-26 15:15:43
+date: 2020-04-26 15:15:43
 tags: 
 - redis 
 - redisson 
@@ -152,6 +152,7 @@ public void delayQueue() throws InterruptedException {
 比如记录一个用户一年的签到记录，我们可以用位图来记录，签到的就是`1`，未签到的是`0`。
 
 使用方法如下：
+
 ```java
 @Test
 public void test() {
@@ -164,7 +165,9 @@ public void test() {
 ```
 
 ## 布隆过滤器
+
 我们如何判断一个ID是否在我们的系统里。我们有两种基本的方法来判断：
+
 - 我们把这个ID拿到数据查询一下就知道来
 - 我们把所有的ID保存的一个Set里面，判断这个新的ID在不在这个Set里面
 
@@ -182,6 +185,7 @@ public void test() {
 如果都是`1`的话，表示大概率可能存在于系统中，如果有一个`0`，表示肯定不在系统中。
 
 Redisson也做了封装，使用非常方便。
+
 ```java
 @Test
 public void test() {
@@ -198,4 +202,3 @@ public void test() {
 ```
 
 未完待续...
-
