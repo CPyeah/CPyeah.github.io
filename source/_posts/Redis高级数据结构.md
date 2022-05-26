@@ -173,7 +173,7 @@ public void test() {
 
 这个是有个非常精妙的算法 - `布隆过滤器`。
 
-![布隆过滤器 原理](assets/HeAOem.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/HeAOem.png)
 
 它的原理非常简单：
 底层是一个位图，并且有若干种Hash算法。
