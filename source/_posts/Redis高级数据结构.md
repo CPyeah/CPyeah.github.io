@@ -274,3 +274,85 @@ public void mergeTest() {
     System.out.println("set count: " + set.size());
 }
 ```
+
+## 限流器
+限流器在我们的生产中非常重要，也很常用。Redis也有封装好的限流器。
+实现了分布式限流器的功能。
+代码如下：
+```java
+@Test
+public void test() throws InterruptedException {
+    // redisson用了zset来记录请求的信息，这样可以非常巧妙的通过比较score，也就是请求的时间戳，来判断当前请求距离上一个请求有没有超过一个令牌生产周期。
+    // 如果超过了，则说明令牌桶中的令牌需要生产，之前用掉了多少个就生产多少个，而之前用掉了多少个令牌的信息也在zset中保存了。
+    RRateLimiter limiter = redissonClient.getRateLimiter("limiter_1");
+    // 1号限流器， 每一秒 允许一个请求
+    limiter.trySetRate(RateType.PER_CLIENT, 1, 1, RateIntervalUnit.SECONDS);
+
+    for (int i = 0; i < 10; i++) {
+        new Thread(() -> {
+            // 阻塞
+//			limiter.acquire(1);
+            boolean result = limiter.tryAcquire(1, 100, TimeUnit.MILLISECONDS);
+            if (!result) {
+                // 快速失败
+                System.out.println(Thread.currentThread().getName() + " failed !");
+                return;
+            }
+            System.out.println(Thread.currentThread().getName() + " -> " + LocalDateTime.now());
+            // do something
+        }).start();
+    }
+    Thread.sleep(12000);
+}
+
+```
+> Redisson真好用！
+
+## Geo
+Redis也提供了Geo功能，可以很方便实现附近的人，两坐标之间的距离等功能。
+它的原理是把经纬度坐标，做Hash，得到一个分数，用zset做存储。
+Hash算法的原理，是把整个地球当作一个平面，并把这个平面切割成很多很多的小块，并对每个方块做编码。
+如果两个点所在的方块越接近，表示这两个点越接近。 当然，有一点点误差。
+使用方法如下：
+```java
+@Test
+public void test() throws ExecutionException, InterruptedException {
+    RGeo<Object> geo = redissonClient.getGeo("geo");
+    GeoEntry juejin = new GeoEntry(116.48105, 39.996794, "juejin");
+    geo.add(juejin);
+    geo.add(116.514203, 39.905409, "ireader");
+    geo.add(116.489033, 40.007669, "meituan");
+    geo.add(116.562108, 39.787602, "jd");
+    geo.add(116.334255, 40.027400, "xiaomi");
+
+    // 两点距离
+    System.out.println(geo.dist("meituan", "jd", GeoUnit.METERS));
+    // 坐标
+    System.out.println(geo.pos("xiaomi"));
+    // hash
+    System.out.println(geo.hash("ireader"));
+    // 附近
+    System.out.println(geo.radiusWithPositionAsync("jd", 20, GeoUnit.KILOMETERS).get());
+    // 附近
+    System.out.println(
+            geo.radiusWithPositionAsync(116.334255, 40.027400, 20, GeoUnit.KILOMETERS).get());
+}
+```
+注意： 在一个地图应用中，车的数据、餐馆的数据、人的数据可能会有百万千万条，
+如果使用Redis 的 Geo 数据结构，它们将全部放在一个 zset 集合中。
+在 Redis 的集群环境中，集合可能会从一个节点迁移到另一个节点，如果单个 key 的数据过大，会对集群的迁移工作造成较大的影响，
+在集群环境中单个 key 对应的数据量不宜超过 1M，否则会导致集群迁移出现卡顿现象，影响线上服务的正常运行。 
+所以，这里建议 Geo 的数据使用单独的 Redis 实例部署，不使用集群环境。
+如果数据量过亿甚至更大，就需要对 Geo 数据进行拆分，按国家拆分、按省拆分，按市拆分，在人口特大城市甚至可以按区拆分。
+这样就可以显著降低单个 zset 集合的大小。
+
+## 总结
+今天我们一起学习了7种高级结构
+- 分布式锁
+- 队列
+- 位图
+- 布隆过滤器
+- HyperLogLog
+- 限流器
+- GeoHash
+希望以后大家能在工作中用到。
