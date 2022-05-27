@@ -249,3 +249,28 @@ HyperLogLog的原理相对复杂，具体可以参考这篇[论文](http://algo.
 而第二的网站记录下来的手机号码是：18623000000，末尾有6个0。
 我们就可以判断出，第二的网站的访问的人数更多。
 大家体会一下。
+
+HyperLogLog还有一个重要的概念，就是合并。
+我们可以把连续7天的UV，合并成这一周的UV，并保证准确性。
+```java
+@Test
+public void mergeTest() {
+    RHyperLogLog<String> today = redisson.getHyperLogLog("UV_" + LocalDate.now());
+    RHyperLogLog<String> nextDay = redisson.getHyperLogLog("UV_" + LocalDate.now().plusDays(1));
+    HashSet<String> set = new HashSet<>();
+    Random random = new Random();
+    for (int i = 0; i < 1000; i++) {
+        String userId = "id_" + random.nextInt(1000);
+        today.add(userId);
+        set.add(userId);
+    }
+    for (int i = 0; i < 1000; i++) {
+        String userId = "id_" + random.nextInt(2000);
+        nextDay.add(userId);
+        set.add(userId);
+    }
+    today.mergeWith(nextDay.getName());
+    System.out.println("RHyperLogLog: " + today.count());
+    System.out.println("set count: " + set.size());
+}
+```
