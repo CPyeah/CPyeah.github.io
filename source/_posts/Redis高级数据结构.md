@@ -1,6 +1,6 @@
 ---
 title: Redis高级数据结构
-date: 2020-04-26 15:15:43
+date: 2021-04-26 15:15:43
 tags: 
 - redis 
 - redisson 
@@ -201,4 +201,51 @@ public void test() {
 }
 ```
 
-未完待续...
+## HyperLogLog
+
+HyperLogLog是一个很神奇的数据结构。
+
+我们先来说两个概念： PV 和 UV。
+PV：简单来说就是流量。只要有一次访问，不管是不是同一个人，就记一个流量。
+UV：独立访客，单位时间内，一个新的访客，就算一个UV。
+
+在我们的统计中，PV很好统计，来一次访问，PV值就往上加1，顶多需要保持一下自增的原子性。
+而计算UV，在互联网领域中一个是一个难题。
+
+通常来说我们计算一个网站一天的UV，我们需要把每一个访客的ID给记录下来，计算时去重。
+这样就导致一个问题，如果访问量非常大，就非常的消耗存储空间。
+
+这个时候，HyperLogLog就能派上用场了。
+
+我们先看下代码：
+
+```java
+@Test
+public void compareTest() {
+    RHyperLogLog<String> today = redisson.getHyperLogLog("UV_" + LocalDate.now());
+    HashSet<String> set = new HashSet<>();
+    Random random = new Random();
+    for (int i = 0; i < 1000; i++) {
+        String userId = "id_" + random.nextInt(500);
+        today.add(userId);
+        set.add(userId);
+    }
+    System.out.println("RHyperLogLog: " + today.count());
+    System.out.println("set count: " + set.size());
+}
+```
+
+这里使用的Set方法，和HyperLogLog，两个做一个比较。
+从结果可以看出，两者的差距非常小，但是HyperLogLog并没有把每一个ID都记录下来，节约了大量存储空间。
+
+HyperLogLog的原理相对复杂，具体可以参考这篇[论文](http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf)。
+
+这里我来介绍一下它的思想：
+假设我们有两个网站，需要比较一下他们的UV，看哪个网站的访问率高。
+假设访问用户的ID使用手机号码表示，如：1xxxxxxxxxx 
+我们不想把每个访客的手机号码都记录下来，因为太浪费存储空间了。
+我们可以定一个规则，我们只记录当天客户中，手机尾号为`0`位数最高的手机号码。
+比如说，第一个网站记录下来的手机号码是：18322333000，末尾有3个0，
+而第二的网站记录下来的手机号码是：18623000000，末尾有6个0。
+我们就可以判断出，第二的网站的访问的人数更多。
+大家体会一下。
