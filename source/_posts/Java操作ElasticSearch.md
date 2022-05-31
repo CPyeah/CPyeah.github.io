@@ -217,3 +217,186 @@ public class Product {
 `@Field(type = FieldType.Nested)`
 
 ## 使用两种方式来操作ES
+![](assets/MHdECp.png)
+
+### 索引操作
+首先我们来看看如何来管理ES的索引
+#### JPA
+如果使用JPA，我们只需保持默认配置，JPA就会替我们按照我们定义的Map来创建索引。
+不需要我们操心。
+
+我们可以使用[http://localhost:9200/product/_mapping](http://localhost:9200/product/_mapping)来查看对应索引信息。
+
+#### ElasticsearchRestTemplate
+template对应的Api如下：
+```java
+@Test
+public void index() {
+    // 拿到对应索引的操作引用
+    IndexOperations indexOperations = elasticsearchRestTemplate.indexOps(Product.class);
+    // 查看索引是否存在
+    boolean exists = indexOperations.exists();
+    if (exists) {
+        // 删除索引（删除操作要慎重）
+        indexOperations.delete();
+    }
+    // 创建索引
+//		indexOperations.create(); //这个没有配置mapping
+    indexOperations.createWithMapping();
+    
+    // 查看索引的Setting
+    Settings settings = indexOperations.getSettings();
+    // 查看索引的Mapping
+    Map<String, Object> mapping = indexOperations.getMapping();
+}
+```
+
+### 增删改查操作
+#### JPA
+使用JPA非常方便，只需要定义好`Repository`，就可以方便快捷的操作Document了。
+```java
+@Repository
+public interface ProductRepository extends ElasticsearchRepository<Product, String> {
+
+}
+```
+然后我们就可以这样使用：
+```java
+@SpringBootTest
+public class CURDTest {
+
+	@Autowired
+	private ProductRepository repository;
+
+	@Test
+	public void create() {
+		Product product = repository.save(Product.get());
+		Assertions.assertNotNull(product);
+	}
+
+	@Test
+	public void createMore() {
+		List<Product> products = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			products.add(Product.get());
+		}
+		repository.saveAll(products);
+	}
+
+	@Test
+	public void listAll() {
+		Iterable<Product> all = repository.findAll();
+		all.forEach(System.out::println);
+	}
+
+	@Test
+	public void page() {
+		Page<Product> page = repository.findAll(Pageable.ofSize(4).withPage(0));
+		System.out.println(page);
+	}
+
+	@Test
+	public void getById() {
+		Page<Product> page = repository.findAll(Pageable.ofSize(1).withPage(0));
+		Product product = page.getContent().get(0);
+		Product product1 = repository.findById(product.getId()).orElse(null);
+		Assertions.assertNotNull(product1);
+		System.out.println(product1);
+		Assertions.assertEquals(product.getId(), product1.getId());
+	}
+
+	@Test
+	public void update() {
+		Page<Product> page = repository.findAll(Pageable.ofSize(1).withPage(0));
+		Product product = page.getContent().get(0);
+		Product newProduct = Product.get();
+		newProduct.setId(product.getId());
+		Product save = repository.save(newProduct);
+		Assertions.assertEquals(product.getId(), save.getId());
+		Assertions.assertNotEquals(product.getName(), save.getName());
+		System.out.println(product);
+		System.out.println(save);
+	}
+
+	@Test
+	public void delete() {
+		Page<Product> page = repository.findAll(Pageable.ofSize(1).withPage(0));
+		Product product = page.getContent().get(0);
+		repository.delete(product);
+
+		Product product1 = repository.findById(product.getId()).orElse(null);
+		Assertions.assertNull(product1);
+	}
+
+}
+```
+
+JPA的封装可以让我们无差别的操作任何数据库。 yyds
+
+#### ElasticsearchRestTemplate
+使用ElasticsearchRestTemplate操作文档相对麻烦一些：
+```java
+@SpringBootTest
+public class CURDTest2 {
+
+	@Autowired
+	private ElasticsearchRestTemplate elasticsearchRestTemplate;
+	
+
+	@Test
+	public void create() {
+		Product product = elasticsearchRestTemplate.save(Product.get());
+		Assertions.assertNotNull(product);
+	}
+
+	@Test
+	public void createMore() {
+		List<Product> products = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			products.add(Product.get());
+		}
+		elasticsearchRestTemplate.save(products);
+	}
+
+	@Test
+	public void listAll() {
+		Query query = elasticsearchRestTemplate.matchAllQuery();
+		SearchHits<Product> search = elasticsearchRestTemplate.search(query, Product.class);
+	}
+
+	@Test
+	public void getById() {
+		Product product = elasticsearchRestTemplate.get("ID", Product.class);
+		Assertions.assertNotNull(product);
+	}
+
+	@Test
+	public void update() {
+		Product oldProduct = elasticsearchRestTemplate.get("ID", Product.class);
+		Assertions.assertNotNull(oldProduct);
+
+		Product newProduct = Product.get();
+		Document document = newProduct.toDocument();
+		UpdateQuery updateQuery = UpdateQuery.builder("ID").withDocument(document).build();
+		UpdateResponse product = elasticsearchRestTemplate
+				.update(updateQuery, IndexCoordinates.of("product"));
+
+	}
+
+	@Test
+	public void delete() {
+		String id = elasticsearchRestTemplate.delete("ID", Product.class);
+	}
+
+}
+```
+
+### 搜索
+#### JPA
+
+#### ElasticsearchRestTemplate
+
+### 聚合
+#### JPA
+
+#### ElasticsearchRestTemplate
