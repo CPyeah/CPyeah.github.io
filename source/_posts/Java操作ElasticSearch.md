@@ -1,6 +1,6 @@
 ---
 title: Java操作ElasticSearch
-date: 2022-05-31 13:44:15
+date: 2021-06-11 13:44:15
 tags: 
   - java 
   - elasticsearch
@@ -105,5 +105,23 @@ networks:
 启动完成之后，浏览器访问:
 [http://localhost:9200](http://localhost:9200)
 如果展示：
-![image.png](./assets/image.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/image.png)
 表示ES集群启动成功。
+
+## 搭建Java环境
+
+我们创建一个SpringBoot项目。
+在`pom.xml`中引入elasticsearch的starter，即可。
+不过要注意的是，因为ElasticSearch版本迭代很快，我们的版本要对应的上。
+我们先查看一下ElasticSearch的版本： 7.13.2
+再看一下[Spring文档](https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/)，找到对应的SpringData的版本。
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/J73lBg.png)
+在pom中我们添加上引用：
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+  <version>2.6.7</version>
+</dependency>
+```
+刷新下maven，即完成环境搭建。
