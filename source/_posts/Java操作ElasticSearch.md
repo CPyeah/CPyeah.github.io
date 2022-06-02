@@ -202,7 +202,7 @@ public class Product {
 #### 确定数据结构
 
 首先我们要知道，ES有着自己的数据结构，而且种类还很多。如图：
-![](assets/JtmYzS.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/JtmYzS.png)
 我们需要在每一个Java的数据结构中，对应上ES的数据结构。
 比如`@Field(type = FieldType.Text)`表示它在ES中，是一个文本型的数据。
 而文本型，是要被分词，生成倒排索引的。
@@ -234,7 +234,7 @@ public class Product {
 
 ## 使用两种方式来操作ES
 
-![](assets/MHdECp.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/MHdECp.png)
 
 ### 索引操作
 
