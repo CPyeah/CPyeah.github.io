@@ -393,8 +393,56 @@ public class CURDTest2 {
 
 ### 搜索
 #### JPA
+JPA的搜索很简单，就把当成一个普通的数据库搜索就行。
+我们只需要在repository中定义
+```java
+@Repository
+public interface ProductRepository extends ElasticsearchRepository<Product, String> {
+
+	List<Product> findAllByNameContaining(String name);
+
+}
+```
+我没就可以在所有名称中包含莫个字段了。
+在调用这个方法的时候，可以在控制台看到，本质上是JPA帮我我们发了一个`_search`的POST请求。
+其他更复杂的方法，可以参考JPA的文档。
 
 #### ElasticsearchRestTemplate
+使用ElasticsearchRestTemplate操作search，也很不错。
+我们可以这样写：
+```java
+@Test
+public void searchTest() {
+    // 查询所有
+    Query searchQuery = Query.findAll();
+    IndexCoordinates indexCoordinates = IndexCoordinates.of("product");
+    SearchHits<Product> result = elasticsearchRestTemplate
+            .search(searchQuery, Product.class, indexCoordinates);
+    System.out.println(result);
+
+    // 按名称 搜索
+    MatchQueryBuilder matchQueryBuilder = QueryBuilders.matchQuery("spuName", "473");
+    searchQuery = new NativeSearchQueryBuilder()
+            .withQuery(matchQueryBuilder)
+            .build();
+    result = elasticsearchRestTemplate
+            .search(searchQuery, Product.class, indexCoordinates);
+    System.out.println(result);
+
+    // 按价格搜索
+    Criteria criteria = new Criteria("price")
+            .greaterThan(500.0)
+            .lessThan(800.0);
+
+    searchQuery = new CriteriaQuery(criteria);
+
+    result = elasticsearchRestTemplate
+            .search(searchQuery, Product.class, indexCoordinates);
+    System.out.println(result);
+
+}
+```
+这样写有一个好处，就是在返回结果数据的同时，还会返回命中率，这个有时候也是会用到的。
 
 ### 聚合
 #### JPA
