@@ -80,9 +80,67 @@ undo log和事物有关。InnoDB存储引擎特有。
 
 这就是MVCC，多版本并发控制。我们在事物那一章的时候，还会详细说明。
 
+## MySQL的存储引擎
+MySQL的存储引擎的设计是MySQL的一大特点。
+它可以让我们灵活的使用不同的存储引擎来应对不同的需求。
+
+我们可以使用：
+```sql
+SELECT ENGINE, SUPPORT FROM INFORMATION_SCHEMA.ENGINES;
+-- 或者
+SHOW ENGINES;
+```
+来查询存储引擎列表，和当前MySQL是否支持。
+
+我们可以查看[官方文档](https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/8hRNsc.png)
+
+我们在这里也做一下简单的介绍：
+
+### InnoDB
+我们最常用的存储引擎当属InnoDB。
+
+它支持事物，符合ACID，支持行级锁，
+支持B树索引，新版版还支持全文索引，
+使用MVCC多版本并发控制，支持崩溃恢复，
+还支持外键。
+
+它是我们一般情况下的首选。
+
+在需要事物的场景中，我们更是无脑选择InnoDB。
+
+### MyISAM
+MyISAM它的特点是不支持事物。当时它的优势是结构简单，比InnoDB稍快。
+
+读效率比写更快。适合需要大量读的场景中。
+
+支持B树索引和全文索引。如果小项目不想使用ES的话，可以考虑使用MyISAM做视图。
+
+### Memory
+看名字就知道，它的特点是把数据存储在内存中的，
+所以没有持久化，断电崩溃数据会丢失。
+
+但是就是因为使用的内存，它的速度非常快。可以部分替代Redis的功能。
+
+### Archive
+如果你需要保存日志信息，存档信息等一些需要快速查询的场景。
+你可以使用Archive。
+
+它支持数据压缩，不支持事物、索引。
+
+可以部分替代MongoDB的功能。
+
+### CSV
+CSV的结构很简单，它会生成一个`.cvs`的文件来存储数据。
+
+我们可以使用Excel来打开它。一般很少使用。
+
+### 其他
+除了上述的存储引擎，剩下还有一些存储引擎。
+比如说：Merge、Federated、Blackhole、NDB、Example
+具体参考[官方文档](https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html)
+
 ## 索引结构
 
-
-## MySQL的存储引擎
 
 ## 总结
