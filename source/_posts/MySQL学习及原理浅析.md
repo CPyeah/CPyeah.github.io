@@ -18,10 +18,6 @@ categories: 知识
 
 <!--more-->
 
-资料：
-https://github.com/dunwu/db-tutorial#mysql
-https://app.yinxiang.com/Home.action?hpts=1655089226286&loginToken=S%3Ds30%3AU%3D1c6b1dc%3AE%3D1815b38508d%3AC%3D1815b01620f%3AP%3D5fd%3AA%3Den-web%3AV%3D3%3AH%3D073d44951df05e0ba4c664d44136f44b&wechatLogin=true&login=true&hptsh=DihA%2BKmd04hTxUWfh9C0eYdK4Eg%3D#n=30c25c81-a703-4934-8724-11d270bc6c2a&s=s30&ses=4&sh=2&sds=2&
-
 ## MySQL的底层结构
 
 MySQL我们可以主要分成三层：
@@ -244,6 +240,7 @@ select * from order where create_time > '2021-01-01 00:00:00';
 这种情况下的查询效率会很高效。
 
 #### 索引下推
+
 索引下推只会作用在联合索引上。并且会发生在范围查询上。
 
 一句话说明：索引下推会尽量使用索引来判断where条件，而减少回表次数。
@@ -251,6 +248,7 @@ select * from order where create_time > '2021-01-01 00:00:00';
 还是以订单表为列子，联合索引：客户姓名、订单时间
 
 如果我们要查询：今年以来，姓王的客户的订单
+
 ```sql
 select * from order where create_time > '2021-01-01 00:00:00' and customer_name like '王%';
 ```
@@ -274,10 +272,13 @@ select * from order where create_time > '2021-01-01 00:00:00' and customer_name 
 这种情况下，回表查询的订单ID是提前筛选好的，会少很多。
 
 #### 覆盖索引
+
 还是上述情况，订单表的联合索引`客户姓名、订单时间`。有这样的查询语句：
+
 ```sql
 select id from order where create_time > '2021-01-01 00:00:00' and customer_name like '王%';
 ```
+
 SQL语句中的所有的查询条件和返回数据，在联合索引的B+树中都有，
 
 我们只需要通过索引查询出来主键ID，就可以直接返回结果了，不需要再回表查询。
@@ -285,6 +286,7 @@ SQL语句中的所有的查询条件和返回数据，在联合索引的B+树中
 这就是覆盖索引。
 
 ## 总结
+
 本次我们探讨了一种目前最流行的关系型数据库MySQL。
 
 带大家了解了下MySQL的基本结构，它的查询过程。
