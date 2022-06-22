@@ -1,18 +1,39 @@
 name: chengpeng's blogs
+
 on:
   push:
     branches:
       - master
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v1
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          node-version: '14.x'
-      - run: hexo clean
-      - run: hexo generate # generate static files
-      - run: hexo new page tags
-      - run: hexo new page categories
+          node-version: ${{ matrix.node-version }}
+
+      - name: Configuration environment
+        env:
+          HEXO_DEPLOY_PRI: ${{secrets.HEXO_DEPLOY_PRI}}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$HEXO_DEPLOY_PRI" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global user.name "<username>"
+          git config --global user.email "<username@email.address>"
+      - name: Install dependencies
+        run: |
+          npm i -g hexo-cli
+          npm i
+      - name: Deploy hexo
+        run: |
+          hexo clean && hexo generate && hexo new page tags &&  hexo new page categories && hexo deploy
