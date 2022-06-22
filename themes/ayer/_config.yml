@@ -251,3 +251,9 @@ ads:
 lock:
   enable: false
   password: 123456
+
+
+deploy:
+  type: git
+  repo: git@github.com:CPyeah/CPyeah.github.io.git
+  branch: master
