@@ -104,9 +104,9 @@ theme_config: _config.ayer.yml
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 #deploy:
-#  type: git
-#  repo: git@github.com:CPyeah/CPyeah.github.io.git
-#  branch: master
+  type: git
+  repo: git@github.com:CPyeah/CPyeah.github.io.git
+  branch: master
 
 # hexo-generator-searchdb
 search:
