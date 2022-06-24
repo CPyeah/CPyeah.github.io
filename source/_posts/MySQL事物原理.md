@@ -244,7 +244,7 @@ select * from customer where id = 1;
 我们可以看到，客户名称已经变成了 `张飞`。
 
 如果session A的事物回滚的话，我们在Session B中看到的结果还会是 `zhangsan`
-这样，我们就成功解决了脏读的问题了。[](https://)
+这样，我们就成功解决了脏读的问题了。
 
 但是如果我们在同一个事物中，读取数据，可能会查询到不同的结果。
 我们按照数字的顺序，执行以下SQL：
@@ -278,7 +278,106 @@ update customer set name = '刘备' where id = 1;
 
 ### 可重复读（REPEATABLE READ）
 
+有些场景，我们需要在一个事物中，查询到到数据保持一致，不管外部事物如何改变。
+
+这个时候，就需要我们满足`可重复读`。
+
+我们直接看效果：
+
+首先修改事物隔离级别：
+
+```sql
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT @@transaction_ISOLATION;
+```
+
+再按照下列SQL的顺序，执行：
+
+```sql
+# session B
+
+# 1、开启事物，并查看数据
+start transaction ;
+select * from customer where id = 1; -- 刘备
+
+# 3、再次查看数据
+select * from customer where id = 1; -- 刘备
+
+# 5、再次查看数据
+select * from customer where id = 1; -- 刘备
+
+# 6、提交当前事物，在查看数据
+commit ;
+select * from customer where id = 1; -- 张飞
+```
+
+```sql
+# session A
+
+# 2、修改数据（自动提交事物）
+update customer set name = '关羽' where id = 1;
+
+# 4、修改数据（自动提交事物）
+update customer set name = '张飞' where id = 1;
+```
+
+我们可以看到，在Session B 中，每一次查询的结果都是一样的，
+不管实际的数据怎样的变化，即使数据已经被SessionA所改变，且已提交。
+
+但是这种隔离级别同样有这自己缺陷，它会发生幻读。
+
+我们看下面的场景：
+
+```sql
+# 1、开启事物，并查看数据
+# session B
+
+# 1、开启事物，并查看数据
+start transaction ;
+select * from customer where id = 10; -- null
+
+# 3、插入指定ID的数据
+select * from customer where id = 10; -- null
+insert into customer values (10, '吕布'); -- 失败
+
+commit ;
+```
+
+```sql
+# session A
+
+# 2、插入数据
+insert into customer values (10, '小吕布'); -- 成功
+```
+
+我们可以看到，SessionB在一个事物中，想要插入一条ID为10的用户。
+重要的是，要第一步查询，已经确定了ID为10的用户并不存在。
+
+但是在事物的过程中，Session A 插入了一条ID为10的客户，并成功提交事物。
+
+等再回到Session B， 再想插入一条ID为10的客户，就报错了`Duplicate entry '10' for key 'customer.PRIMARY'`。
+
+其实，在Session B的操作中，逻辑都是没问题的。但是还是发生了幻读，导致了系统异常。
+
+解决办法是，在Session B中，我们这样写select语句：
+
+```sql
+select * from customer where id = 10 for update ;
+```
+
+在 select 语句后面， 添加一个`for update`，可以把`ID=10`给加上一个锁，
+SessionA， 再想干扰，添加数据的时候，就会拿不到锁，而只能等待[](https://)SessionB的事物完成，并释放锁。
+
+
+所以保证了SessionB的原子性，杜绝的幻读。
+
 ### 串行化（SERIALIZABLE）
+
+串行化，这种隔离级别，可以杜绝所有的干扰，包括（脏读、不可重复读、幻读）。
+
+在此级别下，我们便不需要对 SELECT 操作显式加锁，InnoDB会自动加锁，事务安全，但性能很低。
+
+非常不推荐使用。
 
 ## InnoDB的事物实现（MVCC）
 
