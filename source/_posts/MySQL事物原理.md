@@ -639,7 +639,7 @@ class TransactionControllerTest {
 ### ReadView获取
 ```java
 	// 获取到ReadView
-	public <T> Row<T> readView(Row<T> chain, Integer currentTrxId) {
+	public <T> Row<T> readView(Row<T> chain) {
 		if (chain == null) {
 			return null;
 		}
@@ -697,6 +697,66 @@ class TransactionControllerTest {
 	}
 
 ```
+
+我们在test1中，加上查看readView的效果：
+
+```java
+	@Test
+	public void test1() {
+
+		// 开启事务A
+		Transaction transaction_A = TransactionController.start();
+
+		// 开启事务B
+		Transaction transaction_B = TransactionController.start();
+
+		// 更新数据，同时会加上行锁
+		Row<Customer> 关羽 = getCustomerRow(1, "关羽");
+		TransactionController.update(关羽, transaction_A, Customer.tableData);
+
+		// 查看readView
+		Row<Customer> readView = TransactionController.readView(Customer.tableData.get(1));
+		System.out.println(toString(readView));// 1-刘备(0)
+
+		// 更新数据，同时会加上行锁
+		Row<Customer> 张飞 = getCustomerRow(1, "张飞");
+		TransactionController.update(张飞, transaction_A, Customer.tableData);
+
+		// 事务A提交，并释放锁
+		TransactionController.commit(transaction_A);
+
+		// 查看readView
+		readView = TransactionController.readView(Customer.tableData.get(1));
+		System.out.println(toString(readView));// 1-张飞(100)
+
+		// 更新数据，同时会加上行锁
+		Row<Customer> 赵云 = getCustomerRow(1, "赵云");
+		TransactionController.update(赵云, transaction_B, Customer.tableData);
+
+		// 查看readView
+		readView = TransactionController.readView(Customer.tableData.get(1));
+		System.out.println(toString(readView)); //1-张飞(100)
+
+		// 更新数据，同时会加上行锁
+		Row<Customer> 诸葛亮 = getCustomerRow(1, "诸葛亮");
+		TransactionController.update(诸葛亮, transaction_B, Customer.tableData);
+
+		//commit
+		TransactionController.commit(transaction_B);
+
+		// 查看readView
+		readView = TransactionController.readView(Customer.tableData.get(1));
+		System.out.println(toString(readView)); // 1-诸葛亮(200)
+
+		// 打印undo日志链表
+		printData(Customer.tableData.get(1));
+		// 1-诸葛亮(200) -> 1-赵云(200) -> 1-张飞(100) -> 1-关羽(100) -> 1-刘备(null)
+
+	}
+
+```
+
+完整代码请查看[这里](https://github.com/CPyeah/java-projets/blob/master/java-mvcc/src/test/java/TransactionControllerTest.java)
 
 ## 总结
 至此，我们已经学习了MySQL事务到相关知识。
