@@ -639,24 +639,25 @@ class TransactionControllerTest {
 ### ReadView获取
 ```java
 	// 获取到ReadView
-	public <T> Row<T> readView(Row<T> chain) {
+	public <T> Row<T> readView(Row<T> chain, Integer currentTrxId) {
 		if (chain == null) {
 			return null;
 		}
 		if (m_ids.isEmpty()) {
 			return chain;
 		}
-		// 先找到最小的和最大的，活跃的事务ID
-		Integer min = m_ids.get(0), max = m_ids.get(0);
+		// 该值代表生成readView时m_ids中的最小值
+		Integer min_trx_id = m_ids.get(0);
 		for (Integer id : m_ids) {
-			min = Math.min(min, id);
-			max = Math.max(max, id);
+			min_trx_id = Math.min(min_trx_id, id);
 		}
+		// 该值代表生成readView时系统中应该分配给下一个事务的id值
+		Integer max_trx_id = getNextTransactionId();
 
 		Row<T> pointer = chain;
 
 		while (true) {
-			if (isThisReadView(pointer, min, max)) {
+			if (isThisReadView(pointer, min_trx_id, max_trx_id)) {
 				return pointer;
 			}
 			if (pointer.getRoll_pointer() != null) {
