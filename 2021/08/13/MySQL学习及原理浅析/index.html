@@ -129,7 +129,7 @@
 <ol>
 <li>客户端连接层。主要负责处理客户端的连接，用户的账号密码校验，权限等功能。</li>
 <li>核心服务层。主要功能有缓存，对SQL语句的解析和优化，对底层API的调用。</li>
-<li>存储引擎。 对数据对管理，存储，查询，事物，索引等等功能。</li>
+<li>存储引擎。 对数据对管理，存储，查询，事务，索引等等功能。</li>
 </ol>
 <h2 id="MySQL的查询过程"><a href="#MySQL的查询过程" class="headerlink" title="MySQL的查询过程"></a>MySQL的查询过程</h2><p>一个SQL的查询过程可以分成六步。 如图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/mkccLn.png"></p>
 <ol>
@@ -158,10 +158,10 @@
 <li>如果这时MySQL崩溃，可以根据redo log恢复内存中的数据。</li>
 <li>如果没有崩溃，会在合适的时候，把内存中的数据落到磁盘上，同时删除对应的redo log。</li>
 </ol>
-<h3 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h3><p>undo log和事物有关。InnoDB存储引擎特有。</p>
-<p>在一个事物中，每一次操作，都会生成一个log，所有的log会组成一个数据链。</p>
-<p>可以用来控制回滚，和在不同的事物级别下，所展示的数据的版本。</p>
-<p>这就是MVCC，多版本并发控制。我们在事物那一章的时候，还会详细说明。</p>
+<h3 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h3><p>undo log和事务有关。InnoDB存储引擎特有。</p>
+<p>在一个事务中，每一次操作，都会生成一个log，所有的log会组成一个数据链。</p>
+<p>可以用来控制回滚，和在不同的事务级别下，所展示的数据的版本。</p>
+<p>这就是MVCC，多版本并发控制。我们在事务那一章的时候，还会详细说明。</p>
 <h2 id="MySQL的存储引擎"><a href="#MySQL的存储引擎" class="headerlink" title="MySQL的存储引擎"></a>MySQL的存储引擎</h2><p>MySQL的存储引擎的设计是MySQL的一大特点。<br>它可以让我们灵活的使用不同的存储引擎来应对不同的需求。</p>
 <p>我们可以使用：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> ENGINE, SUPPORT <span class="keyword">FROM</span> INFORMATION_SCHEMA.ENGINES;</span><br><span class="line"><span class="comment">-- 或者</span></span><br><span class="line"><span class="keyword">SHOW</span> ENGINES;</span><br></pre></td></tr></table></figure>
@@ -170,16 +170,16 @@
 <p>我们可以查看<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html">官方文档</a><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/8hRNsc.png"></p>
 <p>我们在这里也做一下简单的介绍：</p>
 <h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><p>我们最常用的存储引擎当属InnoDB。</p>
-<p>它支持事物，符合ACID，支持行级锁，<br>支持B树索引，新版版还支持全文索引，<br>使用MVCC多版本并发控制，支持崩溃恢复，<br>还支持外键。</p>
+<p>它支持事务，符合ACID，支持行级锁，<br>支持B树索引，新版版还支持全文索引，<br>使用MVCC多版本并发控制，支持崩溃恢复，<br>还支持外键。</p>
 <p>它是我们一般情况下的首选。</p>
-<p>在需要事物的场景中，我们更是无脑选择InnoDB。</p>
-<h3 id="MyISAM"><a href="#MyISAM" class="headerlink" title="MyISAM"></a>MyISAM</h3><p>MyISAM它的特点是不支持事物。当时它的优势是结构简单，比InnoDB稍快。</p>
+<p>在需要事务的场景中，我们更是无脑选择InnoDB。</p>
+<h3 id="MyISAM"><a href="#MyISAM" class="headerlink" title="MyISAM"></a>MyISAM</h3><p>MyISAM它的特点是不支持事务。当时它的优势是结构简单，比InnoDB稍快。</p>
 <p>读效率比写更快。适合需要大量读的场景中。</p>
 <p>支持B树索引和全文索引。如果小项目不想使用ES的话，可以考虑使用MyISAM做视图。</p>
 <h3 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h3><p>看名字就知道，它的特点是把数据存储在内存中的，<br>所以没有持久化，断电崩溃数据会丢失。</p>
 <p>但是就是因为使用的内存，它的速度非常快。可以部分替代Redis的功能。</p>
 <h3 id="Archive"><a href="#Archive" class="headerlink" title="Archive"></a>Archive</h3><p>如果你需要保存日志信息，存档信息等一些需要快速查询的场景。<br>你可以使用Archive。</p>
-<p>它支持数据压缩，不支持事物、索引。</p>
+<p>它支持数据压缩，不支持事务、索引。</p>
 <p>可以部分替代MongoDB的功能。</p>
 <h3 id="CSV"><a href="#CSV" class="headerlink" title="CSV"></a>CSV</h3><p>CSV的结构很简单，它会生成一个<code>.cvs</code>的文件来存储数据。</p>
 <p>我们可以使用Excel来打开它。一般很少使用。</p>
@@ -244,7 +244,7 @@
 <p>通过三种Log来了解了一些MySQL的内部原理。</p>
 <p>还有索引相关的一些内容。</p>
 <p>希望大家都有所收获。</p>
-<p>我们下次还会讲到MySQL的事物和MySQL调优相关的内容。</p>
+<p>我们下次还会讲到MySQL的事务和MySQL调优相关的内容。</p>
  
       <!-- reward -->
       
@@ -326,7 +326,7 @@
         <strong class="article-nav-caption">上一篇</strong>
         <div class="article-nav-title">
           
-            MySQL事物原理
+            MySQL事务原理
           
         </div>
       </a>

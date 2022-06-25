@@ -15,7 +15,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1"
       />
-      <title>MySQL事物原理 |  chengpeng&#39;s blogs</title>
+      <title>MySQL事务原理 |  chengpeng&#39;s blogs</title>
   <meta name="generator" content="hexo-theme-ayer">
       
       <link rel="shortcut icon" href="/favicon.ico" />
@@ -58,7 +58,7 @@
     <main class="content on">
       <section class="outer">
   <article
-  id="post-MySQL事物原理"
+  id="post-MySQL事务原理"
   class="article article-type-post"
   itemscope
   itemprop="blogPost"
@@ -69,7 +69,7 @@
     <header class="article-header">
        
 <h1 class="article-title sea-center" style="border-left:0" itemprop="name">
-  MySQL事物原理
+  MySQL事务原理
 </h1>
  
 
@@ -113,22 +113,22 @@
   
     <div class="article-entry" itemprop="articleBody">
        
-  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>什么是事物？！</p>
-<p>一句话来说，事物是一次操作的<code>逻辑单位</code>。要不全部成功，要不全部失败。</p>
+  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>什么是事务？！</p>
+<p>一句话来说，事务是一次操作的<code>逻辑单位</code>。要不全部成功，要不全部失败。</p>
 <p>它主要是用来保证<code>数据一致性</code>的问题。</p>
 <span id="more"></span>
 
-<p>比如去银行转账的操作，原来账户的扣款，和目标账户的加款。<br>这两个操作要放在一个事物里面，要不一起成功，要不一起失败。</p>
-<p>如果在事物中间，发生问题，需要把已经执行了的操作<code>回滚</code>，以保证数据准确。</p>
-<h2 id="事物的常见命令"><a href="#事物的常见命令" class="headerlink" title="事物的常见命令"></a>事物的常见命令</h2><ul>
-<li>START TRANSACTION：开始一个事物</li>
-<li>COMMIT：事物顺利完成时，提交事物</li>
-<li>ROLLBACK：事物发生了异常，回滚</li>
+<p>比如去银行转账的操作，原来账户的扣款，和目标账户的加款。<br>这两个操作要放在一个事务里面，要不一起成功，要不一起失败。</p>
+<p>如果在事务中间，发生问题，需要把已经执行了的操作<code>回滚</code>，以保证数据准确。</p>
+<h2 id="事务的常见命令"><a href="#事务的常见命令" class="headerlink" title="事务的常见命令"></a>事务的常见命令</h2><ul>
+<li>START TRANSACTION：开始一个事务</li>
+<li>COMMIT：事务顺利完成时，提交事务</li>
+<li>ROLLBACK：事务发生了异常，回滚</li>
 </ul>
 <p>比如我们有一张customer表，执行一下语句：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">start</span> transaction;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;zhangsan&#x27;</span>;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;lisi&#x27;</span>;</span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
 
-<p>再查询表，会得到：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/Prom8Z.png"><br>表示一个事物完成、提交。</p>
+<p>再查询表，会得到：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/Prom8Z.png"><br>表示一个事务完成、提交。</p>
 <p>我们再执行下面操作：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">start</span> transaction;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;wangwu&#x27;</span>;</span><br><span class="line"><span class="keyword">rollback</span> ;</span><br></pre></td></tr></table></figure>
 
@@ -144,18 +144,18 @@
 <p>我们查询到到结果是：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/gIvWTx.png"><br><code>zhao liu</code> 成功入库了，而 <code>qian qi</code> 被回滚掉了。</p>
 <p><code>savepoint</code> 保存点，可以让我们实现部分回滚。</p>
 <h2 id="Transaction-四大特性：-ACID"><a href="#Transaction-四大特性：-ACID" class="headerlink" title="Transaction 四大特性： ACID"></a>Transaction 四大特性： ACID</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/NfuAJQ.png"></p>
-<p>一个事物有下列四个重要到特性，简称ACID</p>
+<p>一个事务有下列四个重要到特性，简称ACID</p>
 <ul>
-<li>A：Atomicity 原子性。 事物里面到操作，不可分割，要不一起成功，要不一起失败。</li>
-<li>C：Consistency 一致性。在事物的前后，系统的整体数据保持一致。比如说银行转账。</li>
-<li>I：Isolation 隔离性。 事物之间，相互隔离，互不干扰。</li>
+<li>A：Atomicity 原子性。 事务里面到操作，不可分割，要不一起成功，要不一起失败。</li>
+<li>C：Consistency 一致性。在事务的前后，系统的整体数据保持一致。比如说银行转账。</li>
+<li>I：Isolation 隔离性。 事务之间，相互隔离，互不干扰。</li>
 <li>D：Durability 永久性。 一旦数据修改完成，永久有效。</li>
 </ul>
 <p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/9qUodw.png"><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/xJ1VeA.png"><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/jez6I1.png"><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/vXbP4p.png"></p>
-<h2 id="事物隔离级别"><a href="#事物隔离级别" class="headerlink" title="事物隔离级别"></a>事物隔离级别</h2><p>介绍完了ACID，我们再来重点说说ACID其中的I(Isolation)。</p>
-<p>我们都知道，事物之间是隔离的<br>但是如何处理多个事物之间操作和读取同一个数据的结果，<br>我们需要仔细考虑。</p>
-<p>事物隔离级别是在多个事务同时进行更改和执行查询时，<br>调整<code>性能</code>和结果的<code>可靠性</code>、<code>一致性</code>和<code>可再现性</code>之间的平衡的设置。</p>
-<p>MySQL（InnoDB）提供四种事物隔离级别：</p>
+<h2 id="事务隔离级别"><a href="#事务隔离级别" class="headerlink" title="事务隔离级别"></a>事务隔离级别</h2><p>介绍完了ACID，我们再来重点说说ACID其中的I(Isolation)。</p>
+<p>我们都知道，事务之间是隔离的<br>但是如何处理多个事务之间操作和读取同一个数据的结果，<br>我们需要仔细考虑。</p>
+<p>事务隔离级别是在多个事务同时进行更改和执行查询时，<br>调整<code>性能</code>和结果的<code>可靠性</code>、<code>一致性</code>和<code>可再现性</code>之间的平衡的设置。</p>
+<p>MySQL（InnoDB）提供四种事务隔离级别：</p>
 <ul>
 <li>read uncommitted 读未提交</li>
 <li>read committed   读已提交</li>
@@ -163,12 +163,12 @@
 <li>serializable     串行</li>
 </ul>
 <p>我们可以参考<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html">官方文档</a></p>
-<h3 id="事物隔离级别的设置"><a href="#事物隔离级别的设置" class="headerlink" title="事物隔离级别的设置"></a>事物隔离级别的设置</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 设置全局的事物隔离级别</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> TRANSACTION LEVEL [REPEATABLE READ <span class="operator">|</span> READ COMMITTED <span class="operator">|</span> READ UNCOMMITTED <span class="operator">|</span> SERIALIZABLE];</span><br><span class="line"># 设置当前Session的隔离级别</span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL [REPEATABLE READ <span class="operator">|</span> READ COMMITTED <span class="operator">|</span> READ UNCOMMITTED <span class="operator">|</span> SERIALIZABLE];</span><br><span class="line"># 查看当前事物隔离级别</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
+<h3 id="事务隔离级别的设置"><a href="#事务隔离级别的设置" class="headerlink" title="事务隔离级别的设置"></a>事务隔离级别的设置</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 设置全局的事务隔离级别</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> TRANSACTION LEVEL [REPEATABLE READ <span class="operator">|</span> READ COMMITTED <span class="operator">|</span> READ UNCOMMITTED <span class="operator">|</span> SERIALIZABLE];</span><br><span class="line"># 设置当前Session的隔离级别</span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL [REPEATABLE READ <span class="operator">|</span> READ COMMITTED <span class="operator">|</span> READ UNCOMMITTED <span class="operator">|</span> SERIALIZABLE];</span><br><span class="line"># 查看当前事务隔离级别</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
 
 <p>我们先做一下前置的准备，<br>开启两个Session，<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/Lf8Nzf.png"></p>
-<p>并查看一下当前的事物隔离级别<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/3zaxpJ.png"></p>
+<p>并查看一下当前的事务隔离级别<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/3zaxpJ.png"></p>
 <p>接下来，我们一个一个看：</p>
-<h3 id="未提交读（READ-UNCOMMITTED）"><a href="#未提交读（READ-UNCOMMITTED）" class="headerlink" title="未提交读（READ UNCOMMITTED）"></a>未提交读（READ UNCOMMITTED）</h3><p>未提交读，指的就是一个事物读到了另外一个事物未提交的数据。</p>
+<h3 id="未提交读（READ-UNCOMMITTED）"><a href="#未提交读（READ-UNCOMMITTED）" class="headerlink" title="未提交读（READ UNCOMMITTED）"></a>未提交读（READ UNCOMMITTED）</h3><p>未提交读，指的就是一个事务读到了另外一个事务未提交的数据。</p>
 <p>这样会导致脏读。</p>
 <p>我们来实验一下：</p>
 <p>我们先设置两个Session的隔离级别：</p>
@@ -179,74 +179,74 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer;</span><br></pre></td></tr></table></figure>
 
 <p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/trxTdG.png"></p>
-<p>我们在Session A中开启一个事物，并修改一条记录，但是不提交。</p>
+<p>我们在Session A中开启一个事务，并修改一条记录，但是不提交。</p>
 <p>再在Session B 中查询，看会得到怎样的结果。</p>
 <p>我们现在Session A 中执行以下操作：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事物</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;zhangsan2&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事务</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;zhangsan2&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
 <p>我们在Session B 中看下结果：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"># <span class="number">3</span>、查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
-<p>此时Session A中的事物还没有提交，也就是说有回滚的可能。<br>但在Session B中查看数据， 客户名称已经从 <code>zhangsan</code> 变成了 <code>zhangsan2</code>。</p>
+<p>此时Session A中的事务还没有提交，也就是说有回滚的可能。<br>但在Session B中查看数据， 客户名称已经从 <code>zhangsan</code> 变成了 <code>zhangsan2</code>。</p>
 <p>如果Session A再进行了回滚，rollback。 这样Session B就读出了一个不存在的数据，就是脏读。</p>
 <p>这是非常不安全的一种隔离级别。</p>
-<h3 id="已提交读（READ-COMMITTED）"><a href="#已提交读（READ-COMMITTED）" class="headerlink" title="已提交读（READ COMMITTED）"></a>已提交读（READ COMMITTED）</h3><p>已提交读，就是读到的数据都是另外的事物已经提交过了的数据。<br>可以解决脏读的问题。</p>
-<p>我们先修改下事物隔离级别：</p>
+<h3 id="已提交读（READ-COMMITTED）"><a href="#已提交读（READ-COMMITTED）" class="headerlink" title="已提交读（READ COMMITTED）"></a>已提交读（READ COMMITTED）</h3><p>已提交读，就是读到的数据都是另外的事务已经提交过了的数据。<br>可以解决脏读的问题。</p>
+<p>我们先修改下事务隔离级别：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
 
 <p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/5fAmh8.png"></p>
 <p>我们在SessionA中修改数据：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事物</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事务</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
 <p>在Session B 中查看数据：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"># <span class="number">3</span>、查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
 <p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/YMiybO.png"><br>我们可以看到，客户名称还是<code>zhangsan</code>，没有变成<code>张飞</code>。</p>
-<p>我们这个时候再把Session A中的事物提交</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事物</span><br><span class="line"># <span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"># <span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、提交事物</span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
+<p>我们这个时候再把Session A中的事务提交</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事务</span><br><span class="line"># <span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"># <span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、提交事务</span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
 
 <p>再次在Session B 中查看数据：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"># <span class="number">3</span>、查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
 <p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/wY9JUG.png"><br>我们可以看到，客户名称已经变成了 <code>张飞</code>。</p>
-<p>如果session A的事物回滚的话，我们在Session B中看到的结果还会是 <code>zhangsan</code><br>这样，我们就成功解决了脏读的问题了。</p>
-<p>但是如果我们在同一个事物中，读取数据，可能会查询到不同的结果。<br>我们按照数字的顺序，执行以下SQL：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事物，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 张飞</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 关羽</span></span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br></pre></td></tr></table></figure>
+<p>如果session A的事务回滚的话，我们在Session B中看到的结果还会是 <code>zhangsan</code><br>这样，我们就成功解决了脏读的问题了。</p>
+<p>但是如果我们在同一个事务中，读取数据，可能会查询到不同的结果。<br>我们按照数字的顺序，执行以下SQL：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 张飞</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 关羽</span></span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br></pre></td></tr></table></figure>
 
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据（自动提交事物）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;关羽&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、修改数据（自动提交事物）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;刘备&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;关羽&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;刘备&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
-<p>我们可以看到，Session B 在同一个事物中，同样的查询语句，得出的结果是不一样的。<br>这种现象我们称之为<code>不可重复读</code>。</p>
-<h3 id="可重复读（REPEATABLE-READ）"><a href="#可重复读（REPEATABLE-READ）" class="headerlink" title="可重复读（REPEATABLE READ）"></a>可重复读（REPEATABLE READ）</h3><p>有些场景，我们需要在一个事物中，查询到到数据保持一致，不管外部事物如何改变。</p>
+<p>我们可以看到，Session B 在同一个事务中，同样的查询语句，得出的结果是不一样的。<br>这种现象我们称之为<code>不可重复读</code>。</p>
+<h3 id="可重复读（REPEATABLE-READ）"><a href="#可重复读（REPEATABLE-READ）" class="headerlink" title="可重复读（REPEATABLE READ）"></a>可重复读（REPEATABLE READ）</h3><p>有些场景，我们需要在一个事务中，查询到到数据保持一致，不管外部事务如何改变。</p>
 <p>这个时候，就需要我们满足<code>可重复读</code>。</p>
 <p>我们直接看效果：</p>
-<p>首先修改事物隔离级别：</p>
+<p>首先修改事务隔离级别：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
 
 <p>再按照下列SQL的顺序，执行：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事物，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">6</span>、提交当前事物，在查看数据</span><br><span class="line"><span class="keyword">commit</span> ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 张飞</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">6</span>、提交当前事务，在查看数据</span><br><span class="line"><span class="keyword">commit</span> ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 张飞</span></span><br></pre></td></tr></table></figure>
 
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据（自动提交事物）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;关羽&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、修改数据（自动提交事物）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;关羽&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
 <p>我们可以看到，在Session B 中，每一次查询的结果都是一样的，<br>不管实际的数据怎样的变化，即使数据已经被SessionA所改变，且已提交。</p>
 <p>但是这种隔离级别同样有这自己缺陷，它会发生幻读。</p>
 <p>我们看下面的场景：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># <span class="number">1</span>、开启事物，并查看数据</span><br><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事物，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span>; <span class="comment">-- null</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、插入指定ID的数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span>; <span class="comment">-- null</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">values</span> (<span class="number">10</span>, <span class="string">&#x27;吕布&#x27;</span>); <span class="comment">-- 失败</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span>; <span class="comment">-- null</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、插入指定ID的数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span>; <span class="comment">-- null</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">values</span> (<span class="number">10</span>, <span class="string">&#x27;吕布&#x27;</span>); <span class="comment">-- 失败</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、插入数据</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">values</span> (<span class="number">10</span>, <span class="string">&#x27;小吕布&#x27;</span>); <span class="comment">-- 成功</span></span><br></pre></td></tr></table></figure>
 
-<p>我们可以看到，SessionB在一个事物中，想要插入一条ID为10的用户。<br>重要的是，要第一步查询，已经确定了ID为10的用户并不存在。</p>
-<p>但是在事物的过程中，Session A 插入了一条ID为10的客户，并成功提交事物。</p>
+<p>我们可以看到，SessionB在一个事务中，想要插入一条ID为10的用户。<br>重要的是，要第一步查询，已经确定了ID为10的用户并不存在。</p>
+<p>但是在事务的过程中，Session A 插入了一条ID为10的客户，并成功提交事务。</p>
 <p>等再回到Session B， 再想插入一条ID为10的客户，就报错了<code>Duplicate entry &#39;10&#39; for key &#39;customer.PRIMARY&#39;</code>。</p>
 <p>其实，在Session B的操作中，逻辑都是没问题的。但是还是发生了幻读，导致了系统异常。</p>
 <p>解决办法是，在Session B中，我们这样写select语句：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span> <span class="keyword">for</span> <span class="keyword">update</span> ;</span><br></pre></td></tr></table></figure>
 
-<p>在 select 语句后面， 添加一个<code>for update</code>，可以把<code>ID=10</code>给加上一个锁，<br>SessionA， 再想干扰，添加数据的时候，就会拿不到锁，而只能等待<a href="https://"></a>SessionB的事物完成，并释放锁。</p>
+<p>在 select 语句后面， 添加一个<code>for update</code>，可以把<code>ID=10</code>给加上一个锁，<br>SessionA， 再想干扰，添加数据的时候，就会拿不到锁，而只能等待<a href="https://"></a>SessionB的事务完成，并释放锁。</p>
 <p>所以保证了SessionB的原子性，杜绝的幻读。</p>
 <h3 id="串行化（SERIALIZABLE）"><a href="#串行化（SERIALIZABLE）" class="headerlink" title="串行化（SERIALIZABLE）"></a>串行化（SERIALIZABLE）</h3><p>串行化，这种隔离级别，可以杜绝所有的干扰，包括（脏读、不可重复读、幻读）。</p>
 <p>在此级别下，我们便不需要对 SELECT 操作显式加锁，InnoDB会自动加锁，事务安全，但性能很低。</p>
 <p>非常不推荐使用。</p>
-<h2 id="InnoDB的事物实现（MVCC）"><a href="#InnoDB的事物实现（MVCC）" class="headerlink" title="InnoDB的事物实现（MVCC）"></a>InnoDB的事物实现（MVCC）</h2><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2> 
+<h2 id="InnoDB的事务实现（MVCC）"><a href="#InnoDB的事务实现（MVCC）" class="headerlink" title="InnoDB的事务实现（MVCC）"></a>InnoDB的事务实现（MVCC）</h2><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>
       <!-- reward -->
       
     </div>

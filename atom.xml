@@ -34,15 +34,15 @@
   </entry>
   
   <entry>
-    <title>MySQL事物原理</title>
+    <title>MySQL事务原理</title>
     <link href="https://github.com/CPyeah/2021/08/25/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/"/>
     <id>https://github.com/CPyeah/2021/08/25/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/</id>
     <published>2021-08-25T01:12:24.000Z</published>
     <updated>2022-06-24T08:56:27.290Z</updated>
     
     
-    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;什么是事物？！&lt;/p&gt;
-&lt;p&gt;一句话来说，事物是一次操作的&lt;code&gt;逻辑单位&lt;/code&gt;。要不全部成功，要不全部失败。&lt;/p&gt;
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;什么是事务？！&lt;/p&gt;
+&lt;p&gt;一句话来说，事务是一次操作的&lt;code&gt;逻辑单位&lt;/code&gt;。要不全部成功，要不全部失败。&lt;/p&gt;
 &lt;p&gt;它主要是用来保证&lt;code&gt;数据一致性&lt;/code&gt;的问题。&lt;/p&gt;</summary>
     
     
