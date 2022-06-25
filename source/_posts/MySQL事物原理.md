@@ -639,7 +639,7 @@ class TransactionControllerTest {
 ### ReadView获取
 ```java
 	// 获取到ReadView
-	public <T> Row<T> readView(Row<T> chain, Integer currentTrxId) {
+	public <T> Row<T> readView(Row<T> chain) {
 		if (chain == null) {
 			return null;
 		}
@@ -656,7 +656,7 @@ class TransactionControllerTest {
 		Row<T> pointer = chain;
 
 		while (true) {
-			if (isThisReadView(pointer, currentTrxId, min, max)) {
+			if (isThisReadView(pointer, min, max)) {
 				return pointer;
 			}
 			if (pointer.getRoll_pointer() != null) {
@@ -668,9 +668,8 @@ class TransactionControllerTest {
 
 	}
 
-	// 判断是否当前版本为ReadView
+	// 判断是否此版本为ReadView
 	private <T> boolean isThisReadView(Row<T> pointer,
-			Integer currentTrxId,
 			Integer min,
 			Integer max) {
 		// 如果被访问版本的trx_id属性值小于m_ids列表中最小的事务id，
@@ -695,6 +694,19 @@ class TransactionControllerTest {
 			return true;
 		}
 	}
+
 ```
 
 ## 总结
+至此，我们已经学习了MySQL事务到相关知识。
+- 我们了解到了事务到概念
+- 学习了事务的常见用法
+- 了解了事务的四大特性 ACID
+- 并重点说了事务的隔离特定
+- 实践了不同事务隔离级别下的效果
+- 使用Java代码模拟了MVCC的实现
+- 并通过MVCC，掌握事务隔离级别的实现原理
+
+本篇文章，希望大家好好掌握。😊
+
+
