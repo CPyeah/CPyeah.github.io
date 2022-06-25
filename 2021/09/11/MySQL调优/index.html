@@ -89,7 +89,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">1.1k</span>
+            <span class="post-count">0</span>
         </span>
     </span>
 
@@ -98,64 +98,20 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">3 min</span>
+            <span class="post-count">1 min</span>
         </span>
     </span>
 </div>
  
     </div>
       
-    <div class="tocbot"></div>
-
 
 
 
   
     <div class="article-entry" itemprop="articleBody">
        
-  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这篇文章，我们将谈到SQL优化的相关知识。</p>
-<ul>
-<li>我们会讲到如何合理定义数据结构</li>
-<li>如何设计高效的索引</li>
-<li>如果写出高效的SQL语句</li>
-<li>如果发生了慢查询，我们如何分析</li>
-<li>如何选择其他的组件来替换MySQL</li>
-</ul>
-<p>现在，我们开始吧！！</p>
-<span id="more"></span>
-
-<h2 id="数据结构的优化"><a href="#数据结构的优化" class="headerlink" title="数据结构的优化"></a>数据结构的优化</h2><h3 id="数据类型的选择"><a href="#数据类型的选择" class="headerlink" title="数据类型的选择"></a>数据类型的选择</h3><h4 id="使用最佳的数据类型"><a href="#使用最佳的数据类型" class="headerlink" title="使用最佳的数据类型"></a>使用最佳的数据类型</h4><p>数据类型越短越好，<br>越小的数据类型，往往意味着更好的效率。</p>
-<p>整型的效率会比字符串的性能高<br>使用Date类型来存储时间，比字符串类型的效率来的高。</p>
-<h4 id="尽量使用非空"><a href="#尽量使用非空" class="headerlink" title="尽量使用非空"></a>尽量使用非空</h4><p>null会影响到索引效率，查询的返回结果。<br>可会可能引发业务层的空指针。</p>
-<p>我们可以给字段设为not null，且设定一个默认值。</p>
-<h4 id="可以使用UNSIGNED来修饰数字类型"><a href="#可以使用UNSIGNED来修饰数字类型" class="headerlink" title="可以使用UNSIGNED来修饰数字类型"></a>可以使用UNSIGNED来修饰数字类型</h4><p>无符号数字的存储效率是有符号数组的将近一倍。</p>
-<p>比如ID，金额等一些确定是正数的数字类型，<br>我们可以使用UNSIGNED来修饰。</p>
-<h3 id="表的设计"><a href="#表的设计" class="headerlink" title="表的设计"></a>表的设计</h3><h4 id="避免宽表"><a href="#避免宽表" class="headerlink" title="避免宽表"></a>避免宽表</h4><p>宽表意味着一条记录有很多字段。<br>我们尽量避免一张表有多于100个字段。</p>
-<p>他会在查询的时候，增加性能的负担。<br>尤其是使用alter操作来改变表结构的时候，<br>会非常消耗性能。</p>
-<p>我们可以给一张宽表拆分成不同的小表。<br>比如：一张订单表，我们可以拆分成<br>订单主表；订单金额表；订单商品表；订单物流表 等等。</p>
-<h4 id="范式-and-反范式"><a href="#范式-and-反范式" class="headerlink" title="范式 and 反范式"></a>范式 and 反范式</h4><p>满足范式的设计，往往会更加精简，<br>但是如果需要查询更多的信息，需要连表查询。</p>
-<p>比如说，订单表里面只有买家ID这个字段，<br>在页面上展示的时候，往往是需要展示买家名称，<br>这个时候，就需要连表查询，关联订单表，和客户表，<br>而在我们分布式系统中，更需要单独调用别的中台的接口，来填充信息。</p>
-<p>而反范式，就是把一些数据给冗余下来，以提高查询效率。</p>
-<p>在高并发，高性能，高数据量的时候，<br>往往都是单表查询，<br>反范式，冗余会使用的更多。<br>冗余可以大大简化我们的SQL，提高我们索引的命中率。</p>
-<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><blockquote>
-<p>好的索引，是查询效率提升的关键</p>
-</blockquote>
-<h3 id="什么时候添加索引"><a href="#什么时候添加索引" class="headerlink" title="什么时候添加索引"></a>什么时候添加索引</h3><p>如果我们表的数据只有十几行甚至几行的时候，<br>我们不要添加索引。<br>因为这个时候，全表扫描的效率往往更好，<br>而索引的维护，还会影响到数据的修改效率。</p>
-<p>如果我们的表数据量很多，<br>我们推荐设计合适的索引来提高查询效率。</p>
-<p>如果我们的表数据非常非常多，<br>我们考虑使用分区，分表</p>
-<h3 id="添加合适的索引"><a href="#添加合适的索引" class="headerlink" title="添加合适的索引"></a>添加合适的索引</h3><p>在查询条件上，<br>在关联字段上，<br>在排序字段上，<br>在分组字段上，<br>可以添加索引。</p>
-<p>添加索引的字段值区分度越高越好，比如ID<br>像枚举类型的值不适合设置成索引。</p>
-<p>索引不是越多越好，索引会占用空间，索引会影响修改数据的效率。</p>
-<h3 id="组合索引"><a href="#组合索引" class="headerlink" title="组合索引"></a>组合索引</h3><p>根据业务中的查询条件，添加合适的组合索引<br>遵循最左匹配原则</p>
-<h3 id="使用覆盖索引"><a href="#使用覆盖索引" class="headerlink" title="使用覆盖索引"></a>使用覆盖索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> buyer_id <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> buyer_id <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br></pre></td></tr></table></figure>
-<p>如果我们在订单表（order）中的买家ID（buyer_id）上建立索引，</p>
-<p>上面第一条的SQL会比第二条的执行速度快很多。</p>
-<p>因为第一条索引直接走了覆盖索引，而不用回表查询，大大提高效率。</p>
-<h3 id="精简索引字段"><a href="#精简索引字段" class="headerlink" title="精简索引字段"></a>精简索引字段</h3><p>如果索引字段太长，且有很多重复的字符，我们可以截取一部分来设成索引。</p>
-<p>可以减少索引体积。</p>
-<p>比如说email，或者网站地址，或者非常长的ID</p>
-<p>把区分度高的部分，截取出来，设成索引。</p>
-<h2 id="SQL语句编写的优化"><a href="#SQL语句编写的优化" class="headerlink" title="SQL语句编写的优化"></a>SQL语句编写的优化</h2><h2 id="慢查询及其分析"><a href="#慢查询及其分析" class="headerlink" title="慢查询及其分析"></a>慢查询及其分析</h2><h2 id="使用其他的组件来替代MySQL"><a href="#使用其他的组件来替代MySQL" class="headerlink" title="使用其他的组件来替代MySQL"></a>使用其他的组件来替代MySQL</h2><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2> 
+   
       <!-- reward -->
       
     </div>
