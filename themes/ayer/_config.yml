@@ -253,7 +253,7 @@ lock:
   password: 123456
 
 
-deploy:
-  type: git
-  repo: git@github.com:CPyeah/CPyeah.github.io.git
-  branch: gh-pages
+#deploy:
+#  type: git
+#  repo: git@github.com:CPyeah/CPyeah.github.io.git
+#  branch: gh-pages
