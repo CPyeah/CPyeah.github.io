@@ -122,7 +122,69 @@ select * from order where buyer_id = '';
 
 ## SQL语句编写的优化
 
+### 基础SQL原则
+- 只返回必要的行，避免`select *`这样的语句。
+- where条件里面控制范围
+- limit 控制返回条数
+- 缓存热点数据，使用服务端缓存（redis），避免使用MySQL缓存
+- 查询条件 和 索引相匹配
+
+### count函数优化
+一般来说，我们尽量使用`count(*)`，来统计行数，
+但是还有一种用法，我们可以使用`count(column_1)`来统计，column_1不为空的记录数。
+
+在column_1不为空的情况下：
+count(*) == count(column_1)
+
+在column_1有null值的情况下：
+count(*) > column_1
+
+这点需要大家注意区别。
+
+在不需要准确数据的情况下，
+我们可以使用 explain 来替代 count。
+
+explain会给出一个总数目的估计值，
+explain只会给出一个查询计划，并不会真正去存储引擎上执行，
+它的执行效率是高的。
+
+### 避免深分页
+我们要避免这样的SQL。
+```sql
+select * from table limit 1000, 10;
+```
+
+这样会先把前面的1010条数据都查询出来，在截取后10条记录返回。
+很营销效率。
+
+在这种情况下，我会推荐使用游标的来查询。
+
+```sql
+select * from table where id > '' limit 10;
+```
+
+### 分解大批量
+如果我们需要清楚历史日志数据，我们可能会这样：
+```sql
+delete from log where create_time < '';
+```
+
+如果历史数据非常大，这样会非常影响数据库的性能，
+并会锁住很多记录，占用系统资源。
+
+可能会让很多小而重要的查询发生中断。
+
+我们需要这样做：
+```sql
+delete from log where create_time < '' limit 1000;
+```
+并在业务代码中，循环删除。
+
 ## 慢查询及其分析
+
+### 开启慢查询监控
+
+### 使用EXPLAIN来分析SQL执行计划
 
 ## 使用其他的组件来替代MySQL
 
