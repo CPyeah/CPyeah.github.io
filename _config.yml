@@ -103,10 +103,10 @@ theme_config: _config.ayer.yml
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
-#deploy:
-#  type: git
-#  repo: git@github.com:CPyeah/CPyeah.github.io.git
-#  branch: gh-pages
+deploy:
+  type: git
+  repo: git@github.com:CPyeah/CPyeah.github.io.git
+  branch: gh-pages
 
 # hexo-generator-searchdb
 search:
