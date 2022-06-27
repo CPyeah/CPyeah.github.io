@@ -106,7 +106,7 @@ theme_config: _config.ayer.yml
 deploy:
   type: git
   repo: git@github.com:CPyeah/CPyeah.github.io.git
-  branch: master
+  branch: gh-pages
 
 # hexo-generator-searchdb
 search:
