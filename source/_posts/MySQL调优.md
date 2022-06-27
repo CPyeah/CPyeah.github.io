@@ -181,6 +181,7 @@ delete from log where create_time < '' limit 1000;
 并在业务代码中，循环删除。
 
 ## 慢查询及其分析
+我们可以开启这个配置
 
 ### 开启慢查询监控
 
