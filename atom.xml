@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>chengpeng&#39;s blogs</title>
+  
+  
+  <link href="https://github.com/CPyeah/atom.xml" rel="self"/>
+  
+  <link href="https://github.com/CPyeah/"/>
+  <updated>2022-06-27T09:37:09.508Z</updated>
+  <id>https://github.com/CPyeah/</id>
+  
+  <author>
+    <name>chengpeng</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>MySQL调优</title>
+    <link href="https://github.com/CPyeah/2021/09/11/MySQL%E8%B0%83%E4%BC%98/"/>
+    <id>https://github.com/CPyeah/2021/09/11/MySQL%E8%B0%83%E4%BC%98/</id>
+    <published>2021-09-11T05:47:39.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这篇文章，我们将谈到SQL优化的相关知识。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;我们会讲到如何合理定义数据结构&lt;/li&gt;
+&lt;li&gt;如何设计高效的索引&lt;/li&gt;
+&lt;li&gt;如果写出高效的SQL语句&lt;/li&gt;
+&lt;li&gt;如果发生了慢查询，我们如何分析&lt;/li&gt;
+&lt;li&gt;如何选择其他的组件来替换MySQL&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;现在，我们开始吧！！&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    
+    
+    <category term="mysql" scheme="https://github.com/CPyeah/tags/mysql/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>MySQL事务原理</title>
+    <link href="https://github.com/CPyeah/2021/08/25/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/"/>
+    <id>https://github.com/CPyeah/2021/08/25/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/</id>
+    <published>2021-08-25T01:12:24.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;什么是事务？！&lt;/p&gt;
+&lt;p&gt;一句话来说，事务是一次操作的&lt;code&gt;逻辑单位&lt;/code&gt;。要不全部成功，要不全部失败。&lt;/p&gt;
+&lt;p&gt;它主要是用来保证&lt;code&gt;数据一致性&lt;/code&gt;的问题。&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    
+    
+    <category term="mysql" scheme="https://github.com/CPyeah/tags/mysql/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>MySQL学习及原理浅析</title>
+    <link href="https://github.com/CPyeah/2021/08/13/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
+    <id>https://github.com/CPyeah/2021/08/13/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
+    <published>2021-08-13T03:06:53.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;从今天开始，我们将学习目前最流行的一个数据库MySQL。&lt;/p&gt;
+&lt;p&gt;这篇文章，带大家走进Mysql的世界。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MySQL的底层结构&lt;/li&gt;
+&lt;li&gt;MySQL的查询过程&lt;/li&gt;
+&lt;li&gt;索引结构&lt;/li&gt;
+&lt;li&gt;MySQL的三种Log&lt;/li&gt;
+&lt;li&gt;MySQL的存储引擎&lt;/li&gt;
+&lt;/ul&gt;</summary>
+    
+    
+    
+    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    
+    
+    <category term="mysql" scheme="https://github.com/CPyeah/tags/mysql/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>十大排序算法</title>
+    <link href="https://github.com/CPyeah/2021/07/06/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
+    <id>https://github.com/CPyeah/2021/07/06/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</id>
+    <published>2021-07-06T01:52:41.000Z</published>
+    <updated>2022-06-27T09:37:09.580Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;今天开启我们的算法系列，争取说简单➕通俗易懂。&lt;br&gt;我们从经典的排序算法开始。学习十大排序算法。&lt;br&gt;&lt;img src=&quot;https://cp-images.oss-cn-hangzhou.aliyuncs.com/zoOH3H.png&quot;&gt;&lt;/p&gt;
+&lt;p&gt;排序算法可以分为两大类：基于比较的排序 and 不基于比较的排序。&lt;br&gt;基于比较的排序，是通过元素间的两两比较，来判断大小，继而排序。&lt;br&gt;不基于比较的排序，就是通过各种其他的方法，来让元素排序。&lt;/p&gt;
+&lt;p&gt;在表格中，上面的7种都是基于比较的排序算法。下3种是不基于比较的排序。&lt;/p&gt;
+&lt;p&gt;接下来我们一个一个的来仔细看。&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="算法" scheme="https://github.com/CPyeah/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="算法" scheme="https://github.com/CPyeah/tags/%E7%AE%97%E6%B3%95/"/>
+    
+    <category term="排序算法" scheme="https://github.com/CPyeah/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Java操作ElasticSearch</title>
+    <link href="https://github.com/CPyeah/2021/06/11/Java%E6%93%8D%E4%BD%9CElasticSearch/"/>
+    <id>https://github.com/CPyeah/2021/06/11/Java%E6%93%8D%E4%BD%9CElasticSearch/</id>
+    <published>2021-06-11T05:44:15.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;今天我们将使用Java来操作ElasticSearch。&lt;br&gt;我们将：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用Docker搭建ES集群环境&lt;/li&gt;
+&lt;li&gt;使用SpringBoot搭建Java环境&lt;/li&gt;
+&lt;li&gt;在Java模型中定义ES的索引&lt;/li&gt;
+&lt;li&gt;使用两种方式来操作ES（JPA和ElasticSearchTemplate）&lt;/li&gt;
+&lt;/ul&gt;</summary>
+    
+    
+    
+    <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="springboot" scheme="https://github.com/CPyeah/tags/springboot/"/>
+    
+    <category term="jpa" scheme="https://github.com/CPyeah/tags/jpa/"/>
+    
+    <category term="docker" scheme="https://github.com/CPyeah/tags/docker/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ElasticSearch学习及原理浅析</title>
+    <link href="https://github.com/CPyeah/2021/05/27/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
+    <id>https://github.com/CPyeah/2021/05/27/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
+    <published>2021-05-27T07:29:29.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;ElasticSearch学习及原理浅析&quot;&gt;&lt;a href=&quot;#ElasticSearch学习及原理浅析&quot; class=&quot;headerlink&quot; title=&quot;ElasticSearch学习及原理浅析&quot;&gt;&lt;/a&gt;ElasticSearch学习及原理浅析&lt;/h1&gt;&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;这篇文章我们一起来学习一下最最流行的搜索引擎 - &lt;code&gt;ElasticSearch&lt;/code&gt;&lt;br&gt;我们将学习到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ES集群、节点类型、分片&lt;/li&gt;
+&lt;li&gt;服务发现机制&lt;/li&gt;
+&lt;li&gt;选举机制&lt;/li&gt;
+&lt;li&gt;Docker搭建集群环境&lt;/li&gt;
+&lt;li&gt;基础API操作&lt;/li&gt;
+&lt;li&gt;ES的数据结构及文件系统&lt;/li&gt;
+&lt;li&gt;存储文档的过程&lt;/li&gt;
+&lt;li&gt;索引及搜索&lt;/li&gt;
+&lt;/ul&gt;</summary>
+    
+    
+    
+    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Redis高级数据结构</title>
+    <link href="https://github.com/CPyeah/2021/04/26/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    <id>https://github.com/CPyeah/2021/04/26/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</id>
+    <published>2021-04-26T07:15:43.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这篇文章介绍一下高级Redis数据结构，及其用法。&lt;/p&gt;
+&lt;p&gt;在工作的使用频率很高。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;分布式锁&lt;/li&gt;
+&lt;li&gt;队列&lt;/li&gt;
+&lt;li&gt;位图&lt;/li&gt;
+&lt;li&gt;布隆过滤器&lt;/li&gt;
+&lt;li&gt;HyperLogLog&lt;/li&gt;
+&lt;li&gt;限流器&lt;/li&gt;
+&lt;li&gt;GeoHash&lt;/li&gt;
+&lt;/ul&gt;</summary>
+    
+    
+    
+    <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="redis" scheme="https://github.com/CPyeah/tags/redis/"/>
+    
+    <category term="redisson" scheme="https://github.com/CPyeah/tags/redisson/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Java操作Redis</title>
+    <link href="https://github.com/CPyeah/2021/03/25/Java%E6%93%8D%E4%BD%9CRedis/"/>
+    <id>https://github.com/CPyeah/2021/03/25/Java%E6%93%8D%E4%BD%9CRedis/</id>
+    <published>2021-03-25T02:18:43.000Z</published>
+    <updated>2022-06-27T09:37:09.508Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;Redis是目前最流行的缓存数据库，完全基于内存操作，速度非常快。&lt;br&gt;它是我们互联网公司高性能，高并发的基石。&lt;br&gt;它的功能包括但不限于：提供中央缓存功能，分布式锁，还有特殊数据结构的特殊应用。&lt;br&gt;本篇文章都会一一说到。&lt;/p&gt;
+&lt;p&gt;接下来我们会：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用Docker搭建redis环境&lt;/li&gt;
+&lt;li&gt;搭建springboot服务&lt;/li&gt;
+&lt;li&gt;使用redisson来操作redis&lt;/li&gt;
+&lt;li&gt;熟悉redis的五大基本数据类型&lt;/li&gt;
+&lt;li&gt;熟悉使用redis的高级数据结构及其应用&lt;/li&gt;
+&lt;/ul&gt;</summary>
+    
+    
+    
+    <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="redis" scheme="https://github.com/CPyeah/tags/redis/"/>
+    
+    <category term="redisson" scheme="https://github.com/CPyeah/tags/redisson/"/>
+    
+  </entry>
+  
+</feed>
