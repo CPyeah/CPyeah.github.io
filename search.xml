@@ -1,6 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Java操作ElasticSearch</title>
+    <url>/2021/06/11/Java%E6%93%8D%E4%BD%9CElasticSearch/</url>
+    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>今天我们将使用Java来操作ElasticSearch。<br>我们将：</p>
+<ul>
+<li>使用Docker搭建ES集群环境</li>
+<li>使用SpringBoot搭建Java环境</li>
+<li>在Java模型中定义ES的索引</li>
+<li>使用两种方式来操作ES（JPA和ElasticSearchTemplate）</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="搭建集群环境"><a href="#搭建集群环境" class="headerlink" title="搭建集群环境"></a>搭建集群环境</h2><p>今天我们继续使用docker来搭建环境。<br><code>docker-compose.yaml</code>奉上。<br>想必大家都很清楚docker compose的用法了，这里就不再赘述。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;2.2&#x27;</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">es01:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">docker.elastic.co/elasticsearch/elasticsearch:7.13.2</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">es01</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">node.name=es01</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.name=es-docker-cluster</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">discovery.seed_hosts=es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.initial_master_nodes=es01,es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">bootstrap.memory_lock=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;ES_JAVA_OPTS=-Xms128m -Xmx128m&quot;</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">memlock:</span></span><br><span class="line">        <span class="attr">soft:</span> <span class="number">-1</span></span><br><span class="line">        <span class="attr">hard:</span> <span class="number">-1</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/Users/chengpeng/docker_volume/elasticsearch/data01:/usr/share/elasticsearch/data</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">9200</span><span class="string">:9200</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elastic</span></span><br><span class="line">  <span class="attr">es02:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">docker.elastic.co/elasticsearch/elasticsearch:7.13.2</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">es02</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">node.name=es02</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.name=es-docker-cluster</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">discovery.seed_hosts=es01,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.initial_master_nodes=es01,es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">bootstrap.memory_lock=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;ES_JAVA_OPTS=-Xms128m -Xmx128m&quot;</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">memlock:</span></span><br><span class="line">        <span class="attr">soft:</span> <span class="number">-1</span></span><br><span class="line">        <span class="attr">hard:</span> <span class="number">-1</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/Users/chengpeng/docker_volume/elasticsearch/data02:/usr/share/elasticsearch/data</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elastic</span></span><br><span class="line">  <span class="attr">es03:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">docker.elastic.co/elasticsearch/elasticsearch:7.13.2</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">es03</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">node.name=es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.name=es-docker-cluster</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">discovery.seed_hosts=es01,es02</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.initial_master_nodes=es01,es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">bootstrap.memory_lock=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;ES_JAVA_OPTS=-Xms128m -Xmx128m&quot;</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">memlock:</span></span><br><span class="line">        <span class="attr">soft:</span> <span class="number">-1</span></span><br><span class="line">        <span class="attr">hard:</span> <span class="number">-1</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/Users/chengpeng/docker_volume/elasticsearch/data03:/usr/share/elasticsearch/data</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elastic</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">data01:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line">  <span class="attr">data02:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line">  <span class="attr">data03:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">elastic:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br></pre></td></tr></table></figure>
+
+<p>因为这里是集群，除了<code>volumes</code>需要注意之外，还需要注意<code>network</code>需要配置一下。<br>启动完成之后，浏览器访问:<br><a href="http://localhost:9200/">http://localhost:9200</a><br>如果展示：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/image.png"><br>表示ES集群启动成功。</p>
+<h2 id="搭建Java环境"><a href="#搭建Java环境" class="headerlink" title="搭建Java环境"></a>搭建Java环境</h2><p>我们创建一个SpringBoot项目。<br>在<code>pom.xml</code>中引入elasticsearch的starter，即可。<br>不过要注意的是，因为ElasticSearch版本迭代很快，我们的版本要对应的上。<br>我们先查看一下ElasticSearch的版本： 7.13.2<br>再看一下<a href="https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/">Spring文档</a>，找到对应的SpringData的版本。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/J73lBg.png"><br>在pom中我们添加上引用：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-elasticsearch<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.6.7<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>刷新下maven。 再继续在<code>application.properties</code>中配置:</p>
+<figure class="highlight properties"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring.data.elasticsearch.cluster-name</span>=<span class="string">es-docker-cluster</span></span><br><span class="line"><span class="attr">spring.data.elasticsearch.cluster-nodes</span>=<span class="string">localhost:9200</span></span><br></pre></td></tr></table></figure>
+
+<p>即完成环境搭建。</p>
+<h2 id="在Java模型中定义ES的索引"><a href="#在Java模型中定义ES的索引" class="headerlink" title="在Java模型中定义ES的索引"></a>在Java模型中定义ES的索引</h2><p>好，接下来来到我们的重头戏，设计ES的索引。<br>在ES中，索引对应类似MySQL中的表，而Mapping，相当于MySQL中的表结构。<br>在一切开始之前，设计一个足够好的表结构尤为重要。可以直接影响到数据库的性能。</p>
+<p>直接上结果：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Document(indexName = &quot;product&quot;)</span></span><br><span class="line"><span class="meta">@Setting(shards = 3, replicas = 2)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Product</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Id</span></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Text, index = false)</span></span><br><span class="line">	<span class="keyword">private</span> String id;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Keyword, ignoreAbove = 128)</span></span><br><span class="line">	<span class="keyword">private</span> String name;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Text, analyzer = &quot;ik_smart&quot;, searchAnalyzer = &quot;ik_smart&quot;)</span></span><br><span class="line">	<span class="keyword">private</span> String description;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Keyword)</span></span><br><span class="line">	<span class="keyword">private</span> String brandName;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Long)</span></span><br><span class="line">	<span class="keyword">private</span> Long stock;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Double)</span></span><br><span class="line">	<span class="keyword">private</span> BigDecimal price;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Date, format = &#123;&#125;, pattern = &#123;&quot;yyyy-MM-dd HH:mm:ss&quot;, &quot;yyyy-MM-dd&quot;,</span></span><br><span class="line"><span class="meta">			&quot;epoch_millis&quot;&#125;)</span></span><br><span class="line">	<span class="keyword">private</span> LocalDateTime updateTime;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Nested)</span></span><br><span class="line">	<span class="keyword">private</span> List&lt;Sku&gt; skuList;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="定义模型"><a href="#定义模型" class="headerlink" title="定义模型"></a>定义模型</h3><p>我们首先定义了一个商品的Java模型<code>Product</code>，有各种Java类型（String、Long、BigDecimal、LocalDateTime、List）。<br>在类的上面添加<code>Document</code>注解，表示被Spring所管理。<br><code>org.springframework.data.elasticsearch.annotations.Document</code>中还有一些其他的属性。大家可以参考官方文档。</p>
+<h3 id="定义Setting"><a href="#定义Setting" class="headerlink" title="定义Setting"></a>定义Setting</h3><p>定义好模型之后，我们再确定好索引的配置，<code>Setting</code>。<br>这里面主要配置，这个索引在ES中的分片数，和副本数。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Setting(shards = 3, replicas = 2)</span></span><br></pre></td></tr></table></figure>
+
+<p>当然，除了分片数和副本数，还有其他的配置，大家参考官方文档。</p>
+<h3 id="定义Mapping"><a href="#定义Mapping" class="headerlink" title="定义Mapping"></a>定义Mapping</h3><p>接下来，就到了定义最重要的Mapping。</p>
+<h4 id="确定数据结构"><a href="#确定数据结构" class="headerlink" title="确定数据结构"></a>确定数据结构</h4><p>首先我们要知道，ES有着自己的数据结构，而且种类还很多。如图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/JtmYzS.png"><br>我们需要在每一个Java的数据结构中，对应上ES的数据结构。<br>比如<code>@Field(type = FieldType.Text)</code>表示它在ES中，是一个文本型的数据。<br>而文本型，是要被分词，生成倒排索引的。<br>这里提几点选择策略：</p>
+<ul>
+<li>文本类型分两种，需要分词，选text，不需要分词，选keyword</li>
+<li>如果你未来不确定你到底有多少数据，将类型设置为long是比较合适的</li>
+<li>keyword检索比较短的字符会更快，如果字符很大，那么会增加存储和检索成本，可以使用<code>ignoreAbove</code>属性</li>
+</ul>
+<h4 id="确定是否需要被索引"><a href="#确定是否需要被索引" class="headerlink" title="确定是否需要被索引"></a>确定是否需要被索引</h4><p>默认情况下，索引的字段都是需要被索引的，但是为了节省空间，我们可以把一些字段设置成不建索引。<br>比如ID一类的参数，不想被索引：<code>@Field(type = FieldType.Text, index = false)</code></p>
+<h4 id="检索的方式"><a href="#检索的方式" class="headerlink" title="检索的方式"></a>检索的方式</h4><p>我们可以通过分词器，来定义我们的分词方式，比如<br><code>@Field(type = FieldType.Text, analyzer = &quot;ik_smart&quot;, searchAnalyzer = &quot;ik_smart&quot;)</code><br>这样，我们就可以使用中文的倒排索引啦。。。</p>
+<h4 id="特殊的类型"><a href="#特殊的类型" class="headerlink" title="特殊的类型"></a>特殊的类型</h4><p>如果我们需要使用时间类型，在Java中，我们使用<code>LocalDateTime</code>,对应ES中是<code>Date</code>类型。<br>但是需要注意的是，我们需要定义格式化的方式，不然大概率时分秒要丢失。<br><code>@Field(type = FieldType.Date, format = &#123;&#125;, pattern = &#123;&quot;yyyy-MM-dd HH:mm:ss&quot;, &quot;yyyy-MM-dd&quot;, &quot;epoch_millis&quot;&#125;)</code></p>
+<p>嵌套类型，使用<code>Nested</code><br><code>@Field(type = FieldType.Nested)</code></p>
+<h2 id="使用两种方式来操作ES"><a href="#使用两种方式来操作ES" class="headerlink" title="使用两种方式来操作ES"></a>使用两种方式来操作ES</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/MHdECp.png"></p>
+<h3 id="索引操作"><a href="#索引操作" class="headerlink" title="索引操作"></a>索引操作</h3><p>首先我们来看看如何来管理ES的索引</p>
+<h4 id="JPA"><a href="#JPA" class="headerlink" title="JPA"></a>JPA</h4><p>如果使用JPA，我们只需保持默认配置，JPA就会替我们按照我们定义的Map来创建索引。<br>不需要我们操心。</p>
+<p>我们可以使用<a href="http://localhost:9200/product/_mapping">http://localhost:9200/product/_mapping</a>来查看对应索引信息。</p>
+<h4 id="ElasticsearchRestTemplate"><a href="#ElasticsearchRestTemplate" class="headerlink" title="ElasticsearchRestTemplate"></a>ElasticsearchRestTemplate</h4><p>template对应的Api如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">index</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 拿到对应索引的操作引用</span></span><br><span class="line">    <span class="type">IndexOperations</span> <span class="variable">indexOperations</span> <span class="operator">=</span> elasticsearchRestTemplate.indexOps(Product.class);</span><br><span class="line">    <span class="comment">// 查看索引是否存在</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">exists</span> <span class="operator">=</span> indexOperations.exists();</span><br><span class="line">    <span class="keyword">if</span> (exists) &#123;</span><br><span class="line">        <span class="comment">// 删除索引（删除操作要慎重）</span></span><br><span class="line">        indexOperations.delete();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 创建索引</span></span><br><span class="line"><span class="comment">//		indexOperations.create(); //这个没有配置mapping</span></span><br><span class="line">    indexOperations.createWithMapping();</span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 查看索引的Setting</span></span><br><span class="line">    <span class="type">Settings</span> <span class="variable">settings</span> <span class="operator">=</span> indexOperations.getSettings();</span><br><span class="line">    <span class="comment">// 查看索引的Mapping</span></span><br><span class="line">    Map&lt;String, Object&gt; mapping = indexOperations.getMapping();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="增删改查操作"><a href="#增删改查操作" class="headerlink" title="增删改查操作"></a>增删改查操作</h3><h4 id="JPA-1"><a href="#JPA-1" class="headerlink" title="JPA"></a>JPA</h4><p>使用JPA非常方便，只需要定义好<code>Repository</code>，就可以方便快捷的操作Document了。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ProductRepository</span> <span class="keyword">extends</span> <span class="title class_">ElasticsearchRepository</span>&lt;Product, String&gt; &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后我们就可以这样使用：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CURDTest</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Autowired</span></span><br><span class="line">	<span class="keyword">private</span> ProductRepository repository;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">create</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> repository.save(Product.get());</span><br><span class="line">		Assertions.assertNotNull(product);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createMore</span><span class="params">()</span> &#123;</span><br><span class="line">		List&lt;Product&gt; products = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">			products.add(Product.get());</span><br><span class="line">		&#125;</span><br><span class="line">		repository.saveAll(products);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">listAll</span><span class="params">()</span> &#123;</span><br><span class="line">		Iterable&lt;Product&gt; all = repository.findAll();</span><br><span class="line">		all.forEach(System.out::println);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">page</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">4</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		System.out.println(page);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getById</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">1</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> page.getContent().get(<span class="number">0</span>);</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product1</span> <span class="operator">=</span> repository.findById(product.getId()).orElse(<span class="literal">null</span>);</span><br><span class="line">		Assertions.assertNotNull(product1);</span><br><span class="line">		System.out.println(product1);</span><br><span class="line">		Assertions.assertEquals(product.getId(), product1.getId());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">update</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">1</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> page.getContent().get(<span class="number">0</span>);</span><br><span class="line">		<span class="type">Product</span> <span class="variable">newProduct</span> <span class="operator">=</span> Product.get();</span><br><span class="line">		newProduct.setId(product.getId());</span><br><span class="line">		<span class="type">Product</span> <span class="variable">save</span> <span class="operator">=</span> repository.save(newProduct);</span><br><span class="line">		Assertions.assertEquals(product.getId(), save.getId());</span><br><span class="line">		Assertions.assertNotEquals(product.getName(), save.getName());</span><br><span class="line">		System.out.println(product);</span><br><span class="line">		System.out.println(save);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delete</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">1</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> page.getContent().get(<span class="number">0</span>);</span><br><span class="line">		repository.delete(product);</span><br><span class="line"></span><br><span class="line">		<span class="type">Product</span> <span class="variable">product1</span> <span class="operator">=</span> repository.findById(product.getId()).orElse(<span class="literal">null</span>);</span><br><span class="line">		Assertions.assertNull(product1);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>JPA的封装可以让我们无差别的操作任何数据库。 yyds</p>
+<h4 id="ElasticsearchRestTemplate-1"><a href="#ElasticsearchRestTemplate-1" class="headerlink" title="ElasticsearchRestTemplate"></a>ElasticsearchRestTemplate</h4><p>使用ElasticsearchRestTemplate操作文档相对麻烦一些：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CURDTest2</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Autowired</span></span><br><span class="line">	<span class="keyword">private</span> ElasticsearchRestTemplate elasticsearchRestTemplate;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">create</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> elasticsearchRestTemplate.save(Product.get());</span><br><span class="line">		Assertions.assertNotNull(product);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createMore</span><span class="params">()</span> &#123;</span><br><span class="line">		List&lt;Product&gt; products = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">			products.add(Product.get());</span><br><span class="line">		&#125;</span><br><span class="line">		elasticsearchRestTemplate.save(products);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">listAll</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Query</span> <span class="variable">query</span> <span class="operator">=</span> elasticsearchRestTemplate.matchAllQuery();</span><br><span class="line">		SearchHits&lt;Product&gt; search = elasticsearchRestTemplate.search(query, Product.class);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getById</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> elasticsearchRestTemplate.get(<span class="string">&quot;ID&quot;</span>, Product.class);</span><br><span class="line">		Assertions.assertNotNull(product);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">update</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">oldProduct</span> <span class="operator">=</span> elasticsearchRestTemplate.get(<span class="string">&quot;ID&quot;</span>, Product.class);</span><br><span class="line">		Assertions.assertNotNull(oldProduct);</span><br><span class="line"></span><br><span class="line">		<span class="type">Product</span> <span class="variable">newProduct</span> <span class="operator">=</span> Product.get();</span><br><span class="line">		<span class="type">Document</span> <span class="variable">document</span> <span class="operator">=</span> newProduct.toDocument();</span><br><span class="line">		<span class="type">UpdateQuery</span> <span class="variable">updateQuery</span> <span class="operator">=</span> UpdateQuery.builder(<span class="string">&quot;ID&quot;</span>).withDocument(document).build();</span><br><span class="line">		<span class="type">UpdateResponse</span> <span class="variable">product</span> <span class="operator">=</span> elasticsearchRestTemplate</span><br><span class="line">				.update(updateQuery, IndexCoordinates.of(<span class="string">&quot;product&quot;</span>));</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delete</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">String</span> <span class="variable">id</span> <span class="operator">=</span> elasticsearchRestTemplate.delete(<span class="string">&quot;ID&quot;</span>, Product.class);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="搜索"><a href="#搜索" class="headerlink" title="搜索"></a>搜索</h3><h4 id="JPA-2"><a href="#JPA-2" class="headerlink" title="JPA"></a>JPA</h4><p>JPA的搜索很简单，就把当成一个普通的数据库搜索就行。<br>我们只需要在repository中定义</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ProductRepository</span> <span class="keyword">extends</span> <span class="title class_">ElasticsearchRepository</span>&lt;Product, String&gt; &#123;</span><br><span class="line"></span><br><span class="line">	List&lt;Product&gt; <span class="title function_">findAllByNameContaining</span><span class="params">(String name)</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我没就可以在所有名称中包含莫个字段了。<br>在调用这个方法的时候，可以在控制台看到，本质上是JPA帮我我们发了一个<code>_search</code>的POST请求。<br>其他更复杂的方法，可以参考JPA的文档。</p>
+<h4 id="ElasticsearchRestTemplate-2"><a href="#ElasticsearchRestTemplate-2" class="headerlink" title="ElasticsearchRestTemplate"></a>ElasticsearchRestTemplate</h4><p>使用ElasticsearchRestTemplate操作search，也很不错。<br>我们可以这样写：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">searchTest</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 查询所有</span></span><br><span class="line">    <span class="type">Query</span> <span class="variable">searchQuery</span> <span class="operator">=</span> Query.findAll();</span><br><span class="line">    <span class="type">IndexCoordinates</span> <span class="variable">indexCoordinates</span> <span class="operator">=</span> IndexCoordinates.of(<span class="string">&quot;product&quot;</span>);</span><br><span class="line">    SearchHits&lt;Product&gt; result = elasticsearchRestTemplate</span><br><span class="line">            .search(searchQuery, Product.class, indexCoordinates);</span><br><span class="line">    System.out.println(result);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 按名称 搜索</span></span><br><span class="line">    <span class="type">MatchQueryBuilder</span> <span class="variable">matchQueryBuilder</span> <span class="operator">=</span> QueryBuilders.matchQuery(<span class="string">&quot;spuName&quot;</span>, <span class="string">&quot;473&quot;</span>);</span><br><span class="line">    searchQuery = <span class="keyword">new</span> <span class="title class_">NativeSearchQueryBuilder</span>()</span><br><span class="line">            .withQuery(matchQueryBuilder)</span><br><span class="line">            .build();</span><br><span class="line">    result = elasticsearchRestTemplate</span><br><span class="line">            .search(searchQuery, Product.class, indexCoordinates);</span><br><span class="line">    System.out.println(result);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 按价格搜索</span></span><br><span class="line">    <span class="type">Criteria</span> <span class="variable">criteria</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Criteria</span>(<span class="string">&quot;price&quot;</span>)</span><br><span class="line">            .greaterThan(<span class="number">500.0</span>)</span><br><span class="line">            .lessThan(<span class="number">800.0</span>);</span><br><span class="line"></span><br><span class="line">    searchQuery = <span class="keyword">new</span> <span class="title class_">CriteriaQuery</span>(criteria);</span><br><span class="line"></span><br><span class="line">    result = elasticsearchRestTemplate</span><br><span class="line">            .search(searchQuery, Product.class, indexCoordinates);</span><br><span class="line">    System.out.println(result);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样写有一个好处，就是在返回结果数据的同时，还会返回命中率，这个有时候也是会用到的。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，我们已经学会了如何把ES操作引入到我们到Java项目中，<br>还知道了如何设计并建立一个索引，<br>还有使用两种方法来操作ES。<br>希望大家都能够在工作当中用上哦！！</p>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+        <tag>elasticsearch</tag>
+        <tag>springboot</tag>
+        <tag>jpa</tag>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>ElasticSearch学习及原理浅析</title>
     <url>/2021/05/27/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</url>
     <content><![CDATA[<h1 id="ElasticSearch学习及原理浅析"><a href="#ElasticSearch学习及原理浅析" class="headerlink" title="ElasticSearch学习及原理浅析"></a>ElasticSearch学习及原理浅析</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>这篇文章我们一起来学习一下最最流行的搜索引擎 - <code>ElasticSearch</code><br>我们将学习到：</p>
@@ -313,515 +394,8 @@
         <category>知识</category>
       </categories>
       <tags>
+        <tag>java</tag>
         <tag>elasticsearch</tag>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Java操作ElasticSearch</title>
-    <url>/2021/06/11/Java%E6%93%8D%E4%BD%9CElasticSearch/</url>
-    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>今天我们将使用Java来操作ElasticSearch。<br>我们将：</p>
-<ul>
-<li>使用Docker搭建ES集群环境</li>
-<li>使用SpringBoot搭建Java环境</li>
-<li>在Java模型中定义ES的索引</li>
-<li>使用两种方式来操作ES（JPA和ElasticSearchTemplate）</li>
-</ul>
-<span id="more"></span>
-
-<h2 id="搭建集群环境"><a href="#搭建集群环境" class="headerlink" title="搭建集群环境"></a>搭建集群环境</h2><p>今天我们继续使用docker来搭建环境。<br><code>docker-compose.yaml</code>奉上。<br>想必大家都很清楚docker compose的用法了，这里就不再赘述。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;2.2&#x27;</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">es01:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">docker.elastic.co/elasticsearch/elasticsearch:7.13.2</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">es01</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">node.name=es01</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.name=es-docker-cluster</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">discovery.seed_hosts=es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.initial_master_nodes=es01,es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">bootstrap.memory_lock=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;ES_JAVA_OPTS=-Xms128m -Xmx128m&quot;</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">memlock:</span></span><br><span class="line">        <span class="attr">soft:</span> <span class="number">-1</span></span><br><span class="line">        <span class="attr">hard:</span> <span class="number">-1</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/Users/chengpeng/docker_volume/elasticsearch/data01:/usr/share/elasticsearch/data</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">9200</span><span class="string">:9200</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elastic</span></span><br><span class="line">  <span class="attr">es02:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">docker.elastic.co/elasticsearch/elasticsearch:7.13.2</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">es02</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">node.name=es02</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.name=es-docker-cluster</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">discovery.seed_hosts=es01,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.initial_master_nodes=es01,es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">bootstrap.memory_lock=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;ES_JAVA_OPTS=-Xms128m -Xmx128m&quot;</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">memlock:</span></span><br><span class="line">        <span class="attr">soft:</span> <span class="number">-1</span></span><br><span class="line">        <span class="attr">hard:</span> <span class="number">-1</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/Users/chengpeng/docker_volume/elasticsearch/data02:/usr/share/elasticsearch/data</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elastic</span></span><br><span class="line">  <span class="attr">es03:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">docker.elastic.co/elasticsearch/elasticsearch:7.13.2</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">es03</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">node.name=es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.name=es-docker-cluster</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">discovery.seed_hosts=es01,es02</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">cluster.initial_master_nodes=es01,es02,es03</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">bootstrap.memory_lock=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;ES_JAVA_OPTS=-Xms128m -Xmx128m&quot;</span></span><br><span class="line">    <span class="attr">ulimits:</span></span><br><span class="line">      <span class="attr">memlock:</span></span><br><span class="line">        <span class="attr">soft:</span> <span class="number">-1</span></span><br><span class="line">        <span class="attr">hard:</span> <span class="number">-1</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/Users/chengpeng/docker_volume/elasticsearch/data03:/usr/share/elasticsearch/data</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elastic</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">data01:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line">  <span class="attr">data02:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line">  <span class="attr">data03:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">local</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">elastic:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br></pre></td></tr></table></figure>
-
-<p>因为这里是集群，除了<code>volumes</code>需要注意之外，还需要注意<code>network</code>需要配置一下。<br>启动完成之后，浏览器访问:<br><a href="http://localhost:9200/">http://localhost:9200</a><br>如果展示：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/image.png"><br>表示ES集群启动成功。</p>
-<h2 id="搭建Java环境"><a href="#搭建Java环境" class="headerlink" title="搭建Java环境"></a>搭建Java环境</h2><p>我们创建一个SpringBoot项目。<br>在<code>pom.xml</code>中引入elasticsearch的starter，即可。<br>不过要注意的是，因为ElasticSearch版本迭代很快，我们的版本要对应的上。<br>我们先查看一下ElasticSearch的版本： 7.13.2<br>再看一下<a href="https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/">Spring文档</a>，找到对应的SpringData的版本。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/J73lBg.png"><br>在pom中我们添加上引用：</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-elasticsearch<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.6.7<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>刷新下maven。 再继续在<code>application.properties</code>中配置:</p>
-<figure class="highlight properties"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring.data.elasticsearch.cluster-name</span>=<span class="string">es-docker-cluster</span></span><br><span class="line"><span class="attr">spring.data.elasticsearch.cluster-nodes</span>=<span class="string">localhost:9200</span></span><br></pre></td></tr></table></figure>
-
-<p>即完成环境搭建。</p>
-<h2 id="在Java模型中定义ES的索引"><a href="#在Java模型中定义ES的索引" class="headerlink" title="在Java模型中定义ES的索引"></a>在Java模型中定义ES的索引</h2><p>好，接下来来到我们的重头戏，设计ES的索引。<br>在ES中，索引对应类似MySQL中的表，而Mapping，相当于MySQL中的表结构。<br>在一切开始之前，设计一个足够好的表结构尤为重要。可以直接影响到数据库的性能。</p>
-<p>直接上结果：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Document(indexName = &quot;product&quot;)</span></span><br><span class="line"><span class="meta">@Setting(shards = 3, replicas = 2)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Product</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Id</span></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Text, index = false)</span></span><br><span class="line">	<span class="keyword">private</span> String id;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Keyword, ignoreAbove = 128)</span></span><br><span class="line">	<span class="keyword">private</span> String name;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Text, analyzer = &quot;ik_smart&quot;, searchAnalyzer = &quot;ik_smart&quot;)</span></span><br><span class="line">	<span class="keyword">private</span> String description;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Keyword)</span></span><br><span class="line">	<span class="keyword">private</span> String brandName;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Long)</span></span><br><span class="line">	<span class="keyword">private</span> Long stock;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Double)</span></span><br><span class="line">	<span class="keyword">private</span> BigDecimal price;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Date, format = &#123;&#125;, pattern = &#123;&quot;yyyy-MM-dd HH:mm:ss&quot;, &quot;yyyy-MM-dd&quot;,</span></span><br><span class="line"><span class="meta">			&quot;epoch_millis&quot;&#125;)</span></span><br><span class="line">	<span class="keyword">private</span> LocalDateTime updateTime;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Field(type = FieldType.Nested)</span></span><br><span class="line">	<span class="keyword">private</span> List&lt;Sku&gt; skuList;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="定义模型"><a href="#定义模型" class="headerlink" title="定义模型"></a>定义模型</h3><p>我们首先定义了一个商品的Java模型<code>Product</code>，有各种Java类型（String、Long、BigDecimal、LocalDateTime、List）。<br>在类的上面添加<code>Document</code>注解，表示被Spring所管理。<br><code>org.springframework.data.elasticsearch.annotations.Document</code>中还有一些其他的属性。大家可以参考官方文档。</p>
-<h3 id="定义Setting"><a href="#定义Setting" class="headerlink" title="定义Setting"></a>定义Setting</h3><p>定义好模型之后，我们再确定好索引的配置，<code>Setting</code>。<br>这里面主要配置，这个索引在ES中的分片数，和副本数。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Setting(shards = 3, replicas = 2)</span></span><br></pre></td></tr></table></figure>
-
-<p>当然，除了分片数和副本数，还有其他的配置，大家参考官方文档。</p>
-<h3 id="定义Mapping"><a href="#定义Mapping" class="headerlink" title="定义Mapping"></a>定义Mapping</h3><p>接下来，就到了定义最重要的Mapping。</p>
-<h4 id="确定数据结构"><a href="#确定数据结构" class="headerlink" title="确定数据结构"></a>确定数据结构</h4><p>首先我们要知道，ES有着自己的数据结构，而且种类还很多。如图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/JtmYzS.png"><br>我们需要在每一个Java的数据结构中，对应上ES的数据结构。<br>比如<code>@Field(type = FieldType.Text)</code>表示它在ES中，是一个文本型的数据。<br>而文本型，是要被分词，生成倒排索引的。<br>这里提几点选择策略：</p>
-<ul>
-<li>文本类型分两种，需要分词，选text，不需要分词，选keyword</li>
-<li>如果你未来不确定你到底有多少数据，将类型设置为long是比较合适的</li>
-<li>keyword检索比较短的字符会更快，如果字符很大，那么会增加存储和检索成本，可以使用<code>ignoreAbove</code>属性</li>
-</ul>
-<h4 id="确定是否需要被索引"><a href="#确定是否需要被索引" class="headerlink" title="确定是否需要被索引"></a>确定是否需要被索引</h4><p>默认情况下，索引的字段都是需要被索引的，但是为了节省空间，我们可以把一些字段设置成不建索引。<br>比如ID一类的参数，不想被索引：<code>@Field(type = FieldType.Text, index = false)</code></p>
-<h4 id="检索的方式"><a href="#检索的方式" class="headerlink" title="检索的方式"></a>检索的方式</h4><p>我们可以通过分词器，来定义我们的分词方式，比如<br><code>@Field(type = FieldType.Text, analyzer = &quot;ik_smart&quot;, searchAnalyzer = &quot;ik_smart&quot;)</code><br>这样，我们就可以使用中文的倒排索引啦。。。</p>
-<h4 id="特殊的类型"><a href="#特殊的类型" class="headerlink" title="特殊的类型"></a>特殊的类型</h4><p>如果我们需要使用时间类型，在Java中，我们使用<code>LocalDateTime</code>,对应ES中是<code>Date</code>类型。<br>但是需要注意的是，我们需要定义格式化的方式，不然大概率时分秒要丢失。<br><code>@Field(type = FieldType.Date, format = &#123;&#125;, pattern = &#123;&quot;yyyy-MM-dd HH:mm:ss&quot;, &quot;yyyy-MM-dd&quot;, &quot;epoch_millis&quot;&#125;)</code></p>
-<p>嵌套类型，使用<code>Nested</code><br><code>@Field(type = FieldType.Nested)</code></p>
-<h2 id="使用两种方式来操作ES"><a href="#使用两种方式来操作ES" class="headerlink" title="使用两种方式来操作ES"></a>使用两种方式来操作ES</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/MHdECp.png"></p>
-<h3 id="索引操作"><a href="#索引操作" class="headerlink" title="索引操作"></a>索引操作</h3><p>首先我们来看看如何来管理ES的索引</p>
-<h4 id="JPA"><a href="#JPA" class="headerlink" title="JPA"></a>JPA</h4><p>如果使用JPA，我们只需保持默认配置，JPA就会替我们按照我们定义的Map来创建索引。<br>不需要我们操心。</p>
-<p>我们可以使用<a href="http://localhost:9200/product/_mapping">http://localhost:9200/product/_mapping</a>来查看对应索引信息。</p>
-<h4 id="ElasticsearchRestTemplate"><a href="#ElasticsearchRestTemplate" class="headerlink" title="ElasticsearchRestTemplate"></a>ElasticsearchRestTemplate</h4><p>template对应的Api如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">index</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 拿到对应索引的操作引用</span></span><br><span class="line">    <span class="type">IndexOperations</span> <span class="variable">indexOperations</span> <span class="operator">=</span> elasticsearchRestTemplate.indexOps(Product.class);</span><br><span class="line">    <span class="comment">// 查看索引是否存在</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">exists</span> <span class="operator">=</span> indexOperations.exists();</span><br><span class="line">    <span class="keyword">if</span> (exists) &#123;</span><br><span class="line">        <span class="comment">// 删除索引（删除操作要慎重）</span></span><br><span class="line">        indexOperations.delete();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 创建索引</span></span><br><span class="line"><span class="comment">//		indexOperations.create(); //这个没有配置mapping</span></span><br><span class="line">    indexOperations.createWithMapping();</span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 查看索引的Setting</span></span><br><span class="line">    <span class="type">Settings</span> <span class="variable">settings</span> <span class="operator">=</span> indexOperations.getSettings();</span><br><span class="line">    <span class="comment">// 查看索引的Mapping</span></span><br><span class="line">    Map&lt;String, Object&gt; mapping = indexOperations.getMapping();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="增删改查操作"><a href="#增删改查操作" class="headerlink" title="增删改查操作"></a>增删改查操作</h3><h4 id="JPA-1"><a href="#JPA-1" class="headerlink" title="JPA"></a>JPA</h4><p>使用JPA非常方便，只需要定义好<code>Repository</code>，就可以方便快捷的操作Document了。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ProductRepository</span> <span class="keyword">extends</span> <span class="title class_">ElasticsearchRepository</span>&lt;Product, String&gt; &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>然后我们就可以这样使用：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CURDTest</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Autowired</span></span><br><span class="line">	<span class="keyword">private</span> ProductRepository repository;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">create</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> repository.save(Product.get());</span><br><span class="line">		Assertions.assertNotNull(product);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createMore</span><span class="params">()</span> &#123;</span><br><span class="line">		List&lt;Product&gt; products = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">			products.add(Product.get());</span><br><span class="line">		&#125;</span><br><span class="line">		repository.saveAll(products);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">listAll</span><span class="params">()</span> &#123;</span><br><span class="line">		Iterable&lt;Product&gt; all = repository.findAll();</span><br><span class="line">		all.forEach(System.out::println);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">page</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">4</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		System.out.println(page);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getById</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">1</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> page.getContent().get(<span class="number">0</span>);</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product1</span> <span class="operator">=</span> repository.findById(product.getId()).orElse(<span class="literal">null</span>);</span><br><span class="line">		Assertions.assertNotNull(product1);</span><br><span class="line">		System.out.println(product1);</span><br><span class="line">		Assertions.assertEquals(product.getId(), product1.getId());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">update</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">1</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> page.getContent().get(<span class="number">0</span>);</span><br><span class="line">		<span class="type">Product</span> <span class="variable">newProduct</span> <span class="operator">=</span> Product.get();</span><br><span class="line">		newProduct.setId(product.getId());</span><br><span class="line">		<span class="type">Product</span> <span class="variable">save</span> <span class="operator">=</span> repository.save(newProduct);</span><br><span class="line">		Assertions.assertEquals(product.getId(), save.getId());</span><br><span class="line">		Assertions.assertNotEquals(product.getName(), save.getName());</span><br><span class="line">		System.out.println(product);</span><br><span class="line">		System.out.println(save);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delete</span><span class="params">()</span> &#123;</span><br><span class="line">		Page&lt;Product&gt; page = repository.findAll(Pageable.ofSize(<span class="number">1</span>).withPage(<span class="number">0</span>));</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> page.getContent().get(<span class="number">0</span>);</span><br><span class="line">		repository.delete(product);</span><br><span class="line"></span><br><span class="line">		<span class="type">Product</span> <span class="variable">product1</span> <span class="operator">=</span> repository.findById(product.getId()).orElse(<span class="literal">null</span>);</span><br><span class="line">		Assertions.assertNull(product1);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>JPA的封装可以让我们无差别的操作任何数据库。 yyds</p>
-<h4 id="ElasticsearchRestTemplate-1"><a href="#ElasticsearchRestTemplate-1" class="headerlink" title="ElasticsearchRestTemplate"></a>ElasticsearchRestTemplate</h4><p>使用ElasticsearchRestTemplate操作文档相对麻烦一些：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CURDTest2</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Autowired</span></span><br><span class="line">	<span class="keyword">private</span> ElasticsearchRestTemplate elasticsearchRestTemplate;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">create</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> elasticsearchRestTemplate.save(Product.get());</span><br><span class="line">		Assertions.assertNotNull(product);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createMore</span><span class="params">()</span> &#123;</span><br><span class="line">		List&lt;Product&gt; products = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">			products.add(Product.get());</span><br><span class="line">		&#125;</span><br><span class="line">		elasticsearchRestTemplate.save(products);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">listAll</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Query</span> <span class="variable">query</span> <span class="operator">=</span> elasticsearchRestTemplate.matchAllQuery();</span><br><span class="line">		SearchHits&lt;Product&gt; search = elasticsearchRestTemplate.search(query, Product.class);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getById</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> elasticsearchRestTemplate.get(<span class="string">&quot;ID&quot;</span>, Product.class);</span><br><span class="line">		Assertions.assertNotNull(product);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">update</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Product</span> <span class="variable">oldProduct</span> <span class="operator">=</span> elasticsearchRestTemplate.get(<span class="string">&quot;ID&quot;</span>, Product.class);</span><br><span class="line">		Assertions.assertNotNull(oldProduct);</span><br><span class="line"></span><br><span class="line">		<span class="type">Product</span> <span class="variable">newProduct</span> <span class="operator">=</span> Product.get();</span><br><span class="line">		<span class="type">Document</span> <span class="variable">document</span> <span class="operator">=</span> newProduct.toDocument();</span><br><span class="line">		<span class="type">UpdateQuery</span> <span class="variable">updateQuery</span> <span class="operator">=</span> UpdateQuery.builder(<span class="string">&quot;ID&quot;</span>).withDocument(document).build();</span><br><span class="line">		<span class="type">UpdateResponse</span> <span class="variable">product</span> <span class="operator">=</span> elasticsearchRestTemplate</span><br><span class="line">				.update(updateQuery, IndexCoordinates.of(<span class="string">&quot;product&quot;</span>));</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delete</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">String</span> <span class="variable">id</span> <span class="operator">=</span> elasticsearchRestTemplate.delete(<span class="string">&quot;ID&quot;</span>, Product.class);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="搜索"><a href="#搜索" class="headerlink" title="搜索"></a>搜索</h3><h4 id="JPA-2"><a href="#JPA-2" class="headerlink" title="JPA"></a>JPA</h4><p>JPA的搜索很简单，就把当成一个普通的数据库搜索就行。<br>我们只需要在repository中定义</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">ProductRepository</span> <span class="keyword">extends</span> <span class="title class_">ElasticsearchRepository</span>&lt;Product, String&gt; &#123;</span><br><span class="line"></span><br><span class="line">	List&lt;Product&gt; <span class="title function_">findAllByNameContaining</span><span class="params">(String name)</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我没就可以在所有名称中包含莫个字段了。<br>在调用这个方法的时候，可以在控制台看到，本质上是JPA帮我我们发了一个<code>_search</code>的POST请求。<br>其他更复杂的方法，可以参考JPA的文档。</p>
-<h4 id="ElasticsearchRestTemplate-2"><a href="#ElasticsearchRestTemplate-2" class="headerlink" title="ElasticsearchRestTemplate"></a>ElasticsearchRestTemplate</h4><p>使用ElasticsearchRestTemplate操作search，也很不错。<br>我们可以这样写：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">searchTest</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 查询所有</span></span><br><span class="line">    <span class="type">Query</span> <span class="variable">searchQuery</span> <span class="operator">=</span> Query.findAll();</span><br><span class="line">    <span class="type">IndexCoordinates</span> <span class="variable">indexCoordinates</span> <span class="operator">=</span> IndexCoordinates.of(<span class="string">&quot;product&quot;</span>);</span><br><span class="line">    SearchHits&lt;Product&gt; result = elasticsearchRestTemplate</span><br><span class="line">            .search(searchQuery, Product.class, indexCoordinates);</span><br><span class="line">    System.out.println(result);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 按名称 搜索</span></span><br><span class="line">    <span class="type">MatchQueryBuilder</span> <span class="variable">matchQueryBuilder</span> <span class="operator">=</span> QueryBuilders.matchQuery(<span class="string">&quot;spuName&quot;</span>, <span class="string">&quot;473&quot;</span>);</span><br><span class="line">    searchQuery = <span class="keyword">new</span> <span class="title class_">NativeSearchQueryBuilder</span>()</span><br><span class="line">            .withQuery(matchQueryBuilder)</span><br><span class="line">            .build();</span><br><span class="line">    result = elasticsearchRestTemplate</span><br><span class="line">            .search(searchQuery, Product.class, indexCoordinates);</span><br><span class="line">    System.out.println(result);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 按价格搜索</span></span><br><span class="line">    <span class="type">Criteria</span> <span class="variable">criteria</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Criteria</span>(<span class="string">&quot;price&quot;</span>)</span><br><span class="line">            .greaterThan(<span class="number">500.0</span>)</span><br><span class="line">            .lessThan(<span class="number">800.0</span>);</span><br><span class="line"></span><br><span class="line">    searchQuery = <span class="keyword">new</span> <span class="title class_">CriteriaQuery</span>(criteria);</span><br><span class="line"></span><br><span class="line">    result = elasticsearchRestTemplate</span><br><span class="line">            .search(searchQuery, Product.class, indexCoordinates);</span><br><span class="line">    System.out.println(result);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这样写有一个好处，就是在返回结果数据的同时，还会返回命中率，这个有时候也是会用到的。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，我们已经学会了如何把ES操作引入到我们到Java项目中，<br>还知道了如何设计并建立一个索引，<br>还有使用两种方法来操作ES。<br>希望大家都能够在工作当中用上哦！！</p>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>elasticsearch</tag>
-        <tag>java</tag>
-        <tag>springboot</tag>
-        <tag>jpa</tag>
-        <tag>docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL学习及原理浅析</title>
-    <url>/2021/08/13/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</url>
-    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>从今天开始，我们将学习目前最流行的一个数据库MySQL。</p>
-<p>这篇文章，带大家走进Mysql的世界。</p>
-<ul>
-<li>MySQL的底层结构</li>
-<li>MySQL的查询过程</li>
-<li>索引结构</li>
-<li>MySQL的三种Log</li>
-<li>MySQL的存储引擎</li>
-</ul>
-<span id="more"></span>
-
-<h2 id="MySQL的底层结构"><a href="#MySQL的底层结构" class="headerlink" title="MySQL的底层结构"></a>MySQL的底层结构</h2><p>MySQL我们可以主要分成三层：</p>
-<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/v3Tr6K.png"></p>
-<ol>
-<li>客户端连接层。主要负责处理客户端的连接，用户的账号密码校验，权限等功能。</li>
-<li>核心服务层。主要功能有缓存，对SQL语句的解析和优化，对底层API的调用。</li>
-<li>存储引擎。 对数据对管理，存储，查询，事务，索引等等功能。</li>
-</ol>
-<h2 id="MySQL的查询过程"><a href="#MySQL的查询过程" class="headerlink" title="MySQL的查询过程"></a>MySQL的查询过程</h2><p>一个SQL的查询过程可以分成六步。 如图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/mkccLn.png"></p>
-<ol>
-<li>客户端和MySQL建立连接。</li>
-<li>查询缓存，如果缓存命中，直接返回。但是不建议使用缓存，命中率低，弊大于利。</li>
-<li>解析SQL，生成语法解析树。如果SQL写的有问题，这一步会报错。</li>
-<li>查询优化，通过语法树，生成执行计划，计划可能不止一个，优化器会找到成本最小的一个执行计划。</li>
-<li>执行计划，查询执行引擎拿到了执行计划，调用对应的存储引擎的接口，来执行查询，得到结果。</li>
-<li>返回结果，缓存结果。如果结果集很大（1W条），不会等到全部结果出来再返回，会在第一条结果出来的时候，就开始返回结果。</li>
-</ol>
-<h2 id="MySQL的三种Log"><a href="#MySQL的三种Log" class="headerlink" title="MySQL的三种Log"></a>MySQL的三种Log</h2><p>MySQL有三种Log，各司其职。分别是binlog、redo log、undo log。</p>
-<h3 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h3><p>binlog的主要作用是记录数据库的每一步变化。由MySQL核心服务层控制。</p>
-<p>可以让别的服务来监听，实现数据同步。</p>
-<p>或者再数据库损坏之后，恢复数据。</p>
-<p>数据库的每一次变化，比如某一个表新增了一条数据，就会生成一个对应的binlog。<br>另外的服务监听到了之后，可以做出对应的操作，把数据同步一份。</p>
-<p>可以做主备，可以做读写分离。</p>
-<h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>首先我们先要了解到一点，磁盘的IO昂贵，数据库再做数据变更的时候，都不会一有变更，就立即更新磁盘数据。</p>
-<p>做法都是先在内存中进行操作，等到合适的时候（配置决定），再一次性的刷到磁盘当中。</p>
-<p>但是如果数据在内存当中变更了之后，数据库崩溃了，这个时候内存中的数据就会丢失。</p>
-<p>MySQL就会有一个redo log来保证上述情况的数据不丢失。</p>
-<p>redo log由存储引擎控制。</p>
-<p>当MySQL修改数据的做法如下：</p>
-<ol>
-<li>把对应数据的页，查询出来，并保存到内存中</li>
-<li>修改内存中的数据，同时生成redo log（哪一页，修改了那些内容）。原子操作</li>
-<li>如果这时MySQL崩溃，可以根据redo log恢复内存中的数据。</li>
-<li>如果没有崩溃，会在合适的时候，把内存中的数据落到磁盘上，同时删除对应的redo log。</li>
-</ol>
-<h3 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h3><p>undo log和事务有关。InnoDB存储引擎特有。</p>
-<p>在一个事务中，每一次操作，都会生成一个log，所有的log会组成一个数据链。</p>
-<p>可以用来控制回滚，和在不同的事务级别下，所展示的数据的版本。</p>
-<p>这就是MVCC，多版本并发控制。我们在事务那一章的时候，还会详细说明。</p>
-<h2 id="MySQL的存储引擎"><a href="#MySQL的存储引擎" class="headerlink" title="MySQL的存储引擎"></a>MySQL的存储引擎</h2><p>MySQL的存储引擎的设计是MySQL的一大特点。<br>它可以让我们灵活的使用不同的存储引擎来应对不同的需求。</p>
-<p>我们可以使用：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> ENGINE, SUPPORT <span class="keyword">FROM</span> INFORMATION_SCHEMA.ENGINES;</span><br><span class="line"><span class="comment">-- 或者</span></span><br><span class="line"><span class="keyword">SHOW</span> ENGINES;</span><br></pre></td></tr></table></figure>
-
-<p>来查询存储引擎列表，和当前MySQL是否支持。</p>
-<p>我们可以查看<a href="https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html">官方文档</a><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/8hRNsc.png"></p>
-<p>我们在这里也做一下简单的介绍：</p>
-<h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><p>我们最常用的存储引擎当属InnoDB。</p>
-<p>它支持事务，符合ACID，支持行级锁，<br>支持B树索引，新版版还支持全文索引，<br>使用MVCC多版本并发控制，支持崩溃恢复，<br>还支持外键。</p>
-<p>它是我们一般情况下的首选。</p>
-<p>在需要事务的场景中，我们更是无脑选择InnoDB。</p>
-<h3 id="MyISAM"><a href="#MyISAM" class="headerlink" title="MyISAM"></a>MyISAM</h3><p>MyISAM它的特点是不支持事务。当时它的优势是结构简单，比InnoDB稍快。</p>
-<p>读效率比写更快。适合需要大量读的场景中。</p>
-<p>支持B树索引和全文索引。如果小项目不想使用ES的话，可以考虑使用MyISAM做视图。</p>
-<h3 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h3><p>看名字就知道，它的特点是把数据存储在内存中的，<br>所以没有持久化，断电崩溃数据会丢失。</p>
-<p>但是就是因为使用的内存，它的速度非常快。可以部分替代Redis的功能。</p>
-<h3 id="Archive"><a href="#Archive" class="headerlink" title="Archive"></a>Archive</h3><p>如果你需要保存日志信息，存档信息等一些需要快速查询的场景。<br>你可以使用Archive。</p>
-<p>它支持数据压缩，不支持事务、索引。</p>
-<p>可以部分替代MongoDB的功能。</p>
-<h3 id="CSV"><a href="#CSV" class="headerlink" title="CSV"></a>CSV</h3><p>CSV的结构很简单，它会生成一个<code>.cvs</code>的文件来存储数据。</p>
-<p>我们可以使用Excel来打开它。一般很少使用。</p>
-<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><p>除了上述的存储引擎，剩下还有一些存储引擎。<br>比如说：Merge、Federated、Blackhole、NDB、Example<br>具体参考<a href="https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html">官方文档</a></p>
-<h2 id="索引结构"><a href="#索引结构" class="headerlink" title="索引结构"></a>索引结构</h2><p>索引是为了提高查询效率的一种手段。</p>
-<p>如果我们的数据一本新华字典的话，索引就是字典的目录。可以大大提高我们查询的效率。</p>
-<p>但是索引是有代价的，它会提高修改数据的成本，也需要单独的空间来存放索引数据。</p>
-<p>常见的索引结构有以下几种；</p>
-<ul>
-<li>Hash</li>
-<li>B tree</li>
-<li>全文索引</li>
-</ul>
-<p>本文，我们会重点说说B树这种结构。</p>
-<h3 id="什么是B树"><a href="#什么是B树" class="headerlink" title="什么是B树"></a>什么是B树</h3><p>B树是一种多叉树，一个根节点下面一般有很多叶子节点，所以B树的高度一般不高。</p>
-<p>使用B树存储的数据都是有序的。</p>
-<p>如下图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/mwUrxI.png"></p>
-<h3 id="B-树"><a href="#B-树" class="headerlink" title="B+树"></a>B+树</h3><p>B+树是B树的一种升级版。</p>
-<p>它的特点是，只有叶子节点存储数据。非叶子节点只存储索引。</p>
-<p>叶子节点（数据节点）同样也是有序的，并且相邻的两个叶子节点使用双向链表连接起来，这样范围查询的效率非常高。</p>
-<p>可参考下图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/tu3yvP.png"></p>
-<p>MySQL的InnoDB存储引擎使用的就是B+树作为索引结构。</p>
-<p>每一个节点的大小固定，迎合一次磁盘IO，大小应该是16KB。</p>
-<p>而非叶子上存储的都是索引，所以一个节点上可以存储非常多的索引数据。<br>再通过二分查找，来找到对应的数据地址。</p>
-<h3 id="聚簇索引"><a href="#聚簇索引" class="headerlink" title="聚簇索引"></a>聚簇索引</h3><p>在InnoDB存储引擎中，表中的数据都是通过一个B+树来维护的，<br>同时表中所有的数据，都存放在B+树的叶子节点上。</p>
-<p>而非聚簇索引，B+树的叶子节点上，存储的都是主键ID。<br>如果需要找到详情的数据信息，需要回表查询，即拿到主键ID，到主B+树（聚簇索引）上再查询。</p>
-<h3 id="如何通过索引实现范围查询"><a href="#如何通过索引实现范围查询" class="headerlink" title="如何通过索引实现范围查询"></a>如何通过索引实现范围查询</h3><p>如果我们有一个这样的查询语句：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"># 查询今年以来的订单</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> create_time <span class="operator">&gt;</span> <span class="string">&#x27;2021-01-01 00:00:00&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>为了加快查询效率，我们会在<code>create_time</code>字段上添加索引。<br>这样就有了一个按照时间排序好的索引B+树了。</p>
-<p>我们的查询会从全表扫面，变成通过索引查询。</p>
-<p>我们会先通过索引找到第一create_time为’2021-01-01 00:00:00’的订单索引，</p>
-<p>再通过B+树叶子节点间的链表指针，往后扫描，找到满足条件的所有的订单索引。</p>
-<p>再拿到满足条件的订单主键ID，去订单主聚簇索引中回表查询详细信息，返回结果。</p>
-<h3 id="联合索引、索引下推、覆盖索引"><a href="#联合索引、索引下推、覆盖索引" class="headerlink" title="联合索引、索引下推、覆盖索引"></a>联合索引、索引下推、覆盖索引</h3><h4 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h4><p>我们可以给一个字段添加索引，如上述的订单创建时间。</p>
-<p>但是很多情况下的业务复杂，筛选条件众多，我们会为几个字段一起添加一个联合索引。</p>
-<p>比如<code>订单的买家</code>、<code>订单创建时间</code>和<code>订单状态</code>可以作为一个联合索引。</p>
-<p>这样在应用程序的客户端当中，买家查询自己的订单列表，并按照订单创建时间倒排，并可以通过订单状态做筛选条件。<br>这种情况下的查询效率会很高效。</p>
-<h4 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h4><p>索引下推只会作用在联合索引上。并且会发生在范围查询上。</p>
-<p>一句话说明：索引下推会尽量使用索引来判断where条件，而减少回表次数。</p>
-<p>还是以订单表为列子，联合索引：客户姓名、订单时间</p>
-<p>如果我们要查询：今年以来，姓王的客户的订单</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> create_time <span class="operator">&gt;</span> <span class="string">&#x27;2021-01-01 00:00:00&#x27;</span> <span class="keyword">and</span> customer_name <span class="keyword">like</span> <span class="string">&#x27;王%&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>而我们都知道，范围查询会中断索引。</p>
-<p>如果我们不使用索引下推的话：</p>
-<p>我们会在<code>客户姓名、订单时间索引</code>B+树中找出满足客户姓名姓氏的所有订单ID</p>
-<p>拿到所有订单ID去主键聚簇索引中回表查询数据，再判断今年以来的订单数据。</p>
-<p>这种情况下，回表查询的订单ID会非常多。</p>
-<p>而如果我们使用索引下推：</p>
-<p>我们会在索引的B+树中，提前查询、筛选中满足姓氏和时间的订单ID。</p>
-<p>再回表查询。</p>
-<p>这种情况下，回表查询的订单ID是提前筛选好的，会少很多。</p>
-<h4 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h4><p>还是上述情况，订单表的联合索引<code>客户姓名、订单时间</code>。有这样的查询语句：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> id <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> create_time <span class="operator">&gt;</span> <span class="string">&#x27;2021-01-01 00:00:00&#x27;</span> <span class="keyword">and</span> customer_name <span class="keyword">like</span> <span class="string">&#x27;王%&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>SQL语句中的所有的查询条件和返回数据，在联合索引的B+树中都有，</p>
-<p>我们只需要通过索引查询出来主键ID，就可以直接返回结果了，不需要再回表查询。</p>
-<p>这就是覆盖索引。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本次我们探讨了一种目前最流行的关系型数据库MySQL。</p>
-<p>带大家了解了下MySQL的基本结构，它的查询过程。</p>
-<p>通过三种Log来了解了一些MySQL的内部原理。</p>
-<p>还有索引相关的一些内容。</p>
-<p>希望大家都有所收获。</p>
-<p>我们下次还会讲到MySQL的事务和MySQL调优相关的内容。</p>
-]]></content>
-      <categories>
-        <category>知识</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Java操作Redis</title>
-    <url>/2021/03/25/Java%E6%93%8D%E4%BD%9CRedis/</url>
-    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>Redis是目前最流行的缓存数据库，完全基于内存操作，速度非常快。<br>它是我们互联网公司高性能，高并发的基石。<br>它的功能包括但不限于：提供中央缓存功能，分布式锁，还有特殊数据结构的特殊应用。<br>本篇文章都会一一说到。</p>
-<p>接下来我们会：</p>
-<ul>
-<li>使用Docker搭建redis环境</li>
-<li>搭建springboot服务</li>
-<li>使用redisson来操作redis</li>
-<li>熟悉redis的五大基本数据类型</li>
-<li>熟悉使用redis的高级数据结构及其应用</li>
-</ul>
-<span id="more"></span>
-
-<h2 id="使用Docker搭建redis环境"><a href="#使用Docker搭建redis环境" class="headerlink" title="使用Docker搭建redis环境"></a>使用Docker搭建redis环境</h2><p>使用Docker搭建环境非常方便。 在本地安装好Docker后，使用<code>docker compose</code>可以方便快捷但搭好环境。</p>
-<p>只需要创建<code>docker-compose.yaml</code>文件，内容如下：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.9&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">cache:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">redis:latest</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#x27;6379:6379&#x27;</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">redis-server</span> <span class="string">--save</span> <span class="number">20</span> <span class="number">1</span> <span class="string">--loglevel</span> <span class="string">warning</span> <span class="string">--requirepass</span> <span class="string">eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">~/docker_volume/redis:/data</span></span><br></pre></td></tr></table></figure>
-
-<p>注意： command里面的password和volumes映射，按照自己需要配置</p>
-<p>再使用命令行，cd到yaml的目录下，运行<code>docker-compose up</code>命令。</p>
-<p>非常简单。</p>
-<p>等启动好了之后，可以用redis工具连接，看下效果。</p>
-<h2 id="搭建springboot服务"><a href="#搭建springboot服务" class="headerlink" title="搭建springboot服务"></a>搭建springboot服务</h2><p>IDEA启动等一个Springboot的项目。我这里使用的是gradle。maven当让也可以。</p>
-<p>我的引用如下：</p>
-<figure class="highlight gradle"><table><tr><td class="code"><pre><span class="line"><span class="keyword">dependencies</span> &#123;</span><br><span class="line">    implementation <span class="string">&#x27;org.springframework.boot:spring-boot-starter&#x27;</span></span><br><span class="line">    implementation <span class="string">&#x27;org.springframework.boot:spring-boot-starter-web&#x27;</span></span><br><span class="line">    implementation <span class="string">&#x27;org.redisson:redisson-spring-boot-starter:3.15.6&#x27;</span></span><br><span class="line">    implementation <span class="keyword">group</span>: <span class="string">&#x27;de.ruedigermoeller&#x27;</span>, name: <span class="string">&#x27;fst&#x27;</span>, version: <span class="string">&#x27;2.57&#x27;</span></span><br><span class="line">    compileOnly <span class="string">&#x27;org.projectlombok:lombok&#x27;</span></span><br><span class="line">    annotationProcessor <span class="string">&#x27;org.projectlombok:lombok&#x27;</span></span><br><span class="line">    testImplementation <span class="string">&#x27;org.springframework.boot:spring-boot-starter-test&#x27;</span></span><br><span class="line">    testImplementation <span class="string">&#x27;io.projectreactor:reactor-test&#x27;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我这里使用的官方推荐的redis客户端<code>Redisson</code>,相关的依赖是<code>org.redisson:redisson-spring-boot-starter:3.15.6</code>和<code>de.ruedigermoeller&#39;, name: &#39;fst&#39;, version: &#39;2.57</code>。这样我们就可以在我们的代码中使用<code>RedissonClient</code>了。</p>
-<blockquote>
-<p>干净又卫生</p>
-</blockquote>
-<h2 id="使用redisson来操作redis"><a href="#使用redisson来操作redis" class="headerlink" title="使用redisson来操作redis"></a>使用redisson来操作redis</h2><h3 id="keys"><a href="#keys" class="headerlink" title="keys"></a>keys</h3><p>因为redis是键值对，大家可以把redis当成一个大的<code>HashMap</code>，所以知道它的所有的key很有必要。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">keysTest</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">RKeys</span> <span class="variable">keys</span> <span class="operator">=</span> redissonClient.getKeys();</span><br><span class="line">	System.out.println(keys.count());<span class="comment">// org.redisson.client.protocol.RedisCommands.DBSIZE 命令</span></span><br><span class="line">	Iterable&lt;String&gt; keysByPattern = keys</span><br><span class="line">			.getKeysByPattern(<span class="string">&quot;*&quot;</span>); <span class="comment">// org.redisson.client.protocol.RedisCommands.SCAN</span></span><br><span class="line">	keys.getKeysStream()</span><br><span class="line">			.forEach(System.out::println);<span class="comment">// org.redisson.client.protocol.RedisCommands.SCAN</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Redisson中使用<code>RKeys</code>类来对redis中的keys做封装。</p>
-<p>我们可以</p>
-<ul>
-<li>拿到所有key的数量</li>
-<li>把所有的key列出来</li>
-<li>按照正则匹配key</li>
-</ul>
-<p>注意，在redisson中，使用的不是redis提供的<code>keys</code>命令，而是<code>scan</code>命令。原因是因为，redis是单线程服务，如果key的量特别大，一次keys操作会消耗很长时间，整体拖慢服务性能。</p>
-<h3 id="string"><a href="#string" class="headerlink" title="string"></a>string</h3><p><code>String</code>是redis的最基础的数据结构。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//String</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testString</span><span class="params">()</span> &#123;</span><br><span class="line">	RBucket&lt;String&gt; hello = redissonClient.getBucket(<span class="string">&quot;hello&quot;</span>);</span><br><span class="line">	System.out.println(hello.get());<span class="comment">// org.redisson.client.protocol.RedisCommands.GET</span></span><br><span class="line">	hello.set(<span class="string">&quot;world ! &quot;</span>, <span class="number">5</span>,</span><br><span class="line">			TimeUnit.MINUTES);<span class="comment">// org.redisson.client.protocol.RedisCommands.PSETEX</span></span><br><span class="line">	System.out.println(hello.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>redis中所有的key都是String类型，而一些对象的存储，都是把对象序列化成为字符串进行存储。</p>
-<p>string作为redis中的最基础的数据类型，redis做了极致的优化，这个我们后面再说。</p>
-<h3 id="list"><a href="#list" class="headerlink" title="list"></a>list</h3><p>list是redis中列表的数据结构。说实话，在工作中使用的比较少。可以用来做一个简单的消息队列。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// List</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testList</span><span class="params">()</span> &#123;</span><br><span class="line">	RedissonList&lt;Person&gt; list = (RedissonList) redissonClient.getList(<span class="string">&quot;list&quot;</span>);</span><br><span class="line">	<span class="type">Person</span> <span class="variable">tom</span> <span class="operator">=</span> Person.tom();</span><br><span class="line">	list.add(tom);<span class="comment">// RPUSH</span></span><br><span class="line">	list.addBefore(tom, <span class="keyword">new</span> <span class="title class_">Person</span>());</span><br><span class="line">	list.readAll(); <span class="comment">// LRANGE</span></span><br><span class="line">	list.fastSet(<span class="number">1</span>, <span class="keyword">new</span> <span class="title class_">Person</span>());</span><br><span class="line">	System.out.println(list.size());</span><br><span class="line">	list.forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们可以把redis中的list，在Java中，当成LinkedList操作（插入、删除快；查找慢）。 使用简单方便。</p>
-<p>list的底层是一个叫快速列表的数据结构（quick list）。</p>
-<p>如果所示，它是由ziplist组成，ziplist是压缩列表，是紧凑的，再用link给串起来。</p>
-<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/image.png"></p>
-<h3 id="hash"><a href="#hash" class="headerlink" title="hash"></a>hash</h3><p>hash，map，dict，说的都是一个东西，在Java中，我们叫做<code>HashMap</code>。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Map</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testMap</span><span class="params">()</span> &#123;</span><br><span class="line">	RedissonMap&lt;String, Object&gt; myMap = (RedissonMap) redissonClient.getMap(<span class="string">&quot;myMap&quot;</span>);</span><br><span class="line">	myMap.put(<span class="string">&quot;Tom&quot;</span>, Person.tom());</span><br><span class="line">	RedissonMap&lt;String, Object&gt; map = (RedissonMap) redissonClient.getMap(<span class="string">&quot;myMap&quot;</span>);</span><br><span class="line">	System.out.println(map.get(<span class="string">&quot;Tom&quot;</span>)); <span class="comment">// HGET</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>使用和Java无二。 当我们使用Map缓存数据时候，我们可以部分的获取一些字段，不用把整个对象都拿出来。</p>
-<p>注意：一整个Map能设置过期删除。Map中单独的key-value是设置不了过期删除的。</p>
-<p>和Java中<code>HashMap</code>不同的是，扩容rehash的过程中，redis当中是渐进式的，可能同时出现两个map。</p>
-<h3 id="set"><a href="#set" class="headerlink" title="set"></a>set</h3><p>redis中的set和Java中的HashSet类型。使用方法也类似。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Set</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testSet</span><span class="params">()</span> &#123;</span><br><span class="line">	RSet&lt;Object&gt; set = redissonClient.getSet(<span class="string">&quot;set&quot;</span>);</span><br><span class="line">	set.add(<span class="number">1</span>);</span><br><span class="line">	set.add(<span class="number">2</span>);</span><br><span class="line">	set = redissonClient.getSet(<span class="string">&quot;set&quot;</span>);</span><br><span class="line">	<span class="keyword">for</span> (Object o : set) &#123;</span><br><span class="line">		System.out.println(o);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>工作中使用的也不错，可以计算一些UV。</p>
-<h3 id="zset"><a href="#zset" class="headerlink" title="zset"></a>zset</h3><p>sort set，排序集合，redis特色结构。</p>
-<p>在set的基础上，给每个value加上了分数，在zset中的值都是按照分数排好序的。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ZSet</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testZSet</span><span class="params">()</span> &#123;</span><br><span class="line">	RSortedSet&lt;Object&gt; zset = redissonClient.getSortedSet(<span class="string">&quot;zset&quot;</span>);</span><br><span class="line">	zset.add(<span class="number">1</span>);</span><br><span class="line">	zset.add(<span class="number">2</span>);</span><br><span class="line">	zset.forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">	RScoredSortedSet&lt;Object&gt; szset = redissonClient.getScoredSortedSet(<span class="string">&quot;szset&quot;</span>);</span><br><span class="line">	szset.add(<span class="number">11.1</span>, <span class="number">1</span>);<span class="comment">// ZADD</span></span><br><span class="line">	szset.add(<span class="number">1.1</span>, <span class="number">2</span>);</span><br><span class="line">	szset.forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>zset底层使用的跳跃表（skip list），具体后面再说。</p>
-<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/1653463112036-image.png"></p>
-<p>主要的作用是可以做一些排行榜，像微博热搜。</p>
-<hr>
-<p>这篇文章我们讲到了如果搭建一个redis环境，并使用<code>redisson</code>对redis做一些基本操作。</p>
-<p>在下一篇文章中，我们将讲到redis中的一些高级数据结构。</p>
-<ul>
-<li>位图</li>
-<li>布隆过滤器</li>
-<li>队列</li>
-<li>分布式锁</li>
-<li>限流器</li>
-<li>HyperLogLog</li>
-<li>Geo</li>
-</ul>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-        <tag>redis</tag>
-        <tag>redisson</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL调优</title>
-    <url>/2021/09/11/MySQL%E8%B0%83%E4%BC%98/</url>
-    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这篇文章，我们将谈到SQL优化的相关知识。</p>
-<ul>
-<li>我们会讲到如何合理定义数据结构</li>
-<li>如何设计高效的索引</li>
-<li>如果写出高效的SQL语句</li>
-<li>如果发生了慢查询，我们如何分析</li>
-<li>如何选择其他的组件来替换MySQL</li>
-</ul>
-<p>现在，我们开始吧！！</p>
-<span id="more"></span>
-
-<h2 id="数据结构的优化"><a href="#数据结构的优化" class="headerlink" title="数据结构的优化"></a>数据结构的优化</h2><h3 id="数据类型的选择"><a href="#数据类型的选择" class="headerlink" title="数据类型的选择"></a>数据类型的选择</h3><h4 id="使用最佳的数据类型"><a href="#使用最佳的数据类型" class="headerlink" title="使用最佳的数据类型"></a>使用最佳的数据类型</h4><p>数据类型越短越好，<br>越小的数据类型，往往意味着更好的效率。</p>
-<p>整型的效率会比字符串的性能高<br>使用Date类型来存储时间，比字符串类型的效率来的高。</p>
-<h4 id="尽量使用非空"><a href="#尽量使用非空" class="headerlink" title="尽量使用非空"></a>尽量使用非空</h4><p>null会影响到索引效率，查询的返回结果。<br>可会可能引发业务层的空指针。</p>
-<p>我们可以给字段设为not null，且设定一个默认值。</p>
-<h4 id="可以使用UNSIGNED来修饰数字类型"><a href="#可以使用UNSIGNED来修饰数字类型" class="headerlink" title="可以使用UNSIGNED来修饰数字类型"></a>可以使用UNSIGNED来修饰数字类型</h4><p>无符号数字的存储效率是有符号数组的将近一倍。</p>
-<p>比如ID，金额等一些确定是正数的数字类型，<br>我们可以使用UNSIGNED来修饰。</p>
-<h3 id="表的设计"><a href="#表的设计" class="headerlink" title="表的设计"></a>表的设计</h3><h4 id="避免宽表"><a href="#避免宽表" class="headerlink" title="避免宽表"></a>避免宽表</h4><p>宽表意味着一条记录有很多字段。<br>我们尽量避免一张表有多于100个字段。</p>
-<p>他会在查询的时候，增加性能的负担。<br>尤其是使用alter操作来改变表结构的时候，<br>会非常消耗性能。</p>
-<p>我们可以给一张宽表拆分成不同的小表。<br>比如：一张订单表，我们可以拆分成<br>订单主表；订单金额表；订单商品表；订单物流表 等等。</p>
-<h4 id="范式-and-反范式"><a href="#范式-and-反范式" class="headerlink" title="范式 and 反范式"></a>范式 and 反范式</h4><p>满足范式的设计，往往会更加精简，<br>但是如果需要查询更多的信息，需要连表查询。</p>
-<p>比如说，订单表里面只有买家ID这个字段，<br>在页面上展示的时候，往往是需要展示买家名称，<br>这个时候，就需要连表查询，关联订单表，和客户表，<br>而在我们分布式系统中，更需要单独调用别的中台的接口，来填充信息。</p>
-<p>而反范式，就是把一些数据给冗余下来，以提高查询效率。</p>
-<p>在高并发，高性能，高数据量的时候，<br>往往都是单表查询，<br>反范式，冗余会使用的更多。<br>冗余可以大大简化我们的SQL，提高我们索引的命中率。</p>
-<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><blockquote>
-<p>好的索引，是查询效率提升的关键</p>
-</blockquote>
-<h3 id="什么时候添加索引"><a href="#什么时候添加索引" class="headerlink" title="什么时候添加索引"></a>什么时候添加索引</h3><p>如果我们表的数据只有十几行甚至几行的时候，<br>我们不要添加索引。<br>因为这个时候，全表扫描的效率往往更好，<br>而索引的维护，还会影响到数据的修改效率。</p>
-<p>如果我们的表数据量很多，<br>我们推荐设计合适的索引来提高查询效率。</p>
-<p>如果我们的表数据非常非常多，<br>我们考虑使用分区，分表</p>
-<h3 id="添加合适的索引"><a href="#添加合适的索引" class="headerlink" title="添加合适的索引"></a>添加合适的索引</h3><p>在查询条件上，<br>在关联字段上，<br>在排序字段上，<br>在分组字段上，<br>可以添加索引。</p>
-<p>添加索引的字段值区分度越高越好，比如ID<br>像枚举类型的值不适合设置成索引。</p>
-<p>索引不是越多越好，索引会占用空间，索引会影响修改数据的效率。</p>
-<h3 id="组合索引"><a href="#组合索引" class="headerlink" title="组合索引"></a>组合索引</h3><p>根据业务中的查询条件，添加合适的组合索引<br>遵循最左匹配原则</p>
-<h3 id="使用覆盖索引"><a href="#使用覆盖索引" class="headerlink" title="使用覆盖索引"></a>使用覆盖索引</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> id <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> buyer_id <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> buyer_id <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br></pre></td></tr></table></figure>
-<p>如果我们在订单表（order）中的买家ID（buyer_id）上建立索引，</p>
-<p>上面第一条的SQL会比第二条的执行速度快很多。</p>
-<p>因为第一条索引直接走了覆盖索引，而不用回表查询，大大提高效率。</p>
-<h3 id="精简索引字段"><a href="#精简索引字段" class="headerlink" title="精简索引字段"></a>精简索引字段</h3><p>如果索引字段太长，且有很多重复的字符，我们可以截取一部分来设成索引。</p>
-<p>可以减少索引体积。</p>
-<p>比如说email，或者网站地址，或者非常长的ID</p>
-<p>把区分度高的部分，截取出来，设成索引。</p>
-<h2 id="SQL语句编写的优化"><a href="#SQL语句编写的优化" class="headerlink" title="SQL语句编写的优化"></a>SQL语句编写的优化</h2><h3 id="基础SQL原则"><a href="#基础SQL原则" class="headerlink" title="基础SQL原则"></a>基础SQL原则</h3><ul>
-<li>只返回必要的行，避免<code>select *</code>这样的语句。</li>
-<li>where条件里面控制范围</li>
-<li>limit 控制返回条数</li>
-<li>缓存热点数据，使用服务端缓存（redis），避免使用MySQL缓存</li>
-<li>查询条件 和 索引相匹配</li>
-</ul>
-<h3 id="count函数优化"><a href="#count函数优化" class="headerlink" title="count函数优化"></a>count函数优化</h3><p>一般来说，我们尽量使用<code>count(*)</code>，来统计行数，<br>但是还有一种用法，我们可以使用<code>count(column_1)</code>来统计，column_1不为空的记录数。</p>
-<p>在column_1不为空的情况下：<br>count(*) &#x3D;&#x3D; count(column_1)</p>
-<p>在column_1有null值的情况下：<br>count(*) &gt; column_1</p>
-<p>这点需要大家注意区别。</p>
-<p>在不需要准确数据的情况下，<br>我们可以使用 explain 来替代 count。</p>
-<p>explain会给出一个总数目的估计值，<br>explain只会给出一个查询计划，并不会真正去存储引擎上执行，<br>它的执行效率是高的。</p>
-<h3 id="避免深分页"><a href="#避免深分页" class="headerlink" title="避免深分页"></a>避免深分页</h3><p>我们要避免这样的SQL。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> limit <span class="number">1000</span>, <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
-
-<p>这样会先把前面的1010条数据都查询出来，在截取后10条记录返回。<br>很营销效率。</p>
-<p>在这种情况下，我会推荐使用游标的来查询。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> <span class="keyword">where</span> id <span class="operator">&gt;</span> <span class="string">&#x27;&#x27;</span> limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="分解大批量"><a href="#分解大批量" class="headerlink" title="分解大批量"></a>分解大批量</h3><p>如果我们需要清楚历史日志数据，我们可能会这样：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> log <span class="keyword">where</span> create_time <span class="operator">&lt;</span> <span class="string">&#x27;&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>如果历史数据非常大，这样会非常影响数据库的性能，<br>并会锁住很多记录，占用系统资源。</p>
-<p>可能会让很多小而重要的查询发生中断。</p>
-<p>我们需要这样做：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> log <span class="keyword">where</span> create_time <span class="operator">&lt;</span> <span class="string">&#x27;&#x27;</span> limit <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
-<p>并在业务代码中，循环删除。</p>
-<h2 id="慢查询及其分析"><a href="#慢查询及其分析" class="headerlink" title="慢查询及其分析"></a>慢查询及其分析</h2><p>我们可以开启这个配置</p>
-<h3 id="开启慢查询监控"><a href="#开启慢查询监控" class="headerlink" title="开启慢查询监控"></a>开启慢查询监控</h3><h3 id="使用EXPLAIN来分析SQL执行计划"><a href="#使用EXPLAIN来分析SQL执行计划" class="headerlink" title="使用EXPLAIN来分析SQL执行计划"></a>使用EXPLAIN来分析SQL执行计划</h3><h2 id="使用其他的组件来替代MySQL"><a href="#使用其他的组件来替代MySQL" class="headerlink" title="使用其他的组件来替代MySQL"></a>使用其他的组件来替代MySQL</h2><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>]]></content>
-      <categories>
-        <category>知识</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis高级数据结构</title>
-    <url>/2021/04/26/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</url>
-    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这篇文章介绍一下高级Redis数据结构，及其用法。</p>
-<p>在工作的使用频率很高。</p>
-<ul>
-<li>分布式锁</li>
-<li>队列</li>
-<li>位图</li>
-<li>布隆过滤器</li>
-<li>HyperLogLog</li>
-<li>限流器</li>
-<li>GeoHash</li>
-</ul>
-<span id="more"></span>
-
-<h2 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h2><p>大家都知道，线程安全在我们的系统当中，非常重要。<br>如果多个线程同时操作一笔订单，很可能造成数据不一致。</p>
-<p>而在分布式系统中，<code>synchronized</code>就排不上用场了，需要使用分布式锁来解决线程安全的问题。</p>
-<p>而使用redis就是一个很好的选择。</p>
-<p>使用<code>Redisson</code>封装的分布式锁，非常简单，功能也相当强大。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lockTest</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="type">RLock</span> <span class="variable">lock</span> <span class="operator">=</span> redisson.getLock(<span class="string">&quot;my-lock&quot;</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="comment">// do somethings</span></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>除了基础的分布式锁，Redisson还提供了：</p>
-<ul>
-<li>可重入锁</li>
-<li>公平锁</li>
-<li>自旋锁</li>
-<li>读写锁</li>
-<li>锁超时时间</li>
-<li>获取锁的时间限制</li>
-</ul>
-<p>功能强大且使用方便，具体参考<a href="https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers">官方文档</a>。</p>
-<h2 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h2><p>队列是我们一种常用的数据结构。也有很多专业的中间件来实现。比如：Kafka，RabbitMQ，RocketMQ。。。<br>而redis也支持消息队列，而且功能还不少。有：</p>
-<ul>
-<li>简单的消息队列</li>
-<li>延迟队列</li>
-<li>阻塞队列</li>
-<li>消息的多播</li>
-</ul>
-<p>Redis 的 list(列表) 数据结构常用来作为异步消息队列使用，使用<code>rpush/lpush</code>操作入队列，使用 <code>lpop/rpop</code> 来出队列。</p>
-<p>延时队列可以通过 Redis 的 zset(有序列表) 来实现。我们将消息序列化成一个字符串作为 zset 的 value，这个消息的到期处理时间作为 score。</p>
-<p>Redisson对此都有很好的支持：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 简单队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">simple</span><span class="params">()</span> &#123;</span><br><span class="line">    RQueue&lt;Object&gt; queue = redissonClient.getQueue(<span class="string">&quot;simple&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            queue.add(i);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> queue.poll();</span><br><span class="line">        <span class="keyword">if</span> (poll == <span class="literal">null</span>) &#123;</span><br><span class="line">            i--;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            System.out.println(poll);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 阻塞队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">blockQueue</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    RBlockingQueue&lt;Object&gt; queue = redissonClient.getBlockingQueue(<span class="string">&quot;block&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">100</span>);</span><br><span class="line">                queue.put(i);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        <span class="comment">// 阻塞take</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> queue.take();</span><br><span class="line">        System.out.println(poll);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 延迟队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delayQueue</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    RBlockingQueue&lt;Object&gt; blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;delayQueue1&quot;</span>);</span><br><span class="line">    RDelayedQueue&lt;Object&gt; delayQueue = redissonClient</span><br><span class="line">            .getDelayedQueue(blockingQueue);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        delayQueue.offerAsync(i, (<span class="number">500</span> - i * <span class="number">10</span>), TimeUnit.MILLISECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;delayQueue&quot;</span>);</span><br><span class="line">    System.out.println(blockingQueue.size());</span><br><span class="line">    redissonClient.getDelayedQueue(blockingQueue);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; blockingQueue.size(); i++) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> blockingQueue.take();</span><br><span class="line">        System.out.println(poll);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>以上都是消息队列的<code>生产者-消费者模式</code>，而消息队列的另外一种模式<code>订阅模式</code>，redis也能实现。</p>
-<p>有两种数据结构支持。</p>
-<ul>
-<li>PubSub</li>
-<li>Stream</li>
-</ul>
-<h2 id="位图"><a href="#位图" class="headerlink" title="位图"></a>位图</h2><p>位图完全是为了节约空间而设计的，我们可以把它想象成一个巨大的List，而里面只存放<code>1/0</code>。</p>
-<p>比如记录一个用户一年的签到记录，我们可以用位图来记录，签到的就是<code>1</code>，未签到的是<code>0</code>。</p>
-<p>使用方法如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">RBitSet</span> <span class="variable">bitset</span> <span class="operator">=</span> redissonClient.getBitSet(<span class="string">&quot;bitset&quot;</span>);</span><br><span class="line">    bitset.set(<span class="number">0</span>, <span class="literal">true</span>);</span><br><span class="line">    System.out.println(bitset.get(<span class="number">0</span>));</span><br><span class="line">    System.out.println(bitset.get(<span class="number">1</span>));</span><br><span class="line">    System.out.println(bitset.incrementAndGetInteger(<span class="number">0</span>, <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="布隆过滤器"><a href="#布隆过滤器" class="headerlink" title="布隆过滤器"></a>布隆过滤器</h2><p>我们如何判断一个ID是否在我们的系统里。我们有两种基本的方法来判断：</p>
-<ul>
-<li>我们把这个ID拿到数据查询一下就知道来</li>
-<li>我们把所有的ID保存的一个Set里面，判断这个新的ID在不在这个Set里面</li>
-</ul>
-<p>但是上面两种方法有一个致命的缺陷：<br>就是在数据量特别大的时候，非常消耗性能，不管是对数据库的IO，还是保存所有的ID。</p>
-<p>这个是有个非常精妙的算法 - <code>布隆过滤器</code>。</p>
-<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/HeAOem.png"></p>
-<p>它的原理非常简单：<br>底层是一个位图，并且有若干种Hash算法。<br>在新增ID的时候，对每一个ID做多种Hash运算，并在位图中得到若干位置，把对应的位置变成<code>1</code>。<br>而判断一个ID是否在系统中，也对这个ID做同样的Hash运算，得到若干位置，判断位图中的对应位置是否都是<code>1</code>。<br>如果都是<code>1</code>的话，表示大概率可能存在于系统中，如果有一个<code>0</code>，表示肯定不在系统中。</p>
-<p>Redisson也做了封装，使用非常方便。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    RBloomFilter&lt;String&gt; bloom = redissonClient.getBloomFilter(<span class="string">&quot;bloom&quot;</span>);</span><br><span class="line">    bloom.tryInit(<span class="number">1000</span>, <span class="number">0.1</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">        bloom.add(<span class="string">&quot;user_id_&quot;</span> + i);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">80</span>; i &lt; <span class="number">120</span>; i++) &#123;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">contains</span> <span class="operator">=</span> bloom.contains(<span class="string">&quot;user_id_&quot;</span> + i);</span><br><span class="line">        System.out.println(<span class="string">&quot;user_id_&quot;</span> + i + <span class="string">&quot;  -&gt;  &quot;</span> + contains);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="HyperLogLog"><a href="#HyperLogLog" class="headerlink" title="HyperLogLog"></a>HyperLogLog</h2><p>HyperLogLog是一个很神奇的数据结构。</p>
-<p>我们先来说两个概念： PV 和 UV。<br>PV：简单来说就是流量。只要有一次访问，不管是不是同一个人，就记一个流量。<br>UV：独立访客，单位时间内，一个新的访客，就算一个UV。</p>
-<p>在我们的统计中，PV很好统计，来一次访问，PV值就往上加1，顶多需要保持一下自增的原子性。<br>而计算UV，在互联网领域中一个是一个难题。</p>
-<p>通常来说我们计算一个网站一天的UV，我们需要把每一个访客的ID给记录下来，计算时去重。<br>这样就导致一个问题，如果访问量非常大，就非常的消耗存储空间。</p>
-<p>这个时候，HyperLogLog就能派上用场了。</p>
-<p>我们先看下代码：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">compareTest</span><span class="params">()</span> &#123;</span><br><span class="line">    RHyperLogLog&lt;String&gt; today = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now());</span><br><span class="line">    HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">500</span>);</span><br><span class="line">        today.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println(<span class="string">&quot;RHyperLogLog: &quot;</span> + today.count());</span><br><span class="line">    System.out.println(<span class="string">&quot;set count: &quot;</span> + set.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里使用的Set方法，和HyperLogLog，两个做一个比较。<br>从结果可以看出，两者的差距非常小，但是HyperLogLog并没有把每一个ID都记录下来，节约了大量存储空间。</p>
-<p>HyperLogLog的原理相对复杂，具体可以参考这篇<a href="http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf">论文</a>。</p>
-<p>这里我来介绍一下它的思想：<br>假设我们有两个网站，需要比较一下他们的UV，看哪个网站的访问率高。<br>假设访问用户的ID使用手机号码表示，如：1xxxxxxxxxx<br>我们不想把每个访客的手机号码都记录下来，因为太浪费存储空间了。<br>我们可以定一个规则，我们只记录当天客户中，手机尾号为<code>0</code>位数最高的手机号码。<br>比如说，第一个网站记录下来的手机号码是：18322333000，末尾有3个0，<br>而第二的网站记录下来的手机号码是：18623000000，末尾有6个0。<br>我们就可以判断出，第二的网站的访问的人数更多。<br>大家体会一下。</p>
-<p>HyperLogLog还有一个重要的概念，就是合并。<br>我们可以把连续7天的UV，合并成这一周的UV，并保证准确性。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">mergeTest</span><span class="params">()</span> &#123;</span><br><span class="line">    RHyperLogLog&lt;String&gt; today = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now());</span><br><span class="line">    RHyperLogLog&lt;String&gt; nextDay = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now().plusDays(<span class="number">1</span>));</span><br><span class="line">    HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">1000</span>);</span><br><span class="line">        today.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">2000</span>);</span><br><span class="line">        nextDay.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    today.mergeWith(nextDay.getName());</span><br><span class="line">    System.out.println(<span class="string">&quot;RHyperLogLog: &quot;</span> + today.count());</span><br><span class="line">    System.out.println(<span class="string">&quot;set count: &quot;</span> + set.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="限流器"><a href="#限流器" class="headerlink" title="限流器"></a>限流器</h2><p>限流器在我们的生产中非常重要，也很常用。Redis也有封装好的限流器。<br>实现了分布式限流器的功能。<br>代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="comment">// redisson用了zset来记录请求的信息，这样可以非常巧妙的通过比较score，也就是请求的时间戳，来判断当前请求距离上一个请求有没有超过一个令牌生产周期。</span></span><br><span class="line">    <span class="comment">// 如果超过了，则说明令牌桶中的令牌需要生产，之前用掉了多少个就生产多少个，而之前用掉了多少个令牌的信息也在zset中保存了。</span></span><br><span class="line">    <span class="type">RRateLimiter</span> <span class="variable">limiter</span> <span class="operator">=</span> redissonClient.getRateLimiter(<span class="string">&quot;limiter_1&quot;</span>);</span><br><span class="line">    <span class="comment">// 1号限流器， 每一秒 允许一个请求</span></span><br><span class="line">    limiter.trySetRate(RateType.PER_CLIENT, <span class="number">1</span>, <span class="number">1</span>, RateIntervalUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 阻塞</span></span><br><span class="line"><span class="comment">//			limiter.acquire(1);</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">result</span> <span class="operator">=</span> limiter.tryAcquire(<span class="number">1</span>, <span class="number">100</span>, TimeUnit.MILLISECONDS);</span><br><span class="line">            <span class="keyword">if</span> (!result) &#123;</span><br><span class="line">                <span class="comment">// 快速失败</span></span><br><span class="line">                System.out.println(Thread.currentThread().getName() + <span class="string">&quot; failed !&quot;</span>);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot; -&gt; &quot;</span> + LocalDateTime.now());</span><br><span class="line">            <span class="comment">// do something</span></span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">    Thread.sleep(<span class="number">12000</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>Redisson真好用！</p>
-</blockquote>
-<h2 id="Geo"><a href="#Geo" class="headerlink" title="Geo"></a>Geo</h2><p>Redis也提供了Geo功能，可以很方便实现附近的人，两坐标之间的距离等功能。<br>它的原理是把经纬度坐标，做Hash，得到一个分数，用zset做存储。<br>Hash算法的原理，是把整个地球当作一个平面，并把这个平面切割成很多很多的小块，并对每个方块做编码。<br>如果两个点所在的方块越接近，表示这两个点越接近。 当然，有一点点误差。<br>使用方法如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">    RGeo&lt;Object&gt; geo = redissonClient.getGeo(<span class="string">&quot;geo&quot;</span>);</span><br><span class="line">    <span class="type">GeoEntry</span> <span class="variable">juejin</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">GeoEntry</span>(<span class="number">116.48105</span>, <span class="number">39.996794</span>, <span class="string">&quot;juejin&quot;</span>);</span><br><span class="line">    geo.add(juejin);</span><br><span class="line">    geo.add(<span class="number">116.514203</span>, <span class="number">39.905409</span>, <span class="string">&quot;ireader&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.489033</span>, <span class="number">40.007669</span>, <span class="string">&quot;meituan&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.562108</span>, <span class="number">39.787602</span>, <span class="string">&quot;jd&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.334255</span>, <span class="number">40.027400</span>, <span class="string">&quot;xiaomi&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 两点距离</span></span><br><span class="line">    System.out.println(geo.dist(<span class="string">&quot;meituan&quot;</span>, <span class="string">&quot;jd&quot;</span>, GeoUnit.METERS));</span><br><span class="line">    <span class="comment">// 坐标</span></span><br><span class="line">    System.out.println(geo.pos(<span class="string">&quot;xiaomi&quot;</span>));</span><br><span class="line">    <span class="comment">// hash</span></span><br><span class="line">    System.out.println(geo.hash(<span class="string">&quot;ireader&quot;</span>));</span><br><span class="line">    <span class="comment">// 附近</span></span><br><span class="line">    System.out.println(geo.radiusWithPositionAsync(<span class="string">&quot;jd&quot;</span>, <span class="number">20</span>, GeoUnit.KILOMETERS).get());</span><br><span class="line">    <span class="comment">// 附近</span></span><br><span class="line">    System.out.println(</span><br><span class="line">            geo.radiusWithPositionAsync(<span class="number">116.334255</span>, <span class="number">40.027400</span>, <span class="number">20</span>, GeoUnit.KILOMETERS).get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注意： 在一个地图应用中，车的数据、餐馆的数据、人的数据可能会有百万千万条，<br>如果使用Redis 的 Geo 数据结构，它们将全部放在一个 zset 集合中。<br>在 Redis 的集群环境中，集合可能会从一个节点迁移到另一个节点，如果单个 key 的数据过大，会对集群的迁移工作造成较大的影响，<br>在集群环境中单个 key 对应的数据量不宜超过 1M，否则会导致集群迁移出现卡顿现象，影响线上服务的正常运行。<br>所以，这里建议 Geo 的数据使用单独的 Redis 实例部署，不使用集群环境。<br>如果数据量过亿甚至更大，就需要对 Geo 数据进行拆分，按国家拆分、按省拆分，按市拆分，在人口特大城市甚至可以按区拆分。<br>这样就可以显著降低单个 zset 集合的大小。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们一起学习了7种高级结构</p>
-<ul>
-<li>分布式锁</li>
-<li>队列</li>
-<li>位图</li>
-<li>布隆过滤器</li>
-<li>HyperLogLog</li>
-<li>限流器</li>
-<li>GeoHash<br>希望以后大家能在工作中用到。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-        <tag>redis</tag>
-        <tag>redisson</tag>
       </tags>
   </entry>
   <entry>
@@ -1023,6 +597,241 @@
       </tags>
   </entry>
   <entry>
+    <title>Java操作Redis</title>
+    <url>/2021/03/25/Java%E6%93%8D%E4%BD%9CRedis/</url>
+    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>Redis是目前最流行的缓存数据库，完全基于内存操作，速度非常快。<br>它是我们互联网公司高性能，高并发的基石。<br>它的功能包括但不限于：提供中央缓存功能，分布式锁，还有特殊数据结构的特殊应用。<br>本篇文章都会一一说到。</p>
+<p>接下来我们会：</p>
+<ul>
+<li>使用Docker搭建redis环境</li>
+<li>搭建springboot服务</li>
+<li>使用redisson来操作redis</li>
+<li>熟悉redis的五大基本数据类型</li>
+<li>熟悉使用redis的高级数据结构及其应用</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="使用Docker搭建redis环境"><a href="#使用Docker搭建redis环境" class="headerlink" title="使用Docker搭建redis环境"></a>使用Docker搭建redis环境</h2><p>使用Docker搭建环境非常方便。 在本地安装好Docker后，使用<code>docker compose</code>可以方便快捷但搭好环境。</p>
+<p>只需要创建<code>docker-compose.yaml</code>文件，内容如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.9&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">cache:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">redis:latest</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#x27;6379:6379&#x27;</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">redis-server</span> <span class="string">--save</span> <span class="number">20</span> <span class="number">1</span> <span class="string">--loglevel</span> <span class="string">warning</span> <span class="string">--requirepass</span> <span class="string">eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">~/docker_volume/redis:/data</span></span><br></pre></td></tr></table></figure>
+
+<p>注意： command里面的password和volumes映射，按照自己需要配置</p>
+<p>再使用命令行，cd到yaml的目录下，运行<code>docker-compose up</code>命令。</p>
+<p>非常简单。</p>
+<p>等启动好了之后，可以用redis工具连接，看下效果。</p>
+<h2 id="搭建springboot服务"><a href="#搭建springboot服务" class="headerlink" title="搭建springboot服务"></a>搭建springboot服务</h2><p>IDEA启动等一个Springboot的项目。我这里使用的是gradle。maven当让也可以。</p>
+<p>我的引用如下：</p>
+<figure class="highlight gradle"><table><tr><td class="code"><pre><span class="line"><span class="keyword">dependencies</span> &#123;</span><br><span class="line">    implementation <span class="string">&#x27;org.springframework.boot:spring-boot-starter&#x27;</span></span><br><span class="line">    implementation <span class="string">&#x27;org.springframework.boot:spring-boot-starter-web&#x27;</span></span><br><span class="line">    implementation <span class="string">&#x27;org.redisson:redisson-spring-boot-starter:3.15.6&#x27;</span></span><br><span class="line">    implementation <span class="keyword">group</span>: <span class="string">&#x27;de.ruedigermoeller&#x27;</span>, name: <span class="string">&#x27;fst&#x27;</span>, version: <span class="string">&#x27;2.57&#x27;</span></span><br><span class="line">    compileOnly <span class="string">&#x27;org.projectlombok:lombok&#x27;</span></span><br><span class="line">    annotationProcessor <span class="string">&#x27;org.projectlombok:lombok&#x27;</span></span><br><span class="line">    testImplementation <span class="string">&#x27;org.springframework.boot:spring-boot-starter-test&#x27;</span></span><br><span class="line">    testImplementation <span class="string">&#x27;io.projectreactor:reactor-test&#x27;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我这里使用的官方推荐的redis客户端<code>Redisson</code>,相关的依赖是<code>org.redisson:redisson-spring-boot-starter:3.15.6</code>和<code>de.ruedigermoeller&#39;, name: &#39;fst&#39;, version: &#39;2.57</code>。这样我们就可以在我们的代码中使用<code>RedissonClient</code>了。</p>
+<blockquote>
+<p>干净又卫生</p>
+</blockquote>
+<h2 id="使用redisson来操作redis"><a href="#使用redisson来操作redis" class="headerlink" title="使用redisson来操作redis"></a>使用redisson来操作redis</h2><h3 id="keys"><a href="#keys" class="headerlink" title="keys"></a>keys</h3><p>因为redis是键值对，大家可以把redis当成一个大的<code>HashMap</code>，所以知道它的所有的key很有必要。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">keysTest</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">RKeys</span> <span class="variable">keys</span> <span class="operator">=</span> redissonClient.getKeys();</span><br><span class="line">	System.out.println(keys.count());<span class="comment">// org.redisson.client.protocol.RedisCommands.DBSIZE 命令</span></span><br><span class="line">	Iterable&lt;String&gt; keysByPattern = keys</span><br><span class="line">			.getKeysByPattern(<span class="string">&quot;*&quot;</span>); <span class="comment">// org.redisson.client.protocol.RedisCommands.SCAN</span></span><br><span class="line">	keys.getKeysStream()</span><br><span class="line">			.forEach(System.out::println);<span class="comment">// org.redisson.client.protocol.RedisCommands.SCAN</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Redisson中使用<code>RKeys</code>类来对redis中的keys做封装。</p>
+<p>我们可以</p>
+<ul>
+<li>拿到所有key的数量</li>
+<li>把所有的key列出来</li>
+<li>按照正则匹配key</li>
+</ul>
+<p>注意，在redisson中，使用的不是redis提供的<code>keys</code>命令，而是<code>scan</code>命令。原因是因为，redis是单线程服务，如果key的量特别大，一次keys操作会消耗很长时间，整体拖慢服务性能。</p>
+<h3 id="string"><a href="#string" class="headerlink" title="string"></a>string</h3><p><code>String</code>是redis的最基础的数据结构。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//String</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testString</span><span class="params">()</span> &#123;</span><br><span class="line">	RBucket&lt;String&gt; hello = redissonClient.getBucket(<span class="string">&quot;hello&quot;</span>);</span><br><span class="line">	System.out.println(hello.get());<span class="comment">// org.redisson.client.protocol.RedisCommands.GET</span></span><br><span class="line">	hello.set(<span class="string">&quot;world ! &quot;</span>, <span class="number">5</span>,</span><br><span class="line">			TimeUnit.MINUTES);<span class="comment">// org.redisson.client.protocol.RedisCommands.PSETEX</span></span><br><span class="line">	System.out.println(hello.get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>redis中所有的key都是String类型，而一些对象的存储，都是把对象序列化成为字符串进行存储。</p>
+<p>string作为redis中的最基础的数据类型，redis做了极致的优化，这个我们后面再说。</p>
+<h3 id="list"><a href="#list" class="headerlink" title="list"></a>list</h3><p>list是redis中列表的数据结构。说实话，在工作中使用的比较少。可以用来做一个简单的消息队列。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// List</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testList</span><span class="params">()</span> &#123;</span><br><span class="line">	RedissonList&lt;Person&gt; list = (RedissonList) redissonClient.getList(<span class="string">&quot;list&quot;</span>);</span><br><span class="line">	<span class="type">Person</span> <span class="variable">tom</span> <span class="operator">=</span> Person.tom();</span><br><span class="line">	list.add(tom);<span class="comment">// RPUSH</span></span><br><span class="line">	list.addBefore(tom, <span class="keyword">new</span> <span class="title class_">Person</span>());</span><br><span class="line">	list.readAll(); <span class="comment">// LRANGE</span></span><br><span class="line">	list.fastSet(<span class="number">1</span>, <span class="keyword">new</span> <span class="title class_">Person</span>());</span><br><span class="line">	System.out.println(list.size());</span><br><span class="line">	list.forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以把redis中的list，在Java中，当成LinkedList操作（插入、删除快；查找慢）。 使用简单方便。</p>
+<p>list的底层是一个叫快速列表的数据结构（quick list）。</p>
+<p>如果所示，它是由ziplist组成，ziplist是压缩列表，是紧凑的，再用link给串起来。</p>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/image.png"></p>
+<h3 id="hash"><a href="#hash" class="headerlink" title="hash"></a>hash</h3><p>hash，map，dict，说的都是一个东西，在Java中，我们叫做<code>HashMap</code>。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Map</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testMap</span><span class="params">()</span> &#123;</span><br><span class="line">	RedissonMap&lt;String, Object&gt; myMap = (RedissonMap) redissonClient.getMap(<span class="string">&quot;myMap&quot;</span>);</span><br><span class="line">	myMap.put(<span class="string">&quot;Tom&quot;</span>, Person.tom());</span><br><span class="line">	RedissonMap&lt;String, Object&gt; map = (RedissonMap) redissonClient.getMap(<span class="string">&quot;myMap&quot;</span>);</span><br><span class="line">	System.out.println(map.get(<span class="string">&quot;Tom&quot;</span>)); <span class="comment">// HGET</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用和Java无二。 当我们使用Map缓存数据时候，我们可以部分的获取一些字段，不用把整个对象都拿出来。</p>
+<p>注意：一整个Map能设置过期删除。Map中单独的key-value是设置不了过期删除的。</p>
+<p>和Java中<code>HashMap</code>不同的是，扩容rehash的过程中，redis当中是渐进式的，可能同时出现两个map。</p>
+<h3 id="set"><a href="#set" class="headerlink" title="set"></a>set</h3><p>redis中的set和Java中的HashSet类型。使用方法也类似。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Set</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testSet</span><span class="params">()</span> &#123;</span><br><span class="line">	RSet&lt;Object&gt; set = redissonClient.getSet(<span class="string">&quot;set&quot;</span>);</span><br><span class="line">	set.add(<span class="number">1</span>);</span><br><span class="line">	set.add(<span class="number">2</span>);</span><br><span class="line">	set = redissonClient.getSet(<span class="string">&quot;set&quot;</span>);</span><br><span class="line">	<span class="keyword">for</span> (Object o : set) &#123;</span><br><span class="line">		System.out.println(o);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>工作中使用的也不错，可以计算一些UV。</p>
+<h3 id="zset"><a href="#zset" class="headerlink" title="zset"></a>zset</h3><p>sort set，排序集合，redis特色结构。</p>
+<p>在set的基础上，给每个value加上了分数，在zset中的值都是按照分数排好序的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ZSet</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testZSet</span><span class="params">()</span> &#123;</span><br><span class="line">	RSortedSet&lt;Object&gt; zset = redissonClient.getSortedSet(<span class="string">&quot;zset&quot;</span>);</span><br><span class="line">	zset.add(<span class="number">1</span>);</span><br><span class="line">	zset.add(<span class="number">2</span>);</span><br><span class="line">	zset.forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">	RScoredSortedSet&lt;Object&gt; szset = redissonClient.getScoredSortedSet(<span class="string">&quot;szset&quot;</span>);</span><br><span class="line">	szset.add(<span class="number">11.1</span>, <span class="number">1</span>);<span class="comment">// ZADD</span></span><br><span class="line">	szset.add(<span class="number">1.1</span>, <span class="number">2</span>);</span><br><span class="line">	szset.forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>zset底层使用的跳跃表（skip list），具体后面再说。</p>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/1653463112036-image.png"></p>
+<p>主要的作用是可以做一些排行榜，像微博热搜。</p>
+<hr>
+<p>这篇文章我们讲到了如果搭建一个redis环境，并使用<code>redisson</code>对redis做一些基本操作。</p>
+<p>在下一篇文章中，我们将讲到redis中的一些高级数据结构。</p>
+<ul>
+<li>位图</li>
+<li>布隆过滤器</li>
+<li>队列</li>
+<li>分布式锁</li>
+<li>限流器</li>
+<li>HyperLogLog</li>
+<li>Geo</li>
+</ul>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+        <tag>redis</tag>
+        <tag>redisson</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL学习及原理浅析</title>
+    <url>/2021/08/13/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</url>
+    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>从今天开始，我们将学习目前最流行的一个数据库MySQL。</p>
+<p>这篇文章，带大家走进Mysql的世界。</p>
+<ul>
+<li>MySQL的底层结构</li>
+<li>MySQL的查询过程</li>
+<li>索引结构</li>
+<li>MySQL的三种Log</li>
+<li>MySQL的存储引擎</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="MySQL的底层结构"><a href="#MySQL的底层结构" class="headerlink" title="MySQL的底层结构"></a>MySQL的底层结构</h2><p>MySQL我们可以主要分成三层：</p>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/v3Tr6K.png"></p>
+<ol>
+<li>客户端连接层。主要负责处理客户端的连接，用户的账号密码校验，权限等功能。</li>
+<li>核心服务层。主要功能有缓存，对SQL语句的解析和优化，对底层API的调用。</li>
+<li>存储引擎。 对数据对管理，存储，查询，事务，索引等等功能。</li>
+</ol>
+<h2 id="MySQL的查询过程"><a href="#MySQL的查询过程" class="headerlink" title="MySQL的查询过程"></a>MySQL的查询过程</h2><p>一个SQL的查询过程可以分成六步。 如图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/mkccLn.png"></p>
+<ol>
+<li>客户端和MySQL建立连接。</li>
+<li>查询缓存，如果缓存命中，直接返回。但是不建议使用缓存，命中率低，弊大于利。</li>
+<li>解析SQL，生成语法解析树。如果SQL写的有问题，这一步会报错。</li>
+<li>查询优化，通过语法树，生成执行计划，计划可能不止一个，优化器会找到成本最小的一个执行计划。</li>
+<li>执行计划，查询执行引擎拿到了执行计划，调用对应的存储引擎的接口，来执行查询，得到结果。</li>
+<li>返回结果，缓存结果。如果结果集很大（1W条），不会等到全部结果出来再返回，会在第一条结果出来的时候，就开始返回结果。</li>
+</ol>
+<h2 id="MySQL的三种Log"><a href="#MySQL的三种Log" class="headerlink" title="MySQL的三种Log"></a>MySQL的三种Log</h2><p>MySQL有三种Log，各司其职。分别是binlog、redo log、undo log。</p>
+<h3 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h3><p>binlog的主要作用是记录数据库的每一步变化。由MySQL核心服务层控制。</p>
+<p>可以让别的服务来监听，实现数据同步。</p>
+<p>或者再数据库损坏之后，恢复数据。</p>
+<p>数据库的每一次变化，比如某一个表新增了一条数据，就会生成一个对应的binlog。<br>另外的服务监听到了之后，可以做出对应的操作，把数据同步一份。</p>
+<p>可以做主备，可以做读写分离。</p>
+<h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>首先我们先要了解到一点，磁盘的IO昂贵，数据库再做数据变更的时候，都不会一有变更，就立即更新磁盘数据。</p>
+<p>做法都是先在内存中进行操作，等到合适的时候（配置决定），再一次性的刷到磁盘当中。</p>
+<p>但是如果数据在内存当中变更了之后，数据库崩溃了，这个时候内存中的数据就会丢失。</p>
+<p>MySQL就会有一个redo log来保证上述情况的数据不丢失。</p>
+<p>redo log由存储引擎控制。</p>
+<p>当MySQL修改数据的做法如下：</p>
+<ol>
+<li>把对应数据的页，查询出来，并保存到内存中</li>
+<li>修改内存中的数据，同时生成redo log（哪一页，修改了那些内容）。原子操作</li>
+<li>如果这时MySQL崩溃，可以根据redo log恢复内存中的数据。</li>
+<li>如果没有崩溃，会在合适的时候，把内存中的数据落到磁盘上，同时删除对应的redo log。</li>
+</ol>
+<h3 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h3><p>undo log和事务有关。InnoDB存储引擎特有。</p>
+<p>在一个事务中，每一次操作，都会生成一个log，所有的log会组成一个数据链。</p>
+<p>可以用来控制回滚，和在不同的事务级别下，所展示的数据的版本。</p>
+<p>这就是MVCC，多版本并发控制。我们在事务那一章的时候，还会详细说明。</p>
+<h2 id="MySQL的存储引擎"><a href="#MySQL的存储引擎" class="headerlink" title="MySQL的存储引擎"></a>MySQL的存储引擎</h2><p>MySQL的存储引擎的设计是MySQL的一大特点。<br>它可以让我们灵活的使用不同的存储引擎来应对不同的需求。</p>
+<p>我们可以使用：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> ENGINE, SUPPORT <span class="keyword">FROM</span> INFORMATION_SCHEMA.ENGINES;</span><br><span class="line"><span class="comment">-- 或者</span></span><br><span class="line"><span class="keyword">SHOW</span> ENGINES;</span><br></pre></td></tr></table></figure>
+
+<p>来查询存储引擎列表，和当前MySQL是否支持。</p>
+<p>我们可以查看<a href="https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html">官方文档</a><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/8hRNsc.png"></p>
+<p>我们在这里也做一下简单的介绍：</p>
+<h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><p>我们最常用的存储引擎当属InnoDB。</p>
+<p>它支持事务，符合ACID，支持行级锁，<br>支持B树索引，新版版还支持全文索引，<br>使用MVCC多版本并发控制，支持崩溃恢复，<br>还支持外键。</p>
+<p>它是我们一般情况下的首选。</p>
+<p>在需要事务的场景中，我们更是无脑选择InnoDB。</p>
+<h3 id="MyISAM"><a href="#MyISAM" class="headerlink" title="MyISAM"></a>MyISAM</h3><p>MyISAM它的特点是不支持事务。当时它的优势是结构简单，比InnoDB稍快。</p>
+<p>读效率比写更快。适合需要大量读的场景中。</p>
+<p>支持B树索引和全文索引。如果小项目不想使用ES的话，可以考虑使用MyISAM做视图。</p>
+<h3 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h3><p>看名字就知道，它的特点是把数据存储在内存中的，<br>所以没有持久化，断电崩溃数据会丢失。</p>
+<p>但是就是因为使用的内存，它的速度非常快。可以部分替代Redis的功能。</p>
+<h3 id="Archive"><a href="#Archive" class="headerlink" title="Archive"></a>Archive</h3><p>如果你需要保存日志信息，存档信息等一些需要快速查询的场景。<br>你可以使用Archive。</p>
+<p>它支持数据压缩，不支持事务、索引。</p>
+<p>可以部分替代MongoDB的功能。</p>
+<h3 id="CSV"><a href="#CSV" class="headerlink" title="CSV"></a>CSV</h3><p>CSV的结构很简单，它会生成一个<code>.cvs</code>的文件来存储数据。</p>
+<p>我们可以使用Excel来打开它。一般很少使用。</p>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><p>除了上述的存储引擎，剩下还有一些存储引擎。<br>比如说：Merge、Federated、Blackhole、NDB、Example<br>具体参考<a href="https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html">官方文档</a></p>
+<h2 id="索引结构"><a href="#索引结构" class="headerlink" title="索引结构"></a>索引结构</h2><p>索引是为了提高查询效率的一种手段。</p>
+<p>如果我们的数据一本新华字典的话，索引就是字典的目录。可以大大提高我们查询的效率。</p>
+<p>但是索引是有代价的，它会提高修改数据的成本，也需要单独的空间来存放索引数据。</p>
+<p>常见的索引结构有以下几种；</p>
+<ul>
+<li>Hash</li>
+<li>B tree</li>
+<li>全文索引</li>
+</ul>
+<p>本文，我们会重点说说B树这种结构。</p>
+<h3 id="什么是B树"><a href="#什么是B树" class="headerlink" title="什么是B树"></a>什么是B树</h3><p>B树是一种多叉树，一个根节点下面一般有很多叶子节点，所以B树的高度一般不高。</p>
+<p>使用B树存储的数据都是有序的。</p>
+<p>如下图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/mwUrxI.png"></p>
+<h3 id="B-树"><a href="#B-树" class="headerlink" title="B+树"></a>B+树</h3><p>B+树是B树的一种升级版。</p>
+<p>它的特点是，只有叶子节点存储数据。非叶子节点只存储索引。</p>
+<p>叶子节点（数据节点）同样也是有序的，并且相邻的两个叶子节点使用双向链表连接起来，这样范围查询的效率非常高。</p>
+<p>可参考下图：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/tu3yvP.png"></p>
+<p>MySQL的InnoDB存储引擎使用的就是B+树作为索引结构。</p>
+<p>每一个节点的大小固定，迎合一次磁盘IO，大小应该是16KB。</p>
+<p>而非叶子上存储的都是索引，所以一个节点上可以存储非常多的索引数据。<br>再通过二分查找，来找到对应的数据地址。</p>
+<h3 id="聚簇索引"><a href="#聚簇索引" class="headerlink" title="聚簇索引"></a>聚簇索引</h3><p>在InnoDB存储引擎中，表中的数据都是通过一个B+树来维护的，<br>同时表中所有的数据，都存放在B+树的叶子节点上。</p>
+<p>而非聚簇索引，B+树的叶子节点上，存储的都是主键ID。<br>如果需要找到详情的数据信息，需要回表查询，即拿到主键ID，到主B+树（聚簇索引）上再查询。</p>
+<h3 id="如何通过索引实现范围查询"><a href="#如何通过索引实现范围查询" class="headerlink" title="如何通过索引实现范围查询"></a>如何通过索引实现范围查询</h3><p>如果我们有一个这样的查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"># 查询今年以来的订单</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> create_time <span class="operator">&gt;</span> <span class="string">&#x27;2021-01-01 00:00:00&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>为了加快查询效率，我们会在<code>create_time</code>字段上添加索引。<br>这样就有了一个按照时间排序好的索引B+树了。</p>
+<p>我们的查询会从全表扫面，变成通过索引查询。</p>
+<p>我们会先通过索引找到第一create_time为’2021-01-01 00:00:00’的订单索引，</p>
+<p>再通过B+树叶子节点间的链表指针，往后扫描，找到满足条件的所有的订单索引。</p>
+<p>再拿到满足条件的订单主键ID，去订单主聚簇索引中回表查询详细信息，返回结果。</p>
+<h3 id="联合索引、索引下推、覆盖索引"><a href="#联合索引、索引下推、覆盖索引" class="headerlink" title="联合索引、索引下推、覆盖索引"></a>联合索引、索引下推、覆盖索引</h3><h4 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h4><p>我们可以给一个字段添加索引，如上述的订单创建时间。</p>
+<p>但是很多情况下的业务复杂，筛选条件众多，我们会为几个字段一起添加一个联合索引。</p>
+<p>比如<code>订单的买家</code>、<code>订单创建时间</code>和<code>订单状态</code>可以作为一个联合索引。</p>
+<p>这样在应用程序的客户端当中，买家查询自己的订单列表，并按照订单创建时间倒排，并可以通过订单状态做筛选条件。<br>这种情况下的查询效率会很高效。</p>
+<h4 id="索引下推"><a href="#索引下推" class="headerlink" title="索引下推"></a>索引下推</h4><p>索引下推只会作用在联合索引上。并且会发生在范围查询上。</p>
+<p>一句话说明：索引下推会尽量使用索引来判断where条件，而减少回表次数。</p>
+<p>还是以订单表为列子，联合索引：客户姓名、订单时间</p>
+<p>如果我们要查询：今年以来，姓王的客户的订单</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> create_time <span class="operator">&gt;</span> <span class="string">&#x27;2021-01-01 00:00:00&#x27;</span> <span class="keyword">and</span> customer_name <span class="keyword">like</span> <span class="string">&#x27;王%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>而我们都知道，范围查询会中断索引。</p>
+<p>如果我们不使用索引下推的话：</p>
+<p>我们会在<code>客户姓名、订单时间索引</code>B+树中找出满足客户姓名姓氏的所有订单ID</p>
+<p>拿到所有订单ID去主键聚簇索引中回表查询数据，再判断今年以来的订单数据。</p>
+<p>这种情况下，回表查询的订单ID会非常多。</p>
+<p>而如果我们使用索引下推：</p>
+<p>我们会在索引的B+树中，提前查询、筛选中满足姓氏和时间的订单ID。</p>
+<p>再回表查询。</p>
+<p>这种情况下，回表查询的订单ID是提前筛选好的，会少很多。</p>
+<h4 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h4><p>还是上述情况，订单表的联合索引<code>客户姓名、订单时间</code>。有这样的查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> id <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> create_time <span class="operator">&gt;</span> <span class="string">&#x27;2021-01-01 00:00:00&#x27;</span> <span class="keyword">and</span> customer_name <span class="keyword">like</span> <span class="string">&#x27;王%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>SQL语句中的所有的查询条件和返回数据，在联合索引的B+树中都有，</p>
+<p>我们只需要通过索引查询出来主键ID，就可以直接返回结果了，不需要再回表查询。</p>
+<p>这就是覆盖索引。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本次我们探讨了一种目前最流行的关系型数据库MySQL。</p>
+<p>带大家了解了下MySQL的基本结构，它的查询过程。</p>
+<p>通过三种Log来了解了一些MySQL的内部原理。</p>
+<p>还有索引相关的一些内容。</p>
+<p>希望大家都有所收获。</p>
+<p>我们下次还会讲到MySQL的事务和MySQL调优相关的内容。</p>
+]]></content>
+      <categories>
+        <category>知识</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>十大排序算法</title>
     <url>/2021/07/06/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</url>
     <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>今天开启我们的算法系列，争取说简单➕通俗易懂。<br>我们从经典的排序算法开始。学习十大排序算法。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/zoOH3H.png"></p>
@@ -1140,6 +949,322 @@
         <tag>java</tag>
         <tag>算法</tag>
         <tag>排序算法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL调优</title>
+    <url>/2021/09/11/MySQL%E8%B0%83%E4%BC%98/</url>
+    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这篇文章，我们将谈到SQL优化的相关知识。</p>
+<ul>
+<li>我们会讲到如何合理定义数据结构</li>
+<li>如何设计高效的索引</li>
+<li>如果写出高效的SQL语句</li>
+<li>如果发生了慢查询，我们如何分析</li>
+<li>如何选择其他的组件来替换MySQL</li>
+</ul>
+<p>现在，我们开始吧！！</p>
+<span id="more"></span>
+
+<h2 id="数据结构的优化"><a href="#数据结构的优化" class="headerlink" title="数据结构的优化"></a>数据结构的优化</h2><h3 id="数据类型的选择"><a href="#数据类型的选择" class="headerlink" title="数据类型的选择"></a>数据类型的选择</h3><h4 id="使用最佳的数据类型"><a href="#使用最佳的数据类型" class="headerlink" title="使用最佳的数据类型"></a>使用最佳的数据类型</h4><p>数据类型越短越好，<br>越小的数据类型，往往意味着更好的效率。</p>
+<p>整型的效率会比字符串的性能高<br>使用Date类型来存储时间，比字符串类型的效率来的高。</p>
+<h4 id="尽量使用非空"><a href="#尽量使用非空" class="headerlink" title="尽量使用非空"></a>尽量使用非空</h4><p>null会影响到索引效率，查询的返回结果。<br>可会可能引发业务层的空指针。</p>
+<p>我们可以给字段设为not null，且设定一个默认值。</p>
+<h4 id="可以使用UNSIGNED来修饰数字类型"><a href="#可以使用UNSIGNED来修饰数字类型" class="headerlink" title="可以使用UNSIGNED来修饰数字类型"></a>可以使用UNSIGNED来修饰数字类型</h4><p>无符号数字的存储效率是有符号数组的将近一倍。</p>
+<p>比如ID，金额等一些确定是正数的数字类型，<br>我们可以使用UNSIGNED来修饰。</p>
+<h3 id="表的设计"><a href="#表的设计" class="headerlink" title="表的设计"></a>表的设计</h3><h4 id="避免宽表"><a href="#避免宽表" class="headerlink" title="避免宽表"></a>避免宽表</h4><p>宽表意味着一条记录有很多字段。<br>我们尽量避免一张表有多于100个字段。</p>
+<p>他会在查询的时候，增加性能的负担。<br>尤其是使用alter操作来改变表结构的时候，<br>会非常消耗性能。</p>
+<p>我们可以给一张宽表拆分成不同的小表。<br>比如：一张订单表，我们可以拆分成<br>订单主表；订单金额表；订单商品表；订单物流表 等等。</p>
+<h4 id="范式-and-反范式"><a href="#范式-and-反范式" class="headerlink" title="范式 and 反范式"></a>范式 and 反范式</h4><p>满足范式的设计，往往会更加精简，<br>但是如果需要查询更多的信息，需要连表查询。</p>
+<p>比如说，订单表里面只有买家ID这个字段，<br>在页面上展示的时候，往往是需要展示买家名称，<br>这个时候，就需要连表查询，关联订单表，和客户表，<br>而在我们分布式系统中，更需要单独调用别的中台的接口，来填充信息。</p>
+<p>而反范式，就是把一些数据给冗余下来，以提高查询效率。</p>
+<p>在高并发，高性能，高数据量的时候，<br>往往都是单表查询，<br>反范式，冗余会使用的更多。<br>冗余可以大大简化我们的SQL，提高我们索引的命中率。</p>
+<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><blockquote>
+<p>好的索引，是查询效率提升的关键</p>
+</blockquote>
+<h3 id="什么时候添加索引"><a href="#什么时候添加索引" class="headerlink" title="什么时候添加索引"></a>什么时候添加索引</h3><p>如果我们表的数据只有十几行甚至几行的时候，<br>我们不要添加索引。<br>因为这个时候，全表扫描的效率往往更好，<br>而索引的维护，还会影响到数据的修改效率。</p>
+<p>如果我们的表数据量很多，<br>我们推荐设计合适的索引来提高查询效率。</p>
+<p>如果我们的表数据非常非常多，<br>我们考虑使用分区，分表</p>
+<h3 id="添加合适的索引"><a href="#添加合适的索引" class="headerlink" title="添加合适的索引"></a>添加合适的索引</h3><p>在查询条件上，<br>在关联字段上，<br>在排序字段上，<br>在分组字段上，<br>可以添加索引。</p>
+<p>添加索引的字段值区分度越高越好，比如ID<br>像枚举类型的值不适合设置成索引。</p>
+<p>索引不是越多越好，索引会占用空间，索引会影响修改数据的效率。</p>
+<h3 id="组合索引"><a href="#组合索引" class="headerlink" title="组合索引"></a>组合索引</h3><p>根据业务中的查询条件，添加合适的组合索引<br>遵循最左匹配原则</p>
+<h3 id="使用覆盖索引"><a href="#使用覆盖索引" class="headerlink" title="使用覆盖索引"></a>使用覆盖索引</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> id <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> buyer_id <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> buyer_id <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>如果我们在订单表（order）中的买家ID（buyer_id）上建立索引，</p>
+<p>上面第一条的SQL会比第二条的执行速度快很多。</p>
+<p>因为第一条索引直接走了覆盖索引，而不用回表查询，大大提高效率。</p>
+<h3 id="精简索引字段"><a href="#精简索引字段" class="headerlink" title="精简索引字段"></a>精简索引字段</h3><p>如果索引字段太长，且有很多重复的字符，我们可以截取一部分来设成索引。</p>
+<p>可以减少索引体积。</p>
+<p>比如说email，或者网站地址，或者非常长的ID</p>
+<p>把区分度高的部分，截取出来，设成索引。</p>
+<h2 id="SQL语句编写的优化"><a href="#SQL语句编写的优化" class="headerlink" title="SQL语句编写的优化"></a>SQL语句编写的优化</h2><h3 id="基础SQL原则"><a href="#基础SQL原则" class="headerlink" title="基础SQL原则"></a>基础SQL原则</h3><ul>
+<li>只返回必要的行，避免<code>select *</code>这样的语句。</li>
+<li>where条件里面控制范围</li>
+<li>limit 控制返回条数</li>
+<li>缓存热点数据，使用服务端缓存（redis），避免使用MySQL缓存</li>
+<li>查询条件 和 索引相匹配</li>
+</ul>
+<h3 id="count函数优化"><a href="#count函数优化" class="headerlink" title="count函数优化"></a>count函数优化</h3><p>一般来说，我们尽量使用<code>count(*)</code>，来统计行数，<br>但是还有一种用法，我们可以使用<code>count(column_1)</code>来统计，column_1不为空的记录数。</p>
+<p>在column_1不为空的情况下：<br>count(*) &#x3D;&#x3D; count(column_1)</p>
+<p>在column_1有null值的情况下：<br>count(*) &gt; column_1</p>
+<p>这点需要大家注意区别。</p>
+<p>在不需要准确数据的情况下，<br>我们可以使用 explain 来替代 count。</p>
+<p>explain会给出一个总数目的估计值，<br>explain只会给出一个查询计划，并不会真正去存储引擎上执行，<br>它的执行效率是高的。</p>
+<h3 id="避免深分页"><a href="#避免深分页" class="headerlink" title="避免深分页"></a>避免深分页</h3><p>我们要避免这样的SQL。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> limit <span class="number">1000</span>, <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这样会先把前面的1010条数据都查询出来，在截取后10条记录返回。<br>很营销效率。</p>
+<p>在这种情况下，我会推荐使用游标的来查询。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> <span class="keyword">where</span> id <span class="operator">&gt;</span> <span class="string">&#x27;&#x27;</span> limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="分解大批量"><a href="#分解大批量" class="headerlink" title="分解大批量"></a>分解大批量</h3><p>如果我们需要清楚历史日志数据，我们可能会这样：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> log <span class="keyword">where</span> create_time <span class="operator">&lt;</span> <span class="string">&#x27;&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>如果历史数据非常大，这样会非常影响数据库的性能，<br>并会锁住很多记录，占用系统资源。</p>
+<p>可能会让很多小而重要的查询发生中断。</p>
+<p>我们需要这样做：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> log <span class="keyword">where</span> create_time <span class="operator">&lt;</span> <span class="string">&#x27;&#x27;</span> limit <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
+
+<p>并在业务代码中，循环删除。</p>
+<h2 id="慢查询及其分析"><a href="#慢查询及其分析" class="headerlink" title="慢查询及其分析"></a>慢查询及其分析</h2><h3 id="开启慢查询监控"><a href="#开启慢查询监控" class="headerlink" title="开启慢查询监控"></a>开启慢查询监控</h3><p>我们可以先查看一下配置，直接执行下面的SQL：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;slow%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>得到效果如下：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/O1oh8f.png"><br>很明显，我还没有开启慢查询监控。</p>
+<p>我们继续再修改配置，开启监控：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> slow_query_log<span class="operator">=</span><span class="keyword">ON</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在设置一下触发时间：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;long%&#x27;</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> long_query_time <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>默认的慢查询的触发时间是10秒，太长了<br>我们配置成合适的触发时间， 我这里配置的是1秒。</p>
+<p>Tip：配置好之后，需要重新打开新的session查看配置。</p>
+<p>一切完成之后，如果我们再发生了慢查询，就会在对应的位置生成log啦。<br>我们再可以使用explain分析SQL</p>
+<h3 id="使用EXPLAIN来分析SQL执行计划"><a href="#使用EXPLAIN来分析SQL执行计划" class="headerlink" title="使用EXPLAIN来分析SQL执行计划"></a>使用EXPLAIN来分析SQL执行计划</h3><p>首先上<a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html">官方文档</a><br>最权威</p>
+<p>explain SQL 是一个非常复杂的过程，里面的细节很多，<br>在这里只做一个简单的介绍，和常用的排查慢查询的方法。</p>
+<h4 id="执行和字段解释"><a href="#执行和字段解释" class="headerlink" title="执行和字段解释"></a>执行和字段解释</h4><p>我们拿到了慢查询的SQL，直接再语句的前面加上一个<code>explain</code> 就行。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">explain <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到一下结果：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/FZy098.png"></p>
+<p>一共返回了12个字段，我来看一下每一个字段代表什么意思。</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>JSON Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_id"><code>id</code></a></td>
+<td><code>select_id</code></td>
+<td>表示查询中执行select子句或者操作表的顺序，id的值越大，代表优先级越高，越先执行</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_select_type"><code>select_type</code></a></td>
+<td>None</td>
+<td>表示 select 查询的类型，主要是用于区分各种复杂的查询，例如：普通查询、联合查询、子查询等</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_table"><code>table</code></a></td>
+<td><code>table_name</code></td>
+<td>查询的表名，并不一定是真实存在的表，有别名显示别名，也可能为临时表</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_partitions"><code>partitions</code></a></td>
+<td><code>partitions</code></td>
+<td>查询时匹配到的分区信息，对于非分区表值为NULL，当查询的是分区表时，partitions显示分区表命中的分区情况</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_type"><code>type</code></a></td>
+<td><code>access_type</code></td>
+<td>查询使用了何种类型，它在 SQL优化中是一个非常重要的指标</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_possible_keys"><code>possible_keys</code></a></td>
+<td><code>possible_keys</code></td>
+<td>表示在MySQL中通过哪些索引，能让我们在表中找到想要的记录，一旦查询涉及到的某个字段上存在索引，则索引将被列出，但这个索引并不定一会是最终查询数据时所被用到的索引</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_key"><code>key</code></a></td>
+<td><code>key</code></td>
+<td>区别于possible_keys，key是查询中实际使用到的索引，若没有使用索引，显示为NULL</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_key_len"><code>key_len</code></a></td>
+<td><code>key_length</code></td>
+<td>表示查询用到的索引长度（字节数），原则上长度越短越好</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_ref"><code>ref</code></a></td>
+<td><code>ref</code></td>
+<td>搜索关联字段，有可能是常数、多表关联字段、函数等</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_rows"><code>rows</code></a></td>
+<td><code>rows</code></td>
+<td>以表的统计信息和索引使用情况，估算要找到我们所需的记录，需要读取的行数。</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_filtered"><code>filtered</code></a></td>
+<td><code>filtered</code></td>
+<td>这个是一个百分比的值，表里符合条件的记录数的百分比。简单点说，这个字段表示存储引擎返回的数据在经过过滤后，剩下满足条件的记录数量的比例</td>
+</tr>
+<tr>
+<td><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html#explain_extra"><code>Extra</code></a></td>
+<td>None</td>
+<td>不适合在其他列中显示的信息，Explain 中的很多额外的信息会在 Extra 字段显示</td>
+</tr>
+</tbody></table>
+<h4 id="重点排查顺序"><a href="#重点排查顺序" class="headerlink" title="重点排查顺序"></a>重点排查顺序</h4><p>explain了一条SQL之后，我们的排查流程如下：</p>
+<ul>
+<li><p>type</p>
+<ul>
+<li>system &gt; const &gt; eq_ref &gt; ref &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL</li>
+<li>一般最少要达到range等级，最好达到ref等级</li>
+</ul>
+</li>
+<li><p>key</p>
+<ul>
+<li>实际上用到的索引</li>
+</ul>
+</li>
+<li><p>key_len</p>
+<ul>
+<li>使用到的索引长度，可以算出联合索引中走了几个索引</li>
+<li>utf8中一个字符占3个字节， 允许null +1， not null +2</li>
+</ul>
+</li>
+<li><p>Extra</p>
+<ul>
+<li>一些额外信息，表示使用了哪些操作</li>
+<li>像使用了覆盖索引，索引下推，这都是比较好的</li>
+<li>像使用了文件排序，需要优化下，尽量使用索引排序</li>
+</ul>
+</li>
+</ul>
+<h2 id="使用其他的组件来替代MySQL"><a href="#使用其他的组件来替代MySQL" class="headerlink" title="使用其他的组件来替代MySQL"></a>使用其他的组件来替代MySQL</h2><ul>
+<li>一些经常查询，或者修改频次高的数据，我们尽量放到Redis里面</li>
+<li>如果需要使用到全文索引，首推Elastic Search</li>
+<li>如果是类似日志的数据，数据量大，不需要连表，不需要复杂的索引，可以使用MongoDB</li>
+</ul>
+<p>但是MySQL是一款非常成熟，非常稳定的数据库，在一般的条件下，我们还是会首选MySQL。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，我们学到了MySQL优化的一些相关知识。<br>我们从建表开始，选择合适的数据结构，索引的建立，<br>到生产中，遇到的慢查询的处理。</p>
+<p>希望对大家有所帮助！！Peace～</p>
+]]></content>
+      <categories>
+        <category>知识</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis高级数据结构</title>
+    <url>/2021/04/26/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</url>
+    <content><![CDATA[<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这篇文章介绍一下高级Redis数据结构，及其用法。</p>
+<p>在工作的使用频率很高。</p>
+<ul>
+<li>分布式锁</li>
+<li>队列</li>
+<li>位图</li>
+<li>布隆过滤器</li>
+<li>HyperLogLog</li>
+<li>限流器</li>
+<li>GeoHash</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h2><p>大家都知道，线程安全在我们的系统当中，非常重要。<br>如果多个线程同时操作一笔订单，很可能造成数据不一致。</p>
+<p>而在分布式系统中，<code>synchronized</code>就排不上用场了，需要使用分布式锁来解决线程安全的问题。</p>
+<p>而使用redis就是一个很好的选择。</p>
+<p>使用<code>Redisson</code>封装的分布式锁，非常简单，功能也相当强大。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lockTest</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="type">RLock</span> <span class="variable">lock</span> <span class="operator">=</span> redisson.getLock(<span class="string">&quot;my-lock&quot;</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="comment">// do somethings</span></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>除了基础的分布式锁，Redisson还提供了：</p>
+<ul>
+<li>可重入锁</li>
+<li>公平锁</li>
+<li>自旋锁</li>
+<li>读写锁</li>
+<li>锁超时时间</li>
+<li>获取锁的时间限制</li>
+</ul>
+<p>功能强大且使用方便，具体参考<a href="https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers">官方文档</a>。</p>
+<h2 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h2><p>队列是我们一种常用的数据结构。也有很多专业的中间件来实现。比如：Kafka，RabbitMQ，RocketMQ。。。<br>而redis也支持消息队列，而且功能还不少。有：</p>
+<ul>
+<li>简单的消息队列</li>
+<li>延迟队列</li>
+<li>阻塞队列</li>
+<li>消息的多播</li>
+</ul>
+<p>Redis 的 list(列表) 数据结构常用来作为异步消息队列使用，使用<code>rpush/lpush</code>操作入队列，使用 <code>lpop/rpop</code> 来出队列。</p>
+<p>延时队列可以通过 Redis 的 zset(有序列表) 来实现。我们将消息序列化成一个字符串作为 zset 的 value，这个消息的到期处理时间作为 score。</p>
+<p>Redisson对此都有很好的支持：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 简单队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">simple</span><span class="params">()</span> &#123;</span><br><span class="line">    RQueue&lt;Object&gt; queue = redissonClient.getQueue(<span class="string">&quot;simple&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            queue.add(i);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> queue.poll();</span><br><span class="line">        <span class="keyword">if</span> (poll == <span class="literal">null</span>) &#123;</span><br><span class="line">            i--;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            System.out.println(poll);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 阻塞队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">blockQueue</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    RBlockingQueue&lt;Object&gt; queue = redissonClient.getBlockingQueue(<span class="string">&quot;block&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">100</span>);</span><br><span class="line">                queue.put(i);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        <span class="comment">// 阻塞take</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> queue.take();</span><br><span class="line">        System.out.println(poll);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 延迟队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delayQueue</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    RBlockingQueue&lt;Object&gt; blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;delayQueue1&quot;</span>);</span><br><span class="line">    RDelayedQueue&lt;Object&gt; delayQueue = redissonClient</span><br><span class="line">            .getDelayedQueue(blockingQueue);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        delayQueue.offerAsync(i, (<span class="number">500</span> - i * <span class="number">10</span>), TimeUnit.MILLISECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;delayQueue&quot;</span>);</span><br><span class="line">    System.out.println(blockingQueue.size());</span><br><span class="line">    redissonClient.getDelayedQueue(blockingQueue);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; blockingQueue.size(); i++) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> blockingQueue.take();</span><br><span class="line">        System.out.println(poll);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>以上都是消息队列的<code>生产者-消费者模式</code>，而消息队列的另外一种模式<code>订阅模式</code>，redis也能实现。</p>
+<p>有两种数据结构支持。</p>
+<ul>
+<li>PubSub</li>
+<li>Stream</li>
+</ul>
+<h2 id="位图"><a href="#位图" class="headerlink" title="位图"></a>位图</h2><p>位图完全是为了节约空间而设计的，我们可以把它想象成一个巨大的List，而里面只存放<code>1/0</code>。</p>
+<p>比如记录一个用户一年的签到记录，我们可以用位图来记录，签到的就是<code>1</code>，未签到的是<code>0</code>。</p>
+<p>使用方法如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">RBitSet</span> <span class="variable">bitset</span> <span class="operator">=</span> redissonClient.getBitSet(<span class="string">&quot;bitset&quot;</span>);</span><br><span class="line">    bitset.set(<span class="number">0</span>, <span class="literal">true</span>);</span><br><span class="line">    System.out.println(bitset.get(<span class="number">0</span>));</span><br><span class="line">    System.out.println(bitset.get(<span class="number">1</span>));</span><br><span class="line">    System.out.println(bitset.incrementAndGetInteger(<span class="number">0</span>, <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="布隆过滤器"><a href="#布隆过滤器" class="headerlink" title="布隆过滤器"></a>布隆过滤器</h2><p>我们如何判断一个ID是否在我们的系统里。我们有两种基本的方法来判断：</p>
+<ul>
+<li>我们把这个ID拿到数据查询一下就知道来</li>
+<li>我们把所有的ID保存的一个Set里面，判断这个新的ID在不在这个Set里面</li>
+</ul>
+<p>但是上面两种方法有一个致命的缺陷：<br>就是在数据量特别大的时候，非常消耗性能，不管是对数据库的IO，还是保存所有的ID。</p>
+<p>这个是有个非常精妙的算法 - <code>布隆过滤器</code>。</p>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/HeAOem.png"></p>
+<p>它的原理非常简单：<br>底层是一个位图，并且有若干种Hash算法。<br>在新增ID的时候，对每一个ID做多种Hash运算，并在位图中得到若干位置，把对应的位置变成<code>1</code>。<br>而判断一个ID是否在系统中，也对这个ID做同样的Hash运算，得到若干位置，判断位图中的对应位置是否都是<code>1</code>。<br>如果都是<code>1</code>的话，表示大概率可能存在于系统中，如果有一个<code>0</code>，表示肯定不在系统中。</p>
+<p>Redisson也做了封装，使用非常方便。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    RBloomFilter&lt;String&gt; bloom = redissonClient.getBloomFilter(<span class="string">&quot;bloom&quot;</span>);</span><br><span class="line">    bloom.tryInit(<span class="number">1000</span>, <span class="number">0.1</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">        bloom.add(<span class="string">&quot;user_id_&quot;</span> + i);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">80</span>; i &lt; <span class="number">120</span>; i++) &#123;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">contains</span> <span class="operator">=</span> bloom.contains(<span class="string">&quot;user_id_&quot;</span> + i);</span><br><span class="line">        System.out.println(<span class="string">&quot;user_id_&quot;</span> + i + <span class="string">&quot;  -&gt;  &quot;</span> + contains);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="HyperLogLog"><a href="#HyperLogLog" class="headerlink" title="HyperLogLog"></a>HyperLogLog</h2><p>HyperLogLog是一个很神奇的数据结构。</p>
+<p>我们先来说两个概念： PV 和 UV。<br>PV：简单来说就是流量。只要有一次访问，不管是不是同一个人，就记一个流量。<br>UV：独立访客，单位时间内，一个新的访客，就算一个UV。</p>
+<p>在我们的统计中，PV很好统计，来一次访问，PV值就往上加1，顶多需要保持一下自增的原子性。<br>而计算UV，在互联网领域中一个是一个难题。</p>
+<p>通常来说我们计算一个网站一天的UV，我们需要把每一个访客的ID给记录下来，计算时去重。<br>这样就导致一个问题，如果访问量非常大，就非常的消耗存储空间。</p>
+<p>这个时候，HyperLogLog就能派上用场了。</p>
+<p>我们先看下代码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">compareTest</span><span class="params">()</span> &#123;</span><br><span class="line">    RHyperLogLog&lt;String&gt; today = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now());</span><br><span class="line">    HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">500</span>);</span><br><span class="line">        today.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println(<span class="string">&quot;RHyperLogLog: &quot;</span> + today.count());</span><br><span class="line">    System.out.println(<span class="string">&quot;set count: &quot;</span> + set.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里使用的Set方法，和HyperLogLog，两个做一个比较。<br>从结果可以看出，两者的差距非常小，但是HyperLogLog并没有把每一个ID都记录下来，节约了大量存储空间。</p>
+<p>HyperLogLog的原理相对复杂，具体可以参考这篇<a href="http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf">论文</a>。</p>
+<p>这里我来介绍一下它的思想：<br>假设我们有两个网站，需要比较一下他们的UV，看哪个网站的访问率高。<br>假设访问用户的ID使用手机号码表示，如：1xxxxxxxxxx<br>我们不想把每个访客的手机号码都记录下来，因为太浪费存储空间了。<br>我们可以定一个规则，我们只记录当天客户中，手机尾号为<code>0</code>位数最高的手机号码。<br>比如说，第一个网站记录下来的手机号码是：18322333000，末尾有3个0，<br>而第二的网站记录下来的手机号码是：18623000000，末尾有6个0。<br>我们就可以判断出，第二的网站的访问的人数更多。<br>大家体会一下。</p>
+<p>HyperLogLog还有一个重要的概念，就是合并。<br>我们可以把连续7天的UV，合并成这一周的UV，并保证准确性。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">mergeTest</span><span class="params">()</span> &#123;</span><br><span class="line">    RHyperLogLog&lt;String&gt; today = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now());</span><br><span class="line">    RHyperLogLog&lt;String&gt; nextDay = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now().plusDays(<span class="number">1</span>));</span><br><span class="line">    HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">1000</span>);</span><br><span class="line">        today.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">2000</span>);</span><br><span class="line">        nextDay.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    today.mergeWith(nextDay.getName());</span><br><span class="line">    System.out.println(<span class="string">&quot;RHyperLogLog: &quot;</span> + today.count());</span><br><span class="line">    System.out.println(<span class="string">&quot;set count: &quot;</span> + set.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="限流器"><a href="#限流器" class="headerlink" title="限流器"></a>限流器</h2><p>限流器在我们的生产中非常重要，也很常用。Redis也有封装好的限流器。<br>实现了分布式限流器的功能。<br>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="comment">// redisson用了zset来记录请求的信息，这样可以非常巧妙的通过比较score，也就是请求的时间戳，来判断当前请求距离上一个请求有没有超过一个令牌生产周期。</span></span><br><span class="line">    <span class="comment">// 如果超过了，则说明令牌桶中的令牌需要生产，之前用掉了多少个就生产多少个，而之前用掉了多少个令牌的信息也在zset中保存了。</span></span><br><span class="line">    <span class="type">RRateLimiter</span> <span class="variable">limiter</span> <span class="operator">=</span> redissonClient.getRateLimiter(<span class="string">&quot;limiter_1&quot;</span>);</span><br><span class="line">    <span class="comment">// 1号限流器， 每一秒 允许一个请求</span></span><br><span class="line">    limiter.trySetRate(RateType.PER_CLIENT, <span class="number">1</span>, <span class="number">1</span>, RateIntervalUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 阻塞</span></span><br><span class="line"><span class="comment">//			limiter.acquire(1);</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">result</span> <span class="operator">=</span> limiter.tryAcquire(<span class="number">1</span>, <span class="number">100</span>, TimeUnit.MILLISECONDS);</span><br><span class="line">            <span class="keyword">if</span> (!result) &#123;</span><br><span class="line">                <span class="comment">// 快速失败</span></span><br><span class="line">                System.out.println(Thread.currentThread().getName() + <span class="string">&quot; failed !&quot;</span>);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot; -&gt; &quot;</span> + LocalDateTime.now());</span><br><span class="line">            <span class="comment">// do something</span></span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">    Thread.sleep(<span class="number">12000</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Redisson真好用！</p>
+</blockquote>
+<h2 id="Geo"><a href="#Geo" class="headerlink" title="Geo"></a>Geo</h2><p>Redis也提供了Geo功能，可以很方便实现附近的人，两坐标之间的距离等功能。<br>它的原理是把经纬度坐标，做Hash，得到一个分数，用zset做存储。<br>Hash算法的原理，是把整个地球当作一个平面，并把这个平面切割成很多很多的小块，并对每个方块做编码。<br>如果两个点所在的方块越接近，表示这两个点越接近。 当然，有一点点误差。<br>使用方法如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">    RGeo&lt;Object&gt; geo = redissonClient.getGeo(<span class="string">&quot;geo&quot;</span>);</span><br><span class="line">    <span class="type">GeoEntry</span> <span class="variable">juejin</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">GeoEntry</span>(<span class="number">116.48105</span>, <span class="number">39.996794</span>, <span class="string">&quot;juejin&quot;</span>);</span><br><span class="line">    geo.add(juejin);</span><br><span class="line">    geo.add(<span class="number">116.514203</span>, <span class="number">39.905409</span>, <span class="string">&quot;ireader&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.489033</span>, <span class="number">40.007669</span>, <span class="string">&quot;meituan&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.562108</span>, <span class="number">39.787602</span>, <span class="string">&quot;jd&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.334255</span>, <span class="number">40.027400</span>, <span class="string">&quot;xiaomi&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 两点距离</span></span><br><span class="line">    System.out.println(geo.dist(<span class="string">&quot;meituan&quot;</span>, <span class="string">&quot;jd&quot;</span>, GeoUnit.METERS));</span><br><span class="line">    <span class="comment">// 坐标</span></span><br><span class="line">    System.out.println(geo.pos(<span class="string">&quot;xiaomi&quot;</span>));</span><br><span class="line">    <span class="comment">// hash</span></span><br><span class="line">    System.out.println(geo.hash(<span class="string">&quot;ireader&quot;</span>));</span><br><span class="line">    <span class="comment">// 附近</span></span><br><span class="line">    System.out.println(geo.radiusWithPositionAsync(<span class="string">&quot;jd&quot;</span>, <span class="number">20</span>, GeoUnit.KILOMETERS).get());</span><br><span class="line">    <span class="comment">// 附近</span></span><br><span class="line">    System.out.println(</span><br><span class="line">            geo.radiusWithPositionAsync(<span class="number">116.334255</span>, <span class="number">40.027400</span>, <span class="number">20</span>, GeoUnit.KILOMETERS).get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意： 在一个地图应用中，车的数据、餐馆的数据、人的数据可能会有百万千万条，<br>如果使用Redis 的 Geo 数据结构，它们将全部放在一个 zset 集合中。<br>在 Redis 的集群环境中，集合可能会从一个节点迁移到另一个节点，如果单个 key 的数据过大，会对集群的迁移工作造成较大的影响，<br>在集群环境中单个 key 对应的数据量不宜超过 1M，否则会导致集群迁移出现卡顿现象，影响线上服务的正常运行。<br>所以，这里建议 Geo 的数据使用单独的 Redis 实例部署，不使用集群环境。<br>如果数据量过亿甚至更大，就需要对 Geo 数据进行拆分，按国家拆分、按省拆分，按市拆分，在人口特大城市甚至可以按区拆分。<br>这样就可以显著降低单个 zset 集合的大小。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们一起学习了7种高级结构</p>
+<ul>
+<li>分布式锁</li>
+<li>队列</li>
+<li>位图</li>
+<li>布隆过滤器</li>
+<li>HyperLogLog</li>
+<li>限流器</li>
+<li>GeoHash<br>希望以后大家能在工作中用到。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+        <tag>redis</tag>
+        <tag>redisson</tag>
       </tags>
   </entry>
 </search>
