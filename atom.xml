@@ -172,9 +172,9 @@
     <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
     
     
-    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
-    
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
     <category term="springboot" scheme="https://github.com/CPyeah/tags/springboot/"/>
     
@@ -209,9 +209,9 @@
     <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
     
     
-    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
-    
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
   </entry>
   
