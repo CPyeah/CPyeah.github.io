@@ -6,7 +6,7 @@
   <link href="https://github.com/CPyeah/atom.xml" rel="self"/>
   
   <link href="https://github.com/CPyeah/"/>
-  <updated>2022-07-18T09:47:42.570Z</updated>
+  <updated>2022-07-18T09:56:11.104Z</updated>
   <id>https://github.com/CPyeah/</id>
   
   <author>
@@ -21,7 +21,7 @@
     <link href="https://github.com/CPyeah/2021/10/18/system_design/open_platform/"/>
     <id>https://github.com/CPyeah/2021/10/18/system_design/open_platform/</id>
     <published>2021-10-18T09:38:34.000Z</published>
-    <updated>2022-07-18T09:47:42.570Z</updated>
+    <updated>2022-07-18T09:56:11.104Z</updated>
     
     
     <summary type="html">&lt;blockquote&gt;
@@ -35,7 +35,7 @@
     
     
     
-    <category term="system_design" scheme="https://github.com/CPyeah/categories/system-design/"/>
+    <category term="系统设计" scheme="https://github.com/CPyeah/categories/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/"/>
     
     
     <category term="system_design" scheme="https://github.com/CPyeah/tags/system-design/"/>
@@ -120,6 +120,37 @@
   </entry>
   
   <entry>
+    <title>ESL - Clean the house and relax</title>
+    <link href="https://github.com/CPyeah/2021/07/18/english/clean-room/"/>
+    <id>https://github.com/CPyeah/2021/07/18/english/clean-room/</id>
+    <published>2021-07-18T02:00:51.000Z</published>
+    <updated>2022-07-18T09:56:11.109Z</updated>
+    
+    
+      
+      
+        
+        
+    <summary type="html">&lt;span</summary>
+        
+      
+    
+    
+    
+    <category term="英语学习" scheme="https://github.com/CPyeah/categories/%E8%8B%B1%E8%AF%AD%E5%AD%A6%E4%B9%A0/"/>
+    
+    
+    <category term="english" scheme="https://github.com/CPyeah/tags/english/"/>
+    
+    <category term="ESL" scheme="https://github.com/CPyeah/tags/ESL/"/>
+    
+    <category term="write" scheme="https://github.com/CPyeah/tags/write/"/>
+    
+    <category term="clean_room" scheme="https://github.com/CPyeah/tags/clean-room/"/>
+    
+  </entry>
+  
+  <entry>
     <title>十大排序算法</title>
     <link href="https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
     <id>https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</id>
@@ -183,10 +214,10 @@
     <link href="https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
     <id>https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-05-27T07:29:29.000Z</published>
-    <updated>2022-06-27T14:38:47.071Z</updated>
+    <updated>2022-07-18T09:56:11.116Z</updated>
     
     
-    <summary type="html">&lt;h1 id=&quot;ElasticSearch学习及原理浅析&quot;&gt;&lt;a href=&quot;#ElasticSearch学习及原理浅析&quot; class=&quot;headerlink&quot; title=&quot;ElasticSearch学习及原理浅析&quot;&gt;&lt;/a&gt;ElasticSearch学习及原理浅析&lt;/h1&gt;&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;这篇文章我们一起来学习一下最最流行的搜索引擎 - &lt;code&gt;ElasticSearch&lt;/code&gt;&lt;br&gt;我们将学习到：&lt;/p&gt;
+    <summary type="html">&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;这篇文章我们一起来学习一下最最流行的搜索引擎 - &lt;code&gt;ElasticSearch&lt;/code&gt;&lt;br&gt;我们将学习到：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;ES集群、节点类型、分片&lt;/li&gt;
 &lt;li&gt;服务发现机制&lt;/li&gt;
