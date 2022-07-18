@@ -1,12 +1,12 @@
 ---
-title: ESL: Clean the house and relax
+title: ESL - Clean the house and relax
 date: 2021-07-18 10:00:51
 tags: 
 - english
 - ESL
 - write
 - clean_room
-categories: english
+categories: 英语学习
 ---
 <!--more-->
 > - energetic
