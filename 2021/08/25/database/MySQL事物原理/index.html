@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-cn">
+  
+
+    <head>
+      <meta charset="utf-8" />
+       
+      <meta name="keywords" content="Java" />
+       
+      <meta name="description" content="chengpeng&#39;s blogs" />
+      
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title>MySQL事务原理 |  chengpeng&#39;s blogs</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
+
+      
+<link rel="stylesheet" href="/css/fonts/remixicon.css">
+
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.staticfile.org/pace/1.2.4/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    <link rel="alternate" href="/atom.xml" title="chengpeng's blogs" type="application/atom+xml">
+</head>
+  </html>
+</html>
+
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-database/MySQL事物原理"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  MySQL事务原理
+</h1>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/" class="article-date">
+  <time datetime="2021-08-25T01:12:24.000Z" itemprop="datePublished">2021-08-25</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%9F%A5%E8%AF%86/">知识</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">4.5k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">18 min</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>什么是事务？！</p>
+<p>一句话来说，事务是一次操作的<code>逻辑单位</code>。要不全部成功，要不全部失败。</p>
+<p>它主要是用来保证<code>数据一致性</code>的问题。</p>
+<span id="more"></span>
+
+<p>比如去银行转账的操作，原来账户的扣款，和目标账户的加款。<br>这两个操作要放在一个事务里面，要不一起成功，要不一起失败。</p>
+<p>如果在事务中间，发生问题，需要把已经执行了的操作<code>回滚</code>，以保证数据准确。</p>
+<h2 id="事务的常见命令"><a href="#事务的常见命令" class="headerlink" title="事务的常见命令"></a>事务的常见命令</h2><ul>
+<li>START TRANSACTION：开始一个事务</li>
+<li>COMMIT：事务顺利完成时，提交事务</li>
+<li>ROLLBACK：事务发生了异常，回滚</li>
+</ul>
+<p>比如我们有一张customer表，执行一下语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">start</span> transaction;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;zhangsan&#x27;</span>;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;lisi&#x27;</span>;</span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
+
+<p>再查询表，会得到：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/Prom8Z.png"><br>表示一个事务完成、提交。</p>
+<p>我们再执行下面操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">start</span> transaction;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;wangwu&#x27;</span>;</span><br><span class="line"><span class="keyword">rollback</span> ;</span><br></pre></td></tr></table></figure>
+
+<p>再查询customer表，会发现wangwu并没有被添加到表中，表中还只有两条记录。</p>
+<ul>
+<li>建立保存点：SAVEPOINT 保存点名称</li>
+<li>删除保存点：RELEASE SAVEPOINT 保存点名称</li>
+<li>回滚到特定保存点：ROLLBACK TO SAVEPOINT 保存点名称</li>
+</ul>
+<p>我们接着再执行下面点语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">start</span> transaction;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;zhao liu&#x27;</span>;</span><br><span class="line"><span class="keyword">savepoint</span> my_point;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;qian qi&#x27;</span>;</span><br><span class="line"><span class="keyword">rollback</span> <span class="keyword">to</span> <span class="keyword">savepoint</span> my_point;</span><br></pre></td></tr></table></figure>
+
+<p>我们查询到到结果是：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/gIvWTx.png"><br><code>zhao liu</code> 成功入库了，而 <code>qian qi</code> 被回滚掉了。</p>
+<p><code>savepoint</code> 保存点，可以让我们实现部分回滚。</p>
+<h2 id="Transaction-四大特性：-ACID"><a href="#Transaction-四大特性：-ACID" class="headerlink" title="Transaction 四大特性： ACID"></a>Transaction 四大特性： ACID</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/NfuAJQ.png"></p>
+<p>一个事务有下列四个重要到特性，简称ACID</p>
+<ul>
+<li>A：Atomicity 原子性。 事务里面到操作，不可分割，要不一起成功，要不一起失败。</li>
+<li>C：Consistency 一致性。在事务的前后，系统的整体数据保持一致。比如说银行转账。</li>
+<li>I：Isolation 隔离性。 事务之间，相互隔离，互不干扰。</li>
+<li>D：Durability 永久性。 一旦数据修改完成，永久有效。</li>
+</ul>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/9qUodw.png"><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/xJ1VeA.png"><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/jez6I1.png"><br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/vXbP4p.png"></p>
+<h2 id="事务隔离级别"><a href="#事务隔离级别" class="headerlink" title="事务隔离级别"></a>事务隔离级别</h2><p>介绍完了ACID，我们再来重点说说ACID其中的I(Isolation)。</p>
+<p>我们都知道，事务之间是隔离的<br>但是如何处理多个事务之间操作和读取同一个数据的结果，<br>我们需要仔细考虑。</p>
+<p>事务隔离级别是在多个事务同时进行更改和执行查询时，<br>调整<code>性能</code>和结果的<code>可靠性</code>、<code>一致性</code>和<code>可再现性</code>之间的平衡的设置。</p>
+<p>MySQL（InnoDB）提供四种事务隔离级别：</p>
+<ul>
+<li>read uncommitted 读未提交</li>
+<li>read committed   读已提交</li>
+<li>repeatable read  可重复读（MySQL默认隔离级别）</li>
+<li>serializable     串行</li>
+</ul>
+<p>我们可以参考<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html">官方文档</a></p>
+<h3 id="事务隔离级别的设置"><a href="#事务隔离级别的设置" class="headerlink" title="事务隔离级别的设置"></a>事务隔离级别的设置</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 设置全局的事务隔离级别</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> TRANSACTION LEVEL [REPEATABLE READ <span class="operator">|</span> READ COMMITTED <span class="operator">|</span> READ UNCOMMITTED <span class="operator">|</span> SERIALIZABLE];</span><br><span class="line"># 设置当前Session的隔离级别</span><br><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL [REPEATABLE READ <span class="operator">|</span> READ COMMITTED <span class="operator">|</span> READ UNCOMMITTED <span class="operator">|</span> SERIALIZABLE];</span><br><span class="line"># 查看当前事务隔离级别</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
+
+<p>我们先做一下前置的准备，<br>开启两个Session，<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/Lf8Nzf.png"></p>
+<p>并查看一下当前的事务隔离级别<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/3zaxpJ.png"></p>
+<p>接下来，我们一个一个看：</p>
+<h3 id="未提交读（READ-UNCOMMITTED）"><a href="#未提交读（READ-UNCOMMITTED）" class="headerlink" title="未提交读（READ UNCOMMITTED）"></a>未提交读（READ UNCOMMITTED）</h3><p>未提交读，指的就是一个事务读到了另外一个事务未提交的数据。</p>
+<p>这样会导致脏读。</p>
+<p>我们来实验一下：</p>
+<p>我们先设置两个Session的隔离级别：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;</span><br></pre></td></tr></table></figure>
+
+<p>查看下：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/WNJBVz.png"></p>
+<p>我们现在数据库当中有两条数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/trxTdG.png"></p>
+<p>我们在Session A中开启一个事务，并修改一条记录，但是不提交。</p>
+<p>再在Session B 中查询，看会得到怎样的结果。</p>
+<p>我们现在Session A 中执行以下操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事务</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;zhangsan2&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>我们在Session B 中看下结果：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"># <span class="number">3</span>、查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>此时Session A中的事务还没有提交，也就是说有回滚的可能。<br>但在Session B中查看数据， 客户名称已经从 <code>zhangsan</code> 变成了 <code>zhangsan2</code>。</p>
+<p>如果Session A再进行了回滚，rollback。 这样Session B就读出了一个不存在的数据，就是脏读。</p>
+<p>这是非常不安全的一种隔离级别。</p>
+<h3 id="已提交读（READ-COMMITTED）"><a href="#已提交读（READ-COMMITTED）" class="headerlink" title="已提交读（READ COMMITTED）"></a>已提交读（READ COMMITTED）</h3><p>已提交读，就是读到的数据都是另外的事务已经提交过了的数据。<br>可以解决脏读的问题。</p>
+<p>我们先修改下事务隔离级别：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/5fAmh8.png"></p>
+<p>我们在SessionA中修改数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事务</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在Session B 中查看数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"># <span class="number">3</span>、查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/YMiybO.png"><br>我们可以看到，客户名称还是<code>zhangsan</code>，没有变成<code>张飞</code>。</p>
+<p>我们这个时候再把Session A中的事务提交</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"># <span class="number">1</span>、开启事务</span><br><span class="line"># <span class="keyword">start</span> transaction ;</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据</span><br><span class="line"># <span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、提交事务</span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
+
+<p>再次在Session B 中查看数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"># <span class="number">3</span>、查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/wY9JUG.png"><br>我们可以看到，客户名称已经变成了 <code>张飞</code>。</p>
+<p>如果session A的事务回滚的话，我们在Session B中看到的结果还会是 <code>zhangsan</code><br>这样，我们就成功解决了脏读的问题了。</p>
+<p>但是如果我们在同一个事务中，读取数据，可能会查询到不同的结果。<br>我们按照数字的顺序，执行以下SQL：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 张飞</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 关羽</span></span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;关羽&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;刘备&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到，Session B 在同一个事务中，同样的查询语句，得出的结果是不一样的。<br>这种现象我们称之为<code>不可重复读</code>。</p>
+<h3 id="可重复读（REPEATABLE-READ）"><a href="#可重复读（REPEATABLE-READ）" class="headerlink" title="可重复读（REPEATABLE READ）"></a>可重复读（REPEATABLE READ）</h3><p>有些场景，我们需要在一个事务中，查询到到数据保持一致，不管外部事务如何改变。</p>
+<p>这个时候，就需要我们满足<code>可重复读</code>。</p>
+<p>我们直接看效果：</p>
+<p>首先修改事务隔离级别：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"><span class="keyword">SELECT</span> @<span class="variable">@transaction</span>_ISOLATION;</span><br></pre></td></tr></table></figure>
+
+<p>再按照下列SQL的顺序，执行：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">5</span>、再次查看数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 刘备</span></span><br><span class="line"></span><br><span class="line"># <span class="number">6</span>、提交当前事务，在查看数据</span><br><span class="line"><span class="keyword">commit</span> ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- 张飞</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;关羽&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"># <span class="number">4</span>、修改数据（自动提交事务）</span><br><span class="line"><span class="keyword">update</span> customer <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;张飞&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到，在Session B 中，每一次查询的结果都是一样的，<br>不管实际的数据怎样的变化，即使数据已经被SessionA所改变，且已提交。</p>
+<p>但是这种隔离级别同样有这自己缺陷，它会发生幻读。</p>
+<p>我们看下面的场景：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"># session B</span><br><span class="line"></span><br><span class="line"># <span class="number">1</span>、开启事务，并查看数据</span><br><span class="line"><span class="keyword">start</span> transaction ;</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span>; <span class="comment">-- null</span></span><br><span class="line"></span><br><span class="line"># <span class="number">3</span>、插入指定ID的数据</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span>; <span class="comment">-- null</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">values</span> (<span class="number">10</span>, <span class="string">&#x27;吕布&#x27;</span>); <span class="comment">-- 失败</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">commit</span> ;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># session A</span><br><span class="line"></span><br><span class="line"># <span class="number">2</span>、插入数据</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> customer <span class="keyword">values</span> (<span class="number">10</span>, <span class="string">&#x27;小吕布&#x27;</span>); <span class="comment">-- 成功</span></span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到，SessionB在一个事务中，想要插入一条ID为10的用户。<br>重要的是，要第一步查询，已经确定了ID为10的用户并不存在。</p>
+<p>但是在事务的过程中，Session A 插入了一条ID为10的客户，并成功提交事务。</p>
+<p>等再回到Session B， 再想插入一条ID为10的客户，就报错了<code>Duplicate entry &#39;10&#39; for key &#39;customer.PRIMARY&#39;</code>。</p>
+<p>其实，在Session B的操作中，逻辑都是没问题的。但是还是发生了幻读，导致了系统异常。</p>
+<p>解决办法是，在Session B中，我们这样写select语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> customer <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">10</span> <span class="keyword">for</span> <span class="keyword">update</span> ;</span><br></pre></td></tr></table></figure>
+
+<p>在 select 语句后面， 添加一个<code>for update</code>，可以把<code>ID=10</code>给加上一个锁，<br>SessionA， 再想干扰，添加数据的时候，就会拿不到锁，而只能等待SessionB的事务完成，并释放锁。</p>
+<p>所以保证了SessionB的原子性，杜绝的幻读。</p>
+<h3 id="串行化（SERIALIZABLE）"><a href="#串行化（SERIALIZABLE）" class="headerlink" title="串行化（SERIALIZABLE）"></a>串行化（SERIALIZABLE）</h3><p>串行化，这种隔离级别，可以杜绝所有的干扰，包括（脏读、不可重复读、幻读）。</p>
+<p>在此级别下，我们便不需要对 SELECT 操作显式加锁，InnoDB会自动加锁，事务安全，但性能很低。</p>
+<p>非常不推荐使用。</p>
+<h2 id="InnoDB的事务实现（MVCC）"><a href="#InnoDB的事务实现（MVCC）" class="headerlink" title="InnoDB的事务实现（MVCC）"></a>InnoDB的事务实现（MVCC）</h2><p>MVCC，多版本并发控制。<br>顾名思义，他会记录数据变更的版本（像git一样），形成一个版本链。</p>
+<p>在通过对这个版本链中不同版本的处理，来实现事务，和事务隔离级别。</p>
+<h3 id="版本链"><a href="#版本链" class="headerlink" title="版本链"></a>版本链</h3><p>在数据库行数据的结构中，除了我们存储的字段外，还有两个必不可少的隐藏字段：</p>
+<p>当前事务ID(<code>trx_id)</code> 和 上个版本数据的引用(<code>roll_pointer</code>)。</p>
+<p>直接上代码，我们用Java来模拟MVCC。</p>
+<p>完整代码，请查看<a href="https://github.com/CPyeah/java-projets/tree/master/java-mvcc/src/main/java">这里</a></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.concurrent.locks.ReentrantLock;</span><br><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Row</span>&lt;T&gt; &#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 当前操作的事务id</span></span><br><span class="line">	<span class="keyword">private</span> Integer trx_id;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 历史记录的地址</span></span><br><span class="line">	<span class="keyword">private</span> Row&lt;T&gt; roll_pointer;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 主键ID</span></span><br><span class="line">	<span class="keyword">private</span> Integer primaryId;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 其他数据</span></span><br><span class="line">	<span class="keyword">private</span> T otherData;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 行锁</span></span><br><span class="line">	<span class="keyword">private</span> ReentrantLock rowLock;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>我们可以通过roll_pointer来找到所有的历史版本，可以实现回滚操作，也可以选择指定的版本来展示。</p>
+<p>我们再看一下事务操作的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.LinkedList;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.atomic.AtomicInteger;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 事务控制</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TransactionController</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 当前活跃的事务列表</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> List&lt;Integer&gt; m_ids = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 全局事务ID</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">globeTransactionID</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">100</span>);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 获取事务ID</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Integer <span class="title function_">getNextTransactionId</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> globeTransactionID.getAndAdd(<span class="number">100</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新数据，加行锁</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; T <span class="title function_">update</span><span class="params">(Row&lt;T&gt; newRow, Transaction transaction,</span></span><br><span class="line"><span class="params">			HashMap&lt;Integer, Row&lt;T&gt;&gt; tableData)</span> &#123;</span><br><span class="line">		<span class="type">Integer</span> <span class="variable">primaryId</span> <span class="operator">=</span> newRow.getPrimaryId();</span><br><span class="line">		Row&lt;T&gt; oldRow = tableData.get(primaryId);</span><br><span class="line">		<span class="keyword">if</span> (oldRow == <span class="literal">null</span>) &#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;Data does not exist&quot;</span>);</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			newRow.setTrx_id(transaction.getTransactionId());</span><br><span class="line">			newRow.setRoll_pointer(oldRow); <span class="comment">// 更新版本链</span></span><br><span class="line">			tableData.put(primaryId, newRow);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> newRow.getOtherData();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 开启一个事务</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Transaction <span class="title function_">start</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="type">Integer</span> <span class="variable">transactionId</span> <span class="operator">=</span> getNextTransactionId();</span><br><span class="line"></span><br><span class="line">		<span class="type">Transaction</span> <span class="variable">transaction</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Transaction</span>();</span><br><span class="line">		transaction.setTransactionId(transactionId);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 把当前的事务ID，存放到活跃事务列表中</span></span><br><span class="line">		m_ids.add(transactionId);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> transaction;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 事务提交</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">commit</span><span class="params">(Transaction transaction)</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> (transaction.getLock() != <span class="literal">null</span>) &#123;</span><br><span class="line">			transaction.getLock().unlock();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 在活跃事务列表中，移除事务ID</span></span><br><span class="line">		m_ids.remove(transaction.getTransactionId());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>其中几个关键点：</p>
+<ul>
+<li>全局事务ID ： 全局唯一，递增</li>
+<li>当前活跃的事务列表： 这里维护所有的未提交的事务的ID，</li>
+<li>开启一个事务： 生成一个事务ID，并把这个事务，维护到活跃事务列表中</li>
+<li>更新数据： 新数据赋予事务ID，新数据可以引用到上个版本的老数据，加行锁</li>
+<li>提交事务： 解锁，把活跃事务列表中的删除当前事务</li>
+</ul>
+<p>我们接下来看下事务是怎么运转的：</p>
+<p>我们设计一个这样的测试：</p>
+<p>完整代码请看<a href="https://github.com/CPyeah/java-projets/tree/master/java-mvcc/src/test/java">这里</a></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.BeforeAll;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TransactionControllerTest</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@BeforeAll</span></span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">setup</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">		Row&lt;Customer&gt; row = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;刘备&quot;</span>);</span><br><span class="line"></span><br><span class="line">		Customer.tableData.put(row.getPrimaryId(), row);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test1</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 开启事务A</span></span><br><span class="line">		<span class="type">Transaction</span> <span class="variable">transaction_A</span> <span class="operator">=</span> TransactionController.start();</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 开启事务B</span></span><br><span class="line">		<span class="type">Transaction</span> <span class="variable">transaction_B</span> <span class="operator">=</span> TransactionController.start();</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">		Row&lt;Customer&gt; 关羽 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;关羽&quot;</span>);</span><br><span class="line">		TransactionController.update(关羽, transaction_A, Customer.tableData);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">		Row&lt;Customer&gt; 张飞 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;张飞&quot;</span>);</span><br><span class="line">		TransactionController.update(张飞, transaction_A, Customer.tableData);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 事务A提交，并释放锁</span></span><br><span class="line">		TransactionController.commit(transaction_A);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">		Row&lt;Customer&gt; 赵云 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;赵云&quot;</span>);</span><br><span class="line">		TransactionController.update(赵云, transaction_B, Customer.tableData);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">		Row&lt;Customer&gt; 诸葛亮 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;诸葛亮&quot;</span>);</span><br><span class="line">		TransactionController.update(诸葛亮, transaction_B, Customer.tableData);</span><br><span class="line"></span><br><span class="line">		<span class="comment">//commit</span></span><br><span class="line">		TransactionController.commit(transaction_B);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 打印undo日志链表</span></span><br><span class="line">		printData(Customer.tableData.get(<span class="number">1</span>));</span><br><span class="line">		<span class="comment">// 1-诸葛亮(200) -&gt; 1-赵云(200) -&gt; 1-张飞(100) -&gt; 1-关羽(100) -&gt; 1-刘备(null)</span></span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">printData</span><span class="params">(Row&lt;Customer&gt; customerRow)</span> &#123;</span><br><span class="line">		<span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>(toString(customerRow));</span><br><span class="line"></span><br><span class="line">		Row&lt;Customer&gt; currentPointer = customerRow;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">while</span> (currentPointer.getRoll_pointer() != <span class="literal">null</span>) &#123;</span><br><span class="line">			currentPointer = currentPointer.getRoll_pointer();</span><br><span class="line">			sb.append(<span class="string">&quot; -&gt; &quot;</span>)</span><br><span class="line">					.append(toString(currentPointer));</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println(sb);</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> String <span class="title function_">toString</span><span class="params">(Row&lt;Customer&gt; customerRow)</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> customerRow.getPrimaryId() + <span class="string">&quot;-&quot;</span> + customerRow.getOtherData().getName()</span><br><span class="line">				+ <span class="string">&quot;(&quot;</span></span><br><span class="line">				+ customerRow.getTrx_id()</span><br><span class="line">				+ <span class="string">&quot;)&quot;</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> Row&lt;Customer&gt; <span class="title function_">getCustomerRow</span><span class="params">(Integer id, String name)</span> &#123;</span><br><span class="line">		<span class="type">Customer</span> <span class="variable">customer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Customer</span>();</span><br><span class="line">		customer.setId(id);</span><br><span class="line">		customer.setName(name);</span><br><span class="line"></span><br><span class="line">		Row&lt;Customer&gt; row = <span class="keyword">new</span> <span class="title class_">Row</span>&lt;&gt;();</span><br><span class="line">		row.setPrimaryId(customer.getId());</span><br><span class="line">		row.setOtherData(customer);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> row;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中使用<code>Customer.tableData</code>来模拟存储数据。</p>
+<p>在<code>test1</code>中，我们开启了两个事务，并执行了<code>update</code>操作，最总形成了一个版本链：</p>
+<p>效果如图所示：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/O2WJFy.png"></p>
+<blockquote>
+<p>两个事务不能交叉修改同一个数据，因为在<code>Transaction_A</code>第一次执行<code>update</code>操作的时候，<br>就给这个数据加上了行锁，<code>Transaction_B</code>必须等到<code>Transaction_A</code>提交，释放了锁，<br>才可以进行<code>Transaction_B</code>的<code>update</code>操作。</p>
+</blockquote>
+<p>得到的数据<code>版本链</code>效果如下：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/cfz3Lp.png"></p>
+<h3 id="隔离级别的实现"><a href="#隔离级别的实现" class="headerlink" title="隔离级别的实现"></a>隔离级别的实现</h3><p>我们知道有四大隔离级别，我们来看下它们是怎样实现的。</p>
+<h4 id="SERIALIZABLE"><a href="#SERIALIZABLE" class="headerlink" title="SERIALIZABLE"></a>SERIALIZABLE</h4><p>串行化，这种级别下，不管是更新，还是查询，它都会加锁，<br>所以每次查询的数据，肯定是事务已经提交后的数据，<br>而每次更新数据的过程中，数据不会再发生变化。<br>不管是查询，还是更新数据的过程中，版本链都不会更新。</p>
+<h4 id="READ-UNCOMMITTED"><a href="#READ-UNCOMMITTED" class="headerlink" title="READ UNCOMMITTED"></a>READ UNCOMMITTED</h4><p>读未提交，它的实现也很简单，每次查看数据的时候，都读取版本链中最新的数据，不管操作这个数据的事务有没有提交。</p>
+<h4 id="READ-COMMITTED"><a href="#READ-COMMITTED" class="headerlink" title="READ COMMITTED"></a>READ COMMITTED</h4><p>读已提交，<br>他会在每次查询的时候，都会生成一个<code>ReadView</code>，<br>它会拿到版本链，会从版本链从上往下搜索，<br>找到已经提交了的，最新的一个版本的数据。</p>
+<h4 id="REPEATABLE-READ"><a href="#REPEATABLE-READ" class="headerlink" title="REPEATABLE READ"></a>REPEATABLE READ</h4><p>可重复读<br>它会在当前的事务中，第一次查询的时候，生成一个<code>ReadView</code>，<br>也是从版本链中搜索，找到最新一个已经提交了的事务，<br>但是不同于读已提交的是，这个ReadView只生成一次，<br>以后的每次查询，都会查看这同一个ReadView。<br>从而保证<code>可重复读</code>。</p>
+<h3 id="ReadView获取"><a href="#ReadView获取" class="headerlink" title="ReadView获取"></a>ReadView获取</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取到ReadView</span></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; Row&lt;T&gt; <span class="title function_">readView</span><span class="params">(Row&lt;T&gt; chain)</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> (chain == <span class="literal">null</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (m_ids.isEmpty()) &#123;</span><br><span class="line">		<span class="keyword">return</span> chain;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 该值代表生成readView时m_ids中的最小值</span></span><br><span class="line">	<span class="type">Integer</span> <span class="variable">min_trx_id</span> <span class="operator">=</span> m_ids.get(<span class="number">0</span>);</span><br><span class="line">	<span class="keyword">for</span> (Integer id : m_ids) &#123;</span><br><span class="line">		min_trx_id = Math.min(min_trx_id, id);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 该值代表生成readView时系统中应该分配给下一个事务的id值</span></span><br><span class="line">	<span class="type">Integer</span> <span class="variable">max_trx_id</span> <span class="operator">=</span> getNextTransactionId();</span><br><span class="line"></span><br><span class="line">	Row&lt;T&gt; pointer = chain;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span> (isThisReadView(pointer, min_trx_id, max_trx_id)) &#123;</span><br><span class="line">			<span class="keyword">return</span> pointer;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (pointer.getRoll_pointer() != <span class="literal">null</span>) &#123;</span><br><span class="line">			pointer = pointer.getRoll_pointer();</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 判断是否此版本为ReadView</span></span><br><span class="line"><span class="keyword">private</span> &lt;T&gt; <span class="type">boolean</span> <span class="title function_">isThisReadView</span><span class="params">(Row&lt;T&gt; pointer,</span></span><br><span class="line"><span class="params">		Integer min,</span></span><br><span class="line"><span class="params">		Integer max)</span> &#123;</span><br><span class="line">	<span class="comment">// 如果被访问版本的trx_id属性值小于m_ids列表中最小的事务id，</span></span><br><span class="line">	<span class="comment">// 表明生成该版本的事务在生成ReadView前已经提交，</span></span><br><span class="line">	<span class="comment">// 所以该版本可以被当前事务访问。</span></span><br><span class="line">	<span class="keyword">if</span> (pointer.getTrx_id() &lt; min) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果被访问版本的trx_id属性值大于m_ids列表中最大的事务id，</span></span><br><span class="line">	<span class="comment">// 表明生成该版本的事务在生成ReadView后才生成，</span></span><br><span class="line">	<span class="comment">// 所以该版本不可以被当前事务访问。</span></span><br><span class="line">	<span class="keyword">if</span> (pointer.getTrx_id() &gt; max) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果被访问版本的trx_id属性值在m_ids列表中最大的事务id和最小事务id之间，</span></span><br><span class="line">	<span class="comment">// 那就需要判断一下trx_id属性值是不是在m_ids列表中，</span></span><br><span class="line">	<span class="comment">// 如果在，说明创建ReadView时生成该版本的事务还是活跃的，该版本不可以被访问；</span></span><br><span class="line">	<span class="comment">// 如果不在，说明创建ReadView时生成该版本的事务已经被提交，该版本可以被访问。</span></span><br><span class="line">	<span class="keyword">if</span> (m_ids.contains(pointer.getTrx_id())) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>我们在test1中，加上查看readView的效果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test1</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 开启事务A</span></span><br><span class="line">	<span class="type">Transaction</span> <span class="variable">transaction_A</span> <span class="operator">=</span> TransactionController.start();</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 开启事务B</span></span><br><span class="line">	<span class="type">Transaction</span> <span class="variable">transaction_B</span> <span class="operator">=</span> TransactionController.start();</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">	Row&lt;Customer&gt; 关羽 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;关羽&quot;</span>);</span><br><span class="line">	TransactionController.update(关羽, transaction_A, Customer.tableData);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查看readView</span></span><br><span class="line">	Row&lt;Customer&gt; readView = TransactionController.readView(Customer.tableData.get(<span class="number">1</span>));</span><br><span class="line">	System.out.println(toString(readView));<span class="comment">// 1-刘备(0)</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">	Row&lt;Customer&gt; 张飞 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;张飞&quot;</span>);</span><br><span class="line">	TransactionController.update(张飞, transaction_A, Customer.tableData);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 事务A提交，并释放锁</span></span><br><span class="line">	TransactionController.commit(transaction_A);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查看readView</span></span><br><span class="line">	readView = TransactionController.readView(Customer.tableData.get(<span class="number">1</span>));</span><br><span class="line">	System.out.println(toString(readView));<span class="comment">// 1-张飞(100)</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">	Row&lt;Customer&gt; 赵云 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;赵云&quot;</span>);</span><br><span class="line">	TransactionController.update(赵云, transaction_B, Customer.tableData);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查看readView</span></span><br><span class="line">	readView = TransactionController.readView(Customer.tableData.get(<span class="number">1</span>));</span><br><span class="line">	System.out.println(toString(readView)); <span class="comment">//1-张飞(100)</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新数据，同时会加上行锁</span></span><br><span class="line">	Row&lt;Customer&gt; 诸葛亮 = getCustomerRow(<span class="number">1</span>, <span class="string">&quot;诸葛亮&quot;</span>);</span><br><span class="line">	TransactionController.update(诸葛亮, transaction_B, Customer.tableData);</span><br><span class="line"></span><br><span class="line">	<span class="comment">//commit</span></span><br><span class="line">	TransactionController.commit(transaction_B);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查看readView</span></span><br><span class="line">	readView = TransactionController.readView(Customer.tableData.get(<span class="number">1</span>));</span><br><span class="line">	System.out.println(toString(readView)); <span class="comment">// 1-诸葛亮(200)</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 打印undo日志链表</span></span><br><span class="line">	printData(Customer.tableData.get(<span class="number">1</span>));</span><br><span class="line">	<span class="comment">// 1-诸葛亮(200) -&gt; 1-赵云(200) -&gt; 1-张飞(100) -&gt; 1-关羽(100) -&gt; 1-刘备(null)</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>完整代码请查看<a href="https://github.com/CPyeah/java-projets/blob/master/java-mvcc/src/test/java/TransactionControllerTest.java">这里</a></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，我们已经学习了MySQL事务到相关知识。</p>
+<ul>
+<li>我们了解到了事务到概念</li>
+<li>学习了事务的常见用法</li>
+<li>了解了事务的四大特性 ACID</li>
+<li>并重点说了事务的隔离特定</li>
+<li>实践了不同事务隔离级别下的效果</li>
+<li>使用Java代码模拟了MVCC的实现</li>
+<li>并通过MVCC，掌握事务隔离级别的实现原理</li>
+</ul>
+<p>本篇文章，希望大家好好掌握。😊</p>
+ 
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>Copyright： </strong>
+          
+          Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/mysql/" rel="tag">mysql</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+      <a href="/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            MySQL调优
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">MySQL学习及原理浅析</div>
+      </a>
+    
+  </nav>
+
+  
+   
+    
+    <script src="https://cdn.staticfile.org/twikoo/1.4.18/twikoo.all.min.js"></script>
+    <div id="twikoo" class="twikoo"></div>
+    <script>
+        twikoo.init({
+            envId: ""
+        })
+    </script>
+ 
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020-2022
+        <i class="ri-heart-fill heart_icon"></i> chengpeng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></span>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+    </div>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="chengpeng&#39;s blogs"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+ 
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: ".tocbot",
+    contentSelector: ".article-entry",
+    headingSelector: "h1, h2, h3, h4, h5, h6",
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: "main",
+    positionFixedSelector: ".tocbot",
+    positionFixedClass: "is-position-fixed",
+    fixedSidebarOffset: "auto",
+  });
+</script>
+
+<script src="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.staticfile.org/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/default-skin/default-skin.min.css">
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.js"></script>
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+ 
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+ 
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.staticfile.org/clipboard.js/2.0.10/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
+
+
+    
+    
+
+  </div>
+</body>
+
+</html>

@@ -6,7 +6,7 @@
   <link href="https://github.com/CPyeah/atom.xml" rel="self"/>
   
   <link href="https://github.com/CPyeah/"/>
-  <updated>2022-07-18T02:02:19.109Z</updated>
+  <updated>2022-07-18T09:47:42.570Z</updated>
   <id>https://github.com/CPyeah/</id>
   
   <author>
@@ -17,43 +17,37 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>clean_room</title>
-    <link href="https://github.com/CPyeah/2022/07/18/english/clean-room/"/>
-    <id>https://github.com/CPyeah/2022/07/18/english/clean-room/</id>
-    <published>2022-07-18T02:00:51.000Z</published>
-    <updated>2022-07-18T02:02:19.109Z</updated>
+    <title>SystemDesign:开放平台</title>
+    <link href="https://github.com/CPyeah/2021/10/18/system_design/open_platform/"/>
+    <id>https://github.com/CPyeah/2021/10/18/system_design/open_platform/</id>
+    <published>2021-10-18T09:38:34.000Z</published>
+    <updated>2022-07-18T09:47:42.570Z</updated>
     
     
-      
-      
-        
-        
     <summary type="html">&lt;blockquote&gt;
-&lt;p&gt;ESL&lt;/p&gt;
-&lt;/blockquote&gt;
-</summary>
-        
-      
+&lt;ul&gt;
+&lt;li&gt;客户端注册管理&lt;/li&gt;
+&lt;li&gt;客户端权限验证&lt;/li&gt;
+&lt;li&gt;客户端调用内部接口&lt;/li&gt;
+&lt;li&gt;消息接收&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;</summary>
     
     
     
-    <category term="english" scheme="https://github.com/CPyeah/categories/english/"/>
+    <category term="system_design" scheme="https://github.com/CPyeah/categories/system-design/"/>
     
     
-    <category term="english" scheme="https://github.com/CPyeah/tags/english/"/>
+    <category term="system_design" scheme="https://github.com/CPyeah/tags/system-design/"/>
     
-    <category term="ESL" scheme="https://github.com/CPyeah/tags/ESL/"/>
-    
-    <category term="write" scheme="https://github.com/CPyeah/tags/write/"/>
-    
-    <category term="clean_room" scheme="https://github.com/CPyeah/tags/clean-room/"/>
+    <category term="open_platform" scheme="https://github.com/CPyeah/tags/open-platform/"/>
     
   </entry>
   
   <entry>
     <title>MySQL调优</title>
-    <link href="https://github.com/CPyeah/2021/09/11/MySQL%E8%B0%83%E4%BC%98/"/>
-    <id>https://github.com/CPyeah/2021/09/11/MySQL%E8%B0%83%E4%BC%98/</id>
+    <link href="https://github.com/CPyeah/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/"/>
+    <id>https://github.com/CPyeah/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/</id>
     <published>2021-09-11T05:47:39.000Z</published>
     <updated>2022-07-11T09:37:50.848Z</updated>
     
@@ -79,8 +73,8 @@
   
   <entry>
     <title>MySQL事务原理</title>
-    <link href="https://github.com/CPyeah/2021/08/25/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/"/>
-    <id>https://github.com/CPyeah/2021/08/25/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/</id>
+    <link href="https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/"/>
+    <id>https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/</id>
     <published>2021-08-25T01:12:24.000Z</published>
     <updated>2022-06-27T14:38:47.073Z</updated>
     
@@ -100,8 +94,8 @@
   
   <entry>
     <title>MySQL学习及原理浅析</title>
-    <link href="https://github.com/CPyeah/2021/08/13/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
-    <id>https://github.com/CPyeah/2021/08/13/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
+    <link href="https://github.com/CPyeah/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
+    <id>https://github.com/CPyeah/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-08-13T03:06:53.000Z</published>
     <updated>2022-06-27T14:38:47.073Z</updated>
     
@@ -127,8 +121,8 @@
   
   <entry>
     <title>十大排序算法</title>
-    <link href="https://github.com/CPyeah/2021/07/06/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
-    <id>https://github.com/CPyeah/2021/07/06/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</id>
+    <link href="https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
+    <id>https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</id>
     <published>2021-07-06T01:52:41.000Z</published>
     <updated>2022-06-27T14:38:47.179Z</updated>
     
@@ -153,8 +147,8 @@
   
   <entry>
     <title>Java操作ElasticSearch</title>
-    <link href="https://github.com/CPyeah/2021/06/11/Java%E6%93%8D%E4%BD%9CElasticSearch/"/>
-    <id>https://github.com/CPyeah/2021/06/11/Java%E6%93%8D%E4%BD%9CElasticSearch/</id>
+    <link href="https://github.com/CPyeah/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/"/>
+    <id>https://github.com/CPyeah/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/</id>
     <published>2021-06-11T05:44:15.000Z</published>
     <updated>2022-06-27T14:38:47.072Z</updated>
     
@@ -172,9 +166,9 @@
     <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
     
     
-    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
-    
     <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
     <category term="springboot" scheme="https://github.com/CPyeah/tags/springboot/"/>
     
@@ -186,8 +180,8 @@
   
   <entry>
     <title>ElasticSearch学习及原理浅析</title>
-    <link href="https://github.com/CPyeah/2021/05/27/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
-    <id>https://github.com/CPyeah/2021/05/27/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
+    <link href="https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
+    <id>https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-05-27T07:29:29.000Z</published>
     <updated>2022-06-27T14:38:47.071Z</updated>
     
@@ -209,16 +203,16 @@
     <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
     
     
-    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
-    
     <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
   </entry>
   
   <entry>
     <title>Redis高级数据结构</title>
-    <link href="https://github.com/CPyeah/2021/04/26/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
-    <id>https://github.com/CPyeah/2021/04/26/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</id>
+    <link href="https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    <id>https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</id>
     <published>2021-04-26T07:15:43.000Z</published>
     <updated>2022-06-27T14:38:47.074Z</updated>
     
@@ -250,8 +244,8 @@
   
   <entry>
     <title>Java操作Redis</title>
-    <link href="https://github.com/CPyeah/2021/03/25/Java%E6%93%8D%E4%BD%9CRedis/"/>
-    <id>https://github.com/CPyeah/2021/03/25/Java%E6%93%8D%E4%BD%9CRedis/</id>
+    <link href="https://github.com/CPyeah/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/"/>
+    <id>https://github.com/CPyeah/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/</id>
     <published>2021-03-25T02:18:43.000Z</published>
     <updated>2022-06-27T14:38:47.072Z</updated>
     

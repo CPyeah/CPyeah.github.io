@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-cn">
+  
+
+    <head>
+      <meta charset="utf-8" />
+       
+      <meta name="keywords" content="Java" />
+       
+      <meta name="description" content="chengpeng&#39;s blogs" />
+      
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title>Redis高级数据结构 |  chengpeng&#39;s blogs</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
+
+      
+<link rel="stylesheet" href="/css/fonts/remixicon.css">
+
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.staticfile.org/pace/1.2.4/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    <link rel="alternate" href="/atom.xml" title="chengpeng's blogs" type="application/atom+xml">
+</head>
+  </html>
+</html>
+
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-database/Redis高级数据结构"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  Redis高级数据结构
+</h1>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" class="article-date">
+  <time datetime="2021-04-26T07:15:43.000Z" itemprop="datePublished">2021-04-26</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">2.7k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">11 min</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这篇文章介绍一下高级Redis数据结构，及其用法。</p>
+<p>在工作的使用频率很高。</p>
+<ul>
+<li>分布式锁</li>
+<li>队列</li>
+<li>位图</li>
+<li>布隆过滤器</li>
+<li>HyperLogLog</li>
+<li>限流器</li>
+<li>GeoHash</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h2><p>大家都知道，线程安全在我们的系统当中，非常重要。<br>如果多个线程同时操作一笔订单，很可能造成数据不一致。</p>
+<p>而在分布式系统中，<code>synchronized</code>就排不上用场了，需要使用分布式锁来解决线程安全的问题。</p>
+<p>而使用redis就是一个很好的选择。</p>
+<p>使用<code>Redisson</code>封装的分布式锁，非常简单，功能也相当强大。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lockTest</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="type">RLock</span> <span class="variable">lock</span> <span class="operator">=</span> redisson.getLock(<span class="string">&quot;my-lock&quot;</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="comment">// do somethings</span></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>除了基础的分布式锁，Redisson还提供了：</p>
+<ul>
+<li>可重入锁</li>
+<li>公平锁</li>
+<li>自旋锁</li>
+<li>读写锁</li>
+<li>锁超时时间</li>
+<li>获取锁的时间限制</li>
+</ul>
+<p>功能强大且使用方便，具体参考<a href="https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers">官方文档</a>。</p>
+<h2 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h2><p>队列是我们一种常用的数据结构。也有很多专业的中间件来实现。比如：Kafka，RabbitMQ，RocketMQ。。。<br>而redis也支持消息队列，而且功能还不少。有：</p>
+<ul>
+<li>简单的消息队列</li>
+<li>延迟队列</li>
+<li>阻塞队列</li>
+<li>消息的多播</li>
+</ul>
+<p>Redis 的 list(列表) 数据结构常用来作为异步消息队列使用，使用<code>rpush/lpush</code>操作入队列，使用 <code>lpop/rpop</code> 来出队列。</p>
+<p>延时队列可以通过 Redis 的 zset(有序列表) 来实现。我们将消息序列化成一个字符串作为 zset 的 value，这个消息的到期处理时间作为 score。</p>
+<p>Redisson对此都有很好的支持：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 简单队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">simple</span><span class="params">()</span> &#123;</span><br><span class="line">    RQueue&lt;Object&gt; queue = redissonClient.getQueue(<span class="string">&quot;simple&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            queue.add(i);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> queue.poll();</span><br><span class="line">        <span class="keyword">if</span> (poll == <span class="literal">null</span>) &#123;</span><br><span class="line">            i--;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            System.out.println(poll);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 阻塞队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">blockQueue</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    RBlockingQueue&lt;Object&gt; queue = redissonClient.getBlockingQueue(<span class="string">&quot;block&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">100</span>);</span><br><span class="line">                queue.put(i);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        <span class="comment">// 阻塞take</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> queue.take();</span><br><span class="line">        System.out.println(poll);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 延迟队列</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">delayQueue</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    RBlockingQueue&lt;Object&gt; blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;delayQueue1&quot;</span>);</span><br><span class="line">    RDelayedQueue&lt;Object&gt; delayQueue = redissonClient</span><br><span class="line">            .getDelayedQueue(blockingQueue);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">        delayQueue.offerAsync(i, (<span class="number">500</span> - i * <span class="number">10</span>), TimeUnit.MILLISECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    blockingQueue = redissonClient.getBlockingQueue(<span class="string">&quot;delayQueue&quot;</span>);</span><br><span class="line">    System.out.println(blockingQueue.size());</span><br><span class="line">    redissonClient.getDelayedQueue(blockingQueue);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; blockingQueue.size(); i++) &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">poll</span> <span class="operator">=</span> blockingQueue.take();</span><br><span class="line">        System.out.println(poll);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>以上都是消息队列的<code>生产者-消费者模式</code>，而消息队列的另外一种模式<code>订阅模式</code>，redis也能实现。</p>
+<p>有两种数据结构支持。</p>
+<ul>
+<li>PubSub</li>
+<li>Stream</li>
+</ul>
+<h2 id="位图"><a href="#位图" class="headerlink" title="位图"></a>位图</h2><p>位图完全是为了节约空间而设计的，我们可以把它想象成一个巨大的List，而里面只存放<code>1/0</code>。</p>
+<p>比如记录一个用户一年的签到记录，我们可以用位图来记录，签到的就是<code>1</code>，未签到的是<code>0</code>。</p>
+<p>使用方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">RBitSet</span> <span class="variable">bitset</span> <span class="operator">=</span> redissonClient.getBitSet(<span class="string">&quot;bitset&quot;</span>);</span><br><span class="line">    bitset.set(<span class="number">0</span>, <span class="literal">true</span>);</span><br><span class="line">    System.out.println(bitset.get(<span class="number">0</span>));</span><br><span class="line">    System.out.println(bitset.get(<span class="number">1</span>));</span><br><span class="line">    System.out.println(bitset.incrementAndGetInteger(<span class="number">0</span>, <span class="number">1</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="布隆过滤器"><a href="#布隆过滤器" class="headerlink" title="布隆过滤器"></a>布隆过滤器</h2><p>我们如何判断一个ID是否在我们的系统里。我们有两种基本的方法来判断：</p>
+<ul>
+<li>我们把这个ID拿到数据查询一下就知道来</li>
+<li>我们把所有的ID保存的一个Set里面，判断这个新的ID在不在这个Set里面</li>
+</ul>
+<p>但是上面两种方法有一个致命的缺陷：<br>就是在数据量特别大的时候，非常消耗性能，不管是对数据库的IO，还是保存所有的ID。</p>
+<p>这个是有个非常精妙的算法 - <code>布隆过滤器</code>。</p>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/HeAOem.png"></p>
+<p>它的原理非常简单：<br>底层是一个位图，并且有若干种Hash算法。<br>在新增ID的时候，对每一个ID做多种Hash运算，并在位图中得到若干位置，把对应的位置变成<code>1</code>。<br>而判断一个ID是否在系统中，也对这个ID做同样的Hash运算，得到若干位置，判断位图中的对应位置是否都是<code>1</code>。<br>如果都是<code>1</code>的话，表示大概率可能存在于系统中，如果有一个<code>0</code>，表示肯定不在系统中。</p>
+<p>Redisson也做了封装，使用非常方便。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    RBloomFilter&lt;String&gt; bloom = redissonClient.getBloomFilter(<span class="string">&quot;bloom&quot;</span>);</span><br><span class="line">    bloom.tryInit(<span class="number">1000</span>, <span class="number">0.1</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) &#123;</span><br><span class="line">        bloom.add(<span class="string">&quot;user_id_&quot;</span> + i);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">80</span>; i &lt; <span class="number">120</span>; i++) &#123;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">contains</span> <span class="operator">=</span> bloom.contains(<span class="string">&quot;user_id_&quot;</span> + i);</span><br><span class="line">        System.out.println(<span class="string">&quot;user_id_&quot;</span> + i + <span class="string">&quot;  -&gt;  &quot;</span> + contains);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="HyperLogLog"><a href="#HyperLogLog" class="headerlink" title="HyperLogLog"></a>HyperLogLog</h2><p>HyperLogLog是一个很神奇的数据结构。</p>
+<p>我们先来说两个概念： PV 和 UV。<br>PV：简单来说就是流量。只要有一次访问，不管是不是同一个人，就记一个流量。<br>UV：独立访客，单位时间内，一个新的访客，就算一个UV。</p>
+<p>在我们的统计中，PV很好统计，来一次访问，PV值就往上加1，顶多需要保持一下自增的原子性。<br>而计算UV，在互联网领域中一个是一个难题。</p>
+<p>通常来说我们计算一个网站一天的UV，我们需要把每一个访客的ID给记录下来，计算时去重。<br>这样就导致一个问题，如果访问量非常大，就非常的消耗存储空间。</p>
+<p>这个时候，HyperLogLog就能派上用场了。</p>
+<p>我们先看下代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">compareTest</span><span class="params">()</span> &#123;</span><br><span class="line">    RHyperLogLog&lt;String&gt; today = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now());</span><br><span class="line">    HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">500</span>);</span><br><span class="line">        today.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println(<span class="string">&quot;RHyperLogLog: &quot;</span> + today.count());</span><br><span class="line">    System.out.println(<span class="string">&quot;set count: &quot;</span> + set.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里使用的Set方法，和HyperLogLog，两个做一个比较。<br>从结果可以看出，两者的差距非常小，但是HyperLogLog并没有把每一个ID都记录下来，节约了大量存储空间。</p>
+<p>HyperLogLog的原理相对复杂，具体可以参考这篇<a target="_blank" rel="noopener" href="http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf">论文</a>。</p>
+<p>这里我来介绍一下它的思想：<br>假设我们有两个网站，需要比较一下他们的UV，看哪个网站的访问率高。<br>假设访问用户的ID使用手机号码表示，如：1xxxxxxxxxx<br>我们不想把每个访客的手机号码都记录下来，因为太浪费存储空间了。<br>我们可以定一个规则，我们只记录当天客户中，手机尾号为<code>0</code>位数最高的手机号码。<br>比如说，第一个网站记录下来的手机号码是：18322333000，末尾有3个0，<br>而第二的网站记录下来的手机号码是：18623000000，末尾有6个0。<br>我们就可以判断出，第二的网站的访问的人数更多。<br>大家体会一下。</p>
+<p>HyperLogLog还有一个重要的概念，就是合并。<br>我们可以把连续7天的UV，合并成这一周的UV，并保证准确性。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">mergeTest</span><span class="params">()</span> &#123;</span><br><span class="line">    RHyperLogLog&lt;String&gt; today = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now());</span><br><span class="line">    RHyperLogLog&lt;String&gt; nextDay = redisson.getHyperLogLog(<span class="string">&quot;UV_&quot;</span> + LocalDate.now().plusDays(<span class="number">1</span>));</span><br><span class="line">    HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">1000</span>);</span><br><span class="line">        today.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="string">&quot;id_&quot;</span> + random.nextInt(<span class="number">2000</span>);</span><br><span class="line">        nextDay.add(userId);</span><br><span class="line">        set.add(userId);</span><br><span class="line">    &#125;</span><br><span class="line">    today.mergeWith(nextDay.getName());</span><br><span class="line">    System.out.println(<span class="string">&quot;RHyperLogLog: &quot;</span> + today.count());</span><br><span class="line">    System.out.println(<span class="string">&quot;set count: &quot;</span> + set.size());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="限流器"><a href="#限流器" class="headerlink" title="限流器"></a>限流器</h2><p>限流器在我们的生产中非常重要，也很常用。Redis也有封装好的限流器。<br>实现了分布式限流器的功能。<br>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">    <span class="comment">// redisson用了zset来记录请求的信息，这样可以非常巧妙的通过比较score，也就是请求的时间戳，来判断当前请求距离上一个请求有没有超过一个令牌生产周期。</span></span><br><span class="line">    <span class="comment">// 如果超过了，则说明令牌桶中的令牌需要生产，之前用掉了多少个就生产多少个，而之前用掉了多少个令牌的信息也在zset中保存了。</span></span><br><span class="line">    <span class="type">RRateLimiter</span> <span class="variable">limiter</span> <span class="operator">=</span> redissonClient.getRateLimiter(<span class="string">&quot;limiter_1&quot;</span>);</span><br><span class="line">    <span class="comment">// 1号限流器， 每一秒 允许一个请求</span></span><br><span class="line">    limiter.trySetRate(RateType.PER_CLIENT, <span class="number">1</span>, <span class="number">1</span>, RateIntervalUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 阻塞</span></span><br><span class="line"><span class="comment">//			limiter.acquire(1);</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">result</span> <span class="operator">=</span> limiter.tryAcquire(<span class="number">1</span>, <span class="number">100</span>, TimeUnit.MILLISECONDS);</span><br><span class="line">            <span class="keyword">if</span> (!result) &#123;</span><br><span class="line">                <span class="comment">// 快速失败</span></span><br><span class="line">                System.out.println(Thread.currentThread().getName() + <span class="string">&quot; failed !&quot;</span>);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot; -&gt; &quot;</span> + LocalDateTime.now());</span><br><span class="line">            <span class="comment">// do something</span></span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">    Thread.sleep(<span class="number">12000</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>Redisson真好用！</p>
+</blockquote>
+<h2 id="Geo"><a href="#Geo" class="headerlink" title="Geo"></a>Geo</h2><p>Redis也提供了Geo功能，可以很方便实现附近的人，两坐标之间的距离等功能。<br>它的原理是把经纬度坐标，做Hash，得到一个分数，用zset做存储。<br>Hash算法的原理，是把整个地球当作一个平面，并把这个平面切割成很多很多的小块，并对每个方块做编码。<br>如果两个点所在的方块越接近，表示这两个点越接近。 当然，有一点点误差。<br>使用方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">    RGeo&lt;Object&gt; geo = redissonClient.getGeo(<span class="string">&quot;geo&quot;</span>);</span><br><span class="line">    <span class="type">GeoEntry</span> <span class="variable">juejin</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">GeoEntry</span>(<span class="number">116.48105</span>, <span class="number">39.996794</span>, <span class="string">&quot;juejin&quot;</span>);</span><br><span class="line">    geo.add(juejin);</span><br><span class="line">    geo.add(<span class="number">116.514203</span>, <span class="number">39.905409</span>, <span class="string">&quot;ireader&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.489033</span>, <span class="number">40.007669</span>, <span class="string">&quot;meituan&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.562108</span>, <span class="number">39.787602</span>, <span class="string">&quot;jd&quot;</span>);</span><br><span class="line">    geo.add(<span class="number">116.334255</span>, <span class="number">40.027400</span>, <span class="string">&quot;xiaomi&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 两点距离</span></span><br><span class="line">    System.out.println(geo.dist(<span class="string">&quot;meituan&quot;</span>, <span class="string">&quot;jd&quot;</span>, GeoUnit.METERS));</span><br><span class="line">    <span class="comment">// 坐标</span></span><br><span class="line">    System.out.println(geo.pos(<span class="string">&quot;xiaomi&quot;</span>));</span><br><span class="line">    <span class="comment">// hash</span></span><br><span class="line">    System.out.println(geo.hash(<span class="string">&quot;ireader&quot;</span>));</span><br><span class="line">    <span class="comment">// 附近</span></span><br><span class="line">    System.out.println(geo.radiusWithPositionAsync(<span class="string">&quot;jd&quot;</span>, <span class="number">20</span>, GeoUnit.KILOMETERS).get());</span><br><span class="line">    <span class="comment">// 附近</span></span><br><span class="line">    System.out.println(</span><br><span class="line">            geo.radiusWithPositionAsync(<span class="number">116.334255</span>, <span class="number">40.027400</span>, <span class="number">20</span>, GeoUnit.KILOMETERS).get());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意： 在一个地图应用中，车的数据、餐馆的数据、人的数据可能会有百万千万条，<br>如果使用Redis 的 Geo 数据结构，它们将全部放在一个 zset 集合中。<br>在 Redis 的集群环境中，集合可能会从一个节点迁移到另一个节点，如果单个 key 的数据过大，会对集群的迁移工作造成较大的影响，<br>在集群环境中单个 key 对应的数据量不宜超过 1M，否则会导致集群迁移出现卡顿现象，影响线上服务的正常运行。<br>所以，这里建议 Geo 的数据使用单独的 Redis 实例部署，不使用集群环境。<br>如果数据量过亿甚至更大，就需要对 Geo 数据进行拆分，按国家拆分、按省拆分，按市拆分，在人口特大城市甚至可以按区拆分。<br>这样就可以显著降低单个 zset 集合的大小。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们一起学习了7种高级结构</p>
+<ul>
+<li>分布式锁</li>
+<li>队列</li>
+<li>位图</li>
+<li>布隆过滤器</li>
+<li>HyperLogLog</li>
+<li>限流器</li>
+<li>GeoHash<br>希望以后大家能在工作中用到。</li>
+</ul>
+ 
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>Copyright： </strong>
+          
+          Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/" rel="tag">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis/" rel="tag">redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redisson/" rel="tag">redisson</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+      <a href="/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            ElasticSearch学习及原理浅析
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">Java操作Redis</div>
+      </a>
+    
+  </nav>
+
+  
+   
+    
+    <script src="https://cdn.staticfile.org/twikoo/1.4.18/twikoo.all.min.js"></script>
+    <div id="twikoo" class="twikoo"></div>
+    <script>
+        twikoo.init({
+            envId: ""
+        })
+    </script>
+ 
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020-2022
+        <i class="ri-heart-fill heart_icon"></i> chengpeng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></span>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+    </div>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="chengpeng&#39;s blogs"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+ 
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: ".tocbot",
+    contentSelector: ".article-entry",
+    headingSelector: "h1, h2, h3, h4, h5, h6",
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: "main",
+    positionFixedSelector: ".tocbot",
+    positionFixedClass: "is-position-fixed",
+    fixedSidebarOffset: "auto",
+  });
+</script>
+
+<script src="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.staticfile.org/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/default-skin/default-skin.min.css">
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.js"></script>
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+ 
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+ 
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.staticfile.org/clipboard.js/2.0.10/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
+
+
+    
+    
+
+  </div>
+</body>
+
+</html>
