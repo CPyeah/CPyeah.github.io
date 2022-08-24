@@ -4,7 +4,7 @@ date: 2021-10-18 17:38:34
 tags: 
 - system_design
 - open_platform
-categories: 系统设计
+categories: system_design
 ---
 
 > - 客户端注册管理

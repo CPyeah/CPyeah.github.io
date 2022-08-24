@@ -6,9 +6,10 @@ tags:
 - ESL
 - write
 - clean_room
-categories: 英语学习
+categories: english
 ---
-<!--more-->
+####
+使用下面的关键词，写一篇小短文。
 > - energetic
 > - dust/dusting
 > - lamp
@@ -30,6 +31,8 @@ categories: 英语学习
 > - reality show
 > - contest
 > - There is nothing like ...
+
+<!--more-->
 
 Today is Sunday, so I am very energetic.
 So I decide to clean up my house.

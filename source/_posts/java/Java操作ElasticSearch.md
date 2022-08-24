@@ -8,7 +8,7 @@ tags:
   - jpa
   - docker
 categories:
-  - 技术
+  - java
 ---
 ## 介绍
 

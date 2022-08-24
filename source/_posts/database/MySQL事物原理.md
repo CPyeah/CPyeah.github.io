@@ -2,7 +2,7 @@
 title: MySQL事务原理
 date: 2021-08-25 09:12:24
 tags: mysql
-categories: 知识
+categories: database
 ---
 ## 介绍
 

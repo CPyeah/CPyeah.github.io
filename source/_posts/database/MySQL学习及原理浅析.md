@@ -2,7 +2,7 @@
 title: MySQL学习及原理浅析
 date: 2021-08-13 11:06:53
 tags: mysql
-categories: 知识
+categories: database
 ---
 ## 介绍
 

@@ -4,7 +4,7 @@ date: 2021-05-27 15:29:29
 tags:
 - elasticsearch
 - java 
-categories: 知识
+categories: database
 ---
 
 ## 简介

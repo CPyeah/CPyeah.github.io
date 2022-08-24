@@ -5,7 +5,7 @@ tags:
 - redis 
 - redisson 
 - java
-categories: 技术
+categories: java
 ---
 ## 介绍
 
