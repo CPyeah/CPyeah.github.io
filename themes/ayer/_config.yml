@@ -1,6 +1,13 @@
 # 侧边栏菜单
 menu:
   主页: /
+  JAVA: /categories/java
+  GO: /categories/go
+  数据库: /categories/database
+  系统设计: /categories/system-design
+  算法: /categories/algorithm
+  DevOps: /categories/devops
+  英语学习: /categories/english
   归档: /archives
   分类: /categories
   标签: /tags
