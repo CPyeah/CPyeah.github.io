@@ -238,6 +238,81 @@ func errorOperation() {
 ```
 
 ### 函数与接口
+#### 函数
+go的函数声明类似Java的方法声明，但是又有所增强。
+
+简单的函数声明
+```go
+func add(a int, b int) int {
+	return a + b
+}
+```
+返回两个变量
+```go
+func sumAndDiff(a int, b int) (int, int) {
+	sum := a + b
+	diff := a - b
+	return sum, diff
+}
+```
+
+匿名函数
+```go
+func anonymousFunc() {
+	var f = func() {
+		fmt.Println("I am anonymous function")
+	}
+	f()
+}
+```
+
+闭包
+```go
+func incr() func() int {
+    var x int
+    return func() int {
+        x++
+        return x
+    }
+}
+```
+
+#### 接口
+> 如果它看起来像鸭子、游泳像鸭子、叫声像鸭子，那么它可能就是只鸭子。
+
+go的接口和接口的实现，参考的是这种思想。
+
+我们先声明一个接口：
+```go
+type Message interface {
+	getType() string
+	send()
+}
+```
+
+可以看到，这个接口，定义了两个函数。
+
+再来声明一个struct来实现这个接口
+```go
+// TextMsg obj
+type TextMsg struct {
+	text string
+}
+
+func (tm *TextMsg) getType() string {
+	return "text"
+}
+
+func (tm *TextMsg) send() {
+	fmt.Println("sendText -> ", tm.text, "; type is ", tm.getType())
+}
+
+```
+大家可以看到， TextMsg并没有直接声明 implement Message接口
+但是 TextMsg 绑定了Message接口的两个函数，当然，还可以绑定自己的函数。
+
+这样的话，程序就会认为，TextMsg就是Message的实现结构体。
+
 
 ## 复杂类型
 
