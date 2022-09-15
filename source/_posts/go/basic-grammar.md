@@ -317,14 +317,124 @@ func (tm *TextMsg) send() {
 ## 复杂类型
 
 ### array
+和Java中的数组一样，需要提前定义好数组的容量。
+直接分配内存，效率高。
+
+使用方式如下：
+```go
+	var array [3]int = [3]int{1, 2, 3}
+	fmt.Println(array[1], len(array))
+
+	var array1 = [...]int{4,
+		5,
+		6}
+	fmt.Println(array1[0])
+
+	for i, v := range array1 {
+		fmt.Println(i, "的值是", v)
+	}
+```
+
+二维数组：
+```go
+	var points = [3][2]int{{1, 1}, {2, 2}, {3, 3}}
+	for _, point := range points {
+		fmt.Println(point)
+	}
+```
 
 ### slice
+切片是Go中使用的最多的列表，类似Java中的ArrayList。
+
+很多种方法可以创建一个切片。
+```go
+func createSlice() {
+	// from array
+	array := [5]int{1, 2, 3, 4, 5}
+	var s1 = array[0 : len(array)-1]
+	fmt.Println(s1)
+
+	// from slice
+	var s2 = s1[1:3]
+	fmt.Println(s2)
+
+	// make
+	s3 := make([]int, 0)
+	fmt.Println(s3)
+	s3 = append(s3, 3)
+	fmt.Println(s3)
+
+	// sugar
+	s4 := []int{4}
+	fmt.Println(s4)
+}
+```
+
+他是一种动态数组，支持自动扩容，底层当然是array。
+可以参考Java中ArrayList的实现和扩容方式。
+他有着长度和容量两个树枝。
+```go
+func lenAndCap() {
+	var slice = make([]int, 8, 10)
+	fmt.Println(slice, len(slice), cap(slice))
+}
+```
+
+当然还支持着拼接和copy
+```go
+func appendSlice() {
+	var s1 = []int{1, 2, 3}
+	fmt.Println(s1, len(s1), cap(s1))
+	s1 = append(s1, 4)
+	fmt.Println(s1, len(s1), cap(s1))
+	s1 = append(s1, []int{5, 6, 7}...)
+	fmt.Println(s1, len(s1), cap(s1))
+}
+
+func copySlice() {
+	var s1 = []int{1, 2, 3, 4, 5}
+	var s2 = []int{6, 7}
+	fmt.Println(s1, s2)
+	copy(s1, s2)
+	fmt.Println(s1, s2)
+}
+```
+
+在go中没有栈和队列的数据结构，一般都是用slice来模拟的。
 
 ### map
+go中的map类似与Java中的HashMap，基本操作如下：
+```go
+func createMap() {
+	var m1 = make(map[string]string)
+	m1["morning"] = "eat breakfast"
+	m1["noon"] = "have lunch"
 
-### struct
+	var m2 = map[string]string{
+		"evening": "get dinner",
+	}
 
-### 自定义类型
+	fmt.Println(m1, m2)
+
+	fmt.Println(m1["noom"], m2["evening"])
+
+}
+
+func findDeleteRange() {
+	var m1 = make(map[string]string)
+	m1["morning"] = "eat breakfast"
+	m1["noon"] = "have lunch"
+
+	var v, ok = m1["noon"]
+	fmt.Println(v, ok)
+
+	delete(m1, "noon")
+
+	for key, value := range m1 {
+		fmt.Println(key, value)
+	}
+}
+```
 
 ## 方法与协程
 
@@ -334,8 +444,10 @@ func (tm *TextMsg) send() {
 
 ### wait group
 
+### context
+
 ## 总结
 
 ## 参考资料
 - https://go.dev/
-- https://www.bilibili.com/read/readlist/rl496566
+- https://github.com/CPyeah/hello-go/tree/master/grammar
