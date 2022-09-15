@@ -193,8 +193,49 @@ Go只有`for`这一种方式，当时功能依旧强大，有类似python的`ran
 当然，依旧有`break`和`continue`的支持
 
 ### init函数
+init()函数会在当前go文件加载前加载，
+他的加载顺序是：
+被依赖包的全局变量 -> 被依赖包的init函数 -> 当前包的全局变量 -> 当前包的init函数 -> 当前包的函数
+
+这个方法可以在程序一开始的时候，创建一些数据连接什么的。
+
+使用方法如下：
+```go
+func init() {
+	fmt.Println("this main init function")
+}
+```
 
 ### 异常与错误
+每一种程序都会有一场，在go语言种，使用panic机制来表示异常。
+恐慌，很形象。
+
+比如抛出一个异常可以这样：
+```go
+panic(Error)
+```
+
+我们可以生成一个error，来让panic抛出。
+```go
+	var lovelyError = errors.New("this is a lovely error")
+	var cuteError = fmt.Errorf("this is a cute error")
+```
+
+有了异常和抛出异常，当然会有捕获异常，
+在go里面是使用`defer`（延迟）和 `recover`（恢复）来做的。
+```go
+func errorOperation() {
+	defer func() {
+		var e = recover()
+		fmt.Println("recover:", e)
+	}()
+	var lovelyError = errors.New("this is a lovely error")
+	var cuteError = fmt.Errorf("this is a cute error")
+	fmt.Println(lovelyError, ";", cuteError)
+
+	panic(cuteError)
+}
+```
 
 ### 函数与接口
 
