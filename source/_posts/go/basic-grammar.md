@@ -439,10 +439,117 @@ func findDeleteRange() {
 ## 方法与协程
 
 ### goroutine
+Go语言的核心之一，最最重要的特点，就是goroutine。
+就是Go语言原生帮我实现的协程，又成用户线程。
+可以非常快速和方便的实现异步操作。
 
-### channel
+使用方法非常简单：
+```go
+go function()
+```
+这样就会表示，新开一个协程来调用`function()`函数。
+
+在Java中需要这样写：
+```java
+new Thread(() -> function()).start();
+```
+当然还可以使用协程池来开启一个新线程。
+
+但是不管那种方式，不管是在使用方便的程度，还是程序的运行效率。
+Go 的 goroutine都更加优异。
+
+```go
+func test() {
+	go doWork1()
+	go doWork2()
+	fmt.Println("END")
+}
+
+func doWork2() {
+	fmt.Println("WORK-2")
+}
+
+func doWork1() {
+	fmt.Println("WORK-1")
+}
+```
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/2Ml3uc.png)
+
+类似这个图，`END`,`WORK-1`,`WORK-2`的顺序是没办法保证的。
+
+但是在实际的操作中，我们可能看不到`WORK-1`,`WORK-2`，
+因为在协程执行完之前，整个程序的进程就结束了。
+
+为了解决这个这个问题，我们需要`wait group`来同步结果。
 
 ### wait group
+我们使用WG来保证所有协程都能够结束
+```go
+func test() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go doWork1(&wg)
+	go doWork2(&wg)
+	wg.Wait()
+	fmt.Println("END")
+}
+
+func doWork2(wg *sync.WaitGroup) {
+	defer wg.Done()
+	fmt.Println("WORK-2")
+}
+
+func doWork1(wg *sync.WaitGroup) {
+	defer wg.Done()
+	fmt.Println("WORK-1")
+}
+```
+使用`WaitGroup`，可以保证，在`END`之前，保证`WORK-1`,`WORK-2`执行完毕。
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/OxRa4Q.png)
+
+### channel
+channel类似一个管道，可以又缓存，可以往里面输入东西，可以从里面取出东西。
+在Java中，有个很类似的东西，BlockingQueue。
+两者都具备阻塞队列的功能。
+
+但是他们核心不同点是，Go里面的channel使用的[CSP](http://www.usingcsp.com/cspbook.pdf)模型。
+channel的使用也更简洁，还支持select语法，和定向channel。
+
+使用方法如下：
+```go
+func test() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	var c = make(chan string)
+	go doWork1(&wg, &c)
+	go doWork2(&wg, &c)
+	wg.Wait()
+	fmt.Println("END")
+}
+
+func doWork2(wg *sync.WaitGroup, c *chan string) {
+	defer wg.Done()
+	m := <-*c
+	fmt.Println("WORK-2")
+	fmt.Println(m)
+}
+
+func doWork1(wg *sync.WaitGroup, c *chan string) {
+	defer wg.Done()
+	fmt.Println("WORK-1")
+	*c <- "test message"
+}
+```
+输出的结果如下：
+```
+WORK-1
+WORK-2
+test message
+END
+```
+我们可以使用channel来把信息跨协程传输，
+我们还可以保证`WORK-1`在`WORK-2`之前被打印。
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/0peR0n.png)
 
 ### context
 
