@@ -32,7 +32,7 @@ Go， 他是一款Google开发的语言。
 在容器越来越流行的今天，Go语言拥有着非常大的潜力。
 
 ## 基本数据类型
-我们使用`var`来声明一个变量，yong`const`来声明一个常量。
+我们使用`var`来声明一个变量，用`const`来声明一个常量。
 当然还有一个简便的写法，使用`:`
 
 ### int类型
@@ -80,10 +80,10 @@ Java在9之后，String的底层也从char变成了byte。
 
 ### boolean
 ```go
-    var b1 bool = true
-	var b2 = false
-	b3 := b1 && b2
-	fmt.Println(b1, b2, b3)
+var b1 bool = true
+var b2 = false
+b3 := b1 && b2
+fmt.Println(b1, b2, b3)
 ```
 
 ### string
@@ -372,7 +372,7 @@ func createSlice() {
 
 他是一种动态数组，支持自动扩容，底层当然是array。
 可以参考Java中ArrayList的实现和扩容方式。
-他有着长度和容量两个树枝。
+他有着长度和容量两个数值。
 ```go
 func lenAndCap() {
 	var slice = make([]int, 8, 10)
@@ -552,8 +552,97 @@ END
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/0peR0n.png)
 
 ### context
+上下文，我们可以通过它，来控制协程的活动，比如中断一个协程。
+我们来看段代码：
+```go
+func test() {
+
+	// wait group
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// channel
+	var c = make(chan string)
+
+	// context
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go doWork1(&wg, &c, ctx)
+	go doWork2(&wg, &c, ctx)
+
+	time.Sleep(5 * time.Second)
+	// 中断
+	cancel()
+
+	wg.Wait()
+	fmt.Println("END")
+}
+
+func doWork2(wg *sync.WaitGroup, c *chan string, ctx context.Context) {
+	defer wg.Done()
+	m := <-*c
+	fmt.Println("WORK-2")
+	fmt.Println(m)
+}
+
+func doWork1(wg *sync.WaitGroup, c *chan string, ctx context.Context) {
+	defer wg.Done()
+	fmt.Println("WORK-1")
+	*c <- "test message"
+
+	for i := 0; i < 100; i++ {
+		time.Sleep(time.Second)
+		fmt.Println("WORK-1", i)
+		select {
+		case <-ctx.Done():
+			fmt.Println("WORK-1 DONE")
+			return
+		default:
+
+		}
+	}
+}
+
+```
+
+在work1里面 我们有段逻辑，是打印 0～99，但是如果主线程通知我们中断，我们就会中断当前操作。
+
+我们就会打印出这样的结果。
+```
+WORK-1
+WORK-2
+test message
+WORK-1 0
+WORK-1 1
+WORK-1 2
+WORK-1 3
+WORK-1 4
+WORK-1 DONE
+END
+```
+我们的示意图，就会变成这样：
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/rWNJKX.png)
+
+我们除了`func WithCancel(parent Context) (ctx Context, cancel CancelFunc)`之外，
+还有
+```go
+func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
+
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+
+func WithValue(parent Context, key interface{}, val interface{}) (Context)
+
+```
+
+大家如果感兴趣，可以自己尝试一下。
 
 ## 总结
+这次，我们快速入门了Go，这是一种非常新的语言。
+我相信它会在不久的未来会大展宏图。在市场上有自己的一席之地。
+
+希望这片文章对大家有所帮助～
+
+Bye！
 
 ## 参考资料
 - https://go.dev/
