@@ -88,33 +88,93 @@ IO多路复用，它是接受各种事件（比如连接、读取或写入、错
 
 ## Netty项目结构
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/7qmm3O.png)
+Netty是一个大而全的IO框架，它支持各种各样的协议。
+对各种IO模型都有封装。
+更友好的操作API。
+更高效的性能。
+
+接下来，我们自己看一下它。
+
+### Netty IO 模型
+![](assets/CqK8RW.png)
+
+Netty使用的是反应模型的一种，有主线程组和工作线程组。
+主线程组负责处理各种连接，并分发任务给工作线程组。
+工作线程组就负责处理各种输入输出请求。并执行定义好的pipeline。
 
 ### 三大核心
 
-#### 1、字节缓冲区
+#### 1、ChannelBuffer 缓冲区
+可以自定义的，多类型，API友好的缓冲区类型。
 
-You can define your own buffer type if necessary.
+我们在使用IO的时候，都会使用到buffer，为解决速率不一致。
+但是在操作系统层面和Java原生层面，只提供了ByteBuffer。字节缓冲区。
+非常的单一，而且操作起来很不方便。
 
-Transparent zero copy is achieved by a built-in composite buffer type.
+在Netty中，对缓冲区有了更好的封装。自动的装包和拆包。
 
-A dynamic buffer type is provided out-of-the-box, whose capacity is expanded on demand, just like StringBuffer.
-
-There's no need to call flip() anymore.
-
-It is often faster than ByteBuffer.
+而且ChannelBuffer支持zero-copy，这里的零拷贝，不是操作系统的零拷贝。
+它的原理是在用户模式直接维护一个内核模式的buffer地址，直接进行操作。
+不需要再进行内核模式切换，把buffer拷贝到用户模式里面来。
 
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/lkHtRv.png)
 
 
 #### 2、通用API
 对BIO和NIO的通用抽象。
+支持不同的通讯协议（TCP/UDP）
+
+如果我们使用Java原生的IO/NIO接口编写，
+会相当复杂繁琐。
+
+更糟糕的是，如果我们需要把系统从BIO升级到NIO，
+基本上需要重新开发一边
+
+而如果我们一开始使用Netty开发，
+IO模型、通讯协议都可以的切换得更加顺滑
 
 #### 3、事件模型 
-pipeline
+> 基于拦截器链模式的事件模型
+
+Netty使用pipeline，实现了一个结构清晰得事件模型。
+
+每当一个Channel被创建的时候，就会同时创建一个ChannelPipeline，
+并永久的绑定到这个Channel上。
+
+一个Event事件被加入到，触发一个pipeline，其中很多的Handler执行操作。
+
+我们还可以实现自己的Handler来处理自己的业务逻辑。
+而不会破坏代码。
+![](assets/HgrHQm.png)
+
+而对于我们开发Netty应用，我们只需要配置好Netty，
+然后写好自己的业务逻辑Handler，并加入到Pipeline中。
+其他的交给Netty就好了，非常的方便。
 
 ### 传输服务
+> 处理基于流的传输
+
+在基于TCP/IP的基于流的协议中，数据包都是基于字节流的。
+所以在一个数据包中，可能不是一个完整的我们需要的数据包。
+
+所以在数据包的处理上，就会有很多繁琐的工作内容。
+拆包、装包
+
+所以Netty提供了一个可以扩展的类`ByteToMessageDecoder`
+里面提供很多开箱即用的编码、解码器。
+初次之外，我们还可以编写自己的定制编码、解码器。
+
+在TCP的世界中，所有的数据传输都是基于字节流的。
+但是Netty提供了一种封装，
+可以同时解决粘包、拆包的问题，还可以给转换成POJO对象。
+这样解码器直接解出来的就是一个Java对象。更优雅。
+
 
 ### 协议支持
+
+Netty实现了各种高级的传输协议。
+比如：HTTP、SSL、WebSockets等等。
+我们甚至可以编写自己的协议。
 
 ## Netty实战
 
@@ -125,6 +185,7 @@ pipeline
 ## 参考
 - https://netty.io/
 - http://www.kegel.com/c10k.html
+- https://gee.cs.oswego.edu/dl/cpjslides/nio.pdf
 - https://github.com/netty/netty
 - https://github.com/netty/netty/wiki/User-guide-for-4.x
 - https://netty.io/3.8/guide/#architecture
