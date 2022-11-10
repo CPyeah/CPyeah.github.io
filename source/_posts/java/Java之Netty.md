@@ -30,6 +30,7 @@ Netty是一套支持NIO的客户端-服务器框架。
 > 排队
 
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/PGtSwc.png)
+
 当一个IO请求过来，客户端进入等待，服务端处理数据，并保持阻塞（其他的客户端访问不了）。
 
 等到服务端处理完数据，返回给等待中的客户端。
@@ -43,6 +44,7 @@ Netty是一套支持NIO的客户端-服务器框架。
 > 轮询
 
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/F7rzu9.png)
+
 客户端在执行了IO请求之后，会立刻返回结果，要不返回结果，要不还需等待。
 如果还需要等待的话，客户会发起轮询，不断的请求服务端，直到返回结果。
 
@@ -60,6 +62,7 @@ Netty是一套支持NIO的客户端-服务器框架。
 > 事件处理
 
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/BqbARO.png)
+
 IO多路复用，它是接受各种事件（比如连接、读取或写入、错误发生等)。
 接受到各种事件消息后，记录下来，并返回一个描述符。
 
@@ -88,6 +91,7 @@ IO多路复用，它是接受各种事件（比如连接、读取或写入、错
 
 ## Netty项目结构
 ![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/7qmm3O.png)
+
 Netty是一个大而全的IO框架，它支持各种各样的协议。
 对各种IO模型都有封装。
 更友好的操作API。
@@ -96,7 +100,7 @@ Netty是一个大而全的IO框架，它支持各种各样的协议。
 接下来，我们自己看一下它。
 
 ### Netty IO 模型
-![](assets/CqK8RW.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/CqK8RW.png)
 
 Netty使用的是反应模型的一种，有主线程组和工作线程组。
 主线程组负责处理各种连接，并分发任务给工作线程组。
@@ -145,7 +149,8 @@ Netty使用pipeline，实现了一个结构清晰得事件模型。
 
 我们还可以实现自己的Handler来处理自己的业务逻辑。
 而不会破坏代码。
-![](assets/HgrHQm.png)
+
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/HgrHQm.png)
 
 而对于我们开发Netty应用，我们只需要配置好Netty，
 然后写好自己的业务逻辑Handler，并加入到Pipeline中。
@@ -177,10 +182,321 @@ Netty实现了各种高级的传输协议。
 我们甚至可以编写自己的协议。
 
 ## Netty实战
+接下来  我们简单写一个Netty的服务端和客户端的demo。
+我们使用SpringBoot来快速架构项目。
+使用Gradle构建
+这里是使用的是Netty 4.1.77，比较稳定的版本。
+
+```groovy
+dependencies {
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.77.Final'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+```
+
+### 服务端
+我们写一个Netty服务，主要是以下几步：
+1. 构建一个启动器
+2. 创建EventLoopGroup
+3. 构建ChildHandlers和Pipeline
+4. 编写自己的业务Handler并加入Pipeline
+5. 启动器绑定端口
+
+具体代码如下：
+```java
+package org.cp.easychat.server.server;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * ws://localhost:8080/chat
+ */
+@Slf4j
+public class WebSocketServer {
+
+	private NioEventLoopGroup boss;
+	private NioEventLoopGroup workers;
+	private ServerBootstrap serverBootstrap;
+
+	public void start() {
+		this.init();
+		try {
+			ChannelFuture future = serverBootstrap.bind(8080);
+			log.info("server start success.");
+			future.channel().closeFuture().sync();
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+	}
+
+	private void init() {
+		// 配置启动器
+		serverBootstrap = new ServerBootstrap();
+		serverBootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+		serverBootstrap.option(ChannelOption.TCP_NODELAY, true);
+		serverBootstrap.option(ChannelOption.SO_BACKLOG, 1024);
+
+		boss = new NioEventLoopGroup();
+		workers = new NioEventLoopGroup(7);
+
+		serverBootstrap.group(boss, workers)
+				.channel(NioServerSocketChannel.class)
+				.childHandler(getChildHandlers());
+
+
+	}
+
+	private ChannelHandler getChildHandlers() {
+		return new ChannelInitializer<>() {
+			@Override
+			protected void initChannel(Channel ch) throws Exception {
+				ChannelPipeline pipeline = ch.pipeline();
+				pipeline.addLast(new HttpServerCodec());// http协议的编解码器
+				pipeline.addLast(new ChunkedWriteHandler());// 大数据流支持， 切成小块传输
+				pipeline.addLast(new HttpObjectAggregator(64*1024));// 聚合器，对应上面的切块
+				pipeline.addLast(new WebSocketServerProtocolHandler("/chat"));// 握手 心跳处理
+				pipeline.addLast(new MyWebSocketHandler());// 我的业务处理Handler
+			}
+		};
+	}
+	
+	// 我的业务处理逻辑
+	private static class MyWebSocketHandler extends SimpleChannelInboundHandler<Object> {
+
+		// 上线
+		@Override
+		public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+			log.info("⬆ new connection from {}", ctx.channel().remoteAddress());
+		}
+
+		// 下线
+		@Override
+		public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+			log.info(" ⬇️️ up connection close from {}", ctx.channel().remoteAddress());
+		}
+
+		// 读取消息，并返回
+		@Override
+		protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+			log.info(" 🆕 New Message: {}, from {}", msg, ctx.channel().remoteAddress());
+			if (! (msg instanceof TextWebSocketFrame)) {
+				log.error("message is not text, {}", msg);
+				return;
+			}
+			TextWebSocketFrame request = (TextWebSocketFrame) msg;
+			log.info("received text message : {}", request);
+
+			ctx.writeAndFlush(new TextWebSocketFrame("server send :" + request.text()));
+		}
+	}
+}
+
+```
+编写完成之后，我们可以启动服务器，
+并使用在线Websocket工具调用测试一下
+
+
+### 客户端
+
+客户端的编写和服务端类似，
+但是有些地方不一样。
+需要服务端主动发起连接。
+
+具体步骤如下：
+1. 构建一个启动器
+2. 创建EventLoopGroup
+3. 构建ChildHandlers和Pipeline
+4. 在业务Handler中，需要添加发起握手操作
+5. 启动器发起连接
+
+代码如下：
+```java
+package org.cp.client.client;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import java.net.URI;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class WebsocketClient {
+
+	private final URI uri;
+	private Bootstrap bootstrap;
+	private EventLoopGroup eventLoopGroup;
+	private ChannelPromise channelPromise;
+	private Channel channel;
+
+	public WebsocketClient(URI uri) {
+		this.uri = uri;
+		this.init();
+	}
+
+	public void connect() {
+		try {
+			channel = bootstrap.connect(uri.getHost(), uri.getPort()).sync().channel();
+			channelPromise.sync();
+			log.info("connect success and handshake complete.");
+		} catch (InterruptedException e) {
+			log.error("connect error, " + e.getMessage(), e);
+		}
+	}
+
+	private void init() {
+		bootstrap = new Bootstrap();
+		bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+		bootstrap.option(ChannelOption.TCP_NODELAY, true);
+
+		eventLoopGroup = new NioEventLoopGroup();
+
+		bootstrap.group(eventLoopGroup)
+				.channel(NioSocketChannel.class)
+				.handler(getHandlers());
+	}
+
+	private ChannelHandler getHandlers() {
+		return new ChannelInitializer<>() {
+			@Override
+			protected void initChannel(Channel ch) throws Exception {
+				ChannelPipeline channelPipeline = ch.pipeline();
+				channelPipeline.addLast(new HttpClientCodec());
+				channelPipeline.addLast(new HttpObjectAggregator(1048576));
+				channelPipeline.addLast(new MyWebSocketHandler(getHandShaker(uri)));
+			}
+
+			private WebSocketClientHandshaker getHandShaker(URI uri) {
+				return WebSocketClientHandshakerFactory
+						.newHandshaker(uri, WebSocketVersion.V13, null, false, null);
+			}
+		};
+	}
+
+	public class MyWebSocketHandler extends SimpleChannelInboundHandler<Object> {
+
+
+		private final WebSocketClientHandshaker handShaker;
+
+		public MyWebSocketHandler(WebSocketClientHandshaker handShaker) {
+			this.handShaker = handShaker;
+		}
+
+		@Override
+		public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+			channelPromise = ctx.newPromise();
+		}
+
+		@Override
+		public void channelActive(ChannelHandlerContext ctx) throws Exception {
+			log.info("handshake to : {}", ctx.channel().remoteAddress());
+			this.handShaker.handshake(ctx.channel());
+		}
+
+		@Override
+		protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+			log.info("receive data {} from {}", msg, ctx.channel().remoteAddress());
+			if (handShaker.isHandshakeComplete()) {
+				finishHandShaker(ctx, msg);
+				return;
+			}
+			// handle business data
+			if (!(msg instanceof TextWebSocketFrame)) {
+				log.warn("{} is not a text message.", msg);
+				return;
+			}
+
+			TextWebSocketFrame textMsg = (TextWebSocketFrame) msg;
+			log.info("client receive a message: {}", textMsg.text());
+		}
+
+		private void finishHandShaker(ChannelHandlerContext ctx, Object msg) {
+			try {
+				handShaker.finishHandshake(ctx.channel(), (FullHttpResponse) msg);
+				channelPromise.setSuccess();
+				log.info("handShake success.");
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+			}
+		}
+	}
+}
+
+```
+
+完整代码请点击[这里](https://github.com/CPyeah/easy-chat)
 
 ## Netty在开放平台中的应用
 
+在我们的开放平台中，我们需要通过Websocket对客户端推送一下消息。
+所以我们使用Netty搭建了一个Webscoket服务器。
+
+具体搭建步骤跟上面差不多。
+
+但是对于生产环境，权限的校验很重要。
+
+所以在每一个链接建立之后，客户端会发起登录操作。
+如果登录成功，服务端会把客户端的信息保存下来，维持会话。
+
+在正常的业务逻辑中，我们首先监听业务中台的MQ消息。
+如果消息有对应的客户端在线，我们把消息内容，
+封装成`Message`对象，推送给客户端。
+
+然后客户端接受到消息之后，会发起一个消息确认，以保证消息顺利被接收。
+
+流程如下：
+
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/5cnd8k.png)
+
+
 ## 总结
+至此，我们学习了Netty的相关知识。并实操练习了一下。
+我们知道了Netty是Java世界中最重要的NIO框架。
+它对java.nio的封装，它的事件，反应模型都对我们开发NIO服务器非常有用。
+它的多路复用的模型也非常重要。
+
+我们还一起搭建了一个简单的Netty服务，
+并使用Netty编写了一个简单的Netty客户端。
+帮助大家上手入门。
+
+还有我司在生产环境中是如何使用Netty搭建一个开放平台的消息推送系统的。
+供大家参考。
+
+希望这片文章能让大家有所收获！
 
 ## 参考
 - https://netty.io/
