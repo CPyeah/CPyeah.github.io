@@ -13,13 +13,14 @@ categories: basic
 - IP internet protocol (网络层)
 - IPv4 vs IPv6
 
+<!--more-->
 
 ## 网络分层模型
 分层模型
 分层的意义
 以快递配送做比喻
 
-![](assets/DoyVUQ.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/DoyVUQ.png)
 
 
 ## TCP与UDP （传输层）
@@ -37,7 +38,7 @@ categories: basic
 很多协议的基石
 HTTP(s)、FTP、Dubbo
 
-![](assets/SxZ9xf.png)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/SxZ9xf.png)
 
 特点：
 面向链接
