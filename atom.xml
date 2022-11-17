@@ -6,7 +6,7 @@
   <link href="https://github.com/CPyeah/atom.xml" rel="self"/>
   
   <link href="https://github.com/CPyeah/"/>
-  <updated>2022-07-18T09:56:11.104Z</updated>
+  <updated>2022-11-17T15:07:22.008Z</updated>
   <id>https://github.com/CPyeah/</id>
   
   <author>
@@ -17,11 +17,116 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>深入理解Java虚拟机</title>
+    <link href="https://github.com/CPyeah/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/"/>
+    <id>https://github.com/CPyeah/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/</id>
+    <published>2022-03-05T12:54:21.000Z</published>
+    <updated>2022-11-17T15:07:22.008Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这边文章我们深入了解一下Java虚拟机。&lt;br&gt;我会了解到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;虚拟机的种类大概有哪些？&lt;/li&gt;
+&lt;li&gt;JVM的内存管理模型是什么样子的？&lt;/li&gt;
+&lt;li&gt;Java对象的创建过程是什么样子的？&lt;/li&gt;
+&lt;li&gt;Java对象的内存布局是什么样子的？&lt;/li&gt;
+&lt;li&gt;如何判断对象是垃圾？&lt;/li&gt;
+&lt;li&gt;Java中引用的类型有哪些？&lt;/li&gt;
+&lt;li&gt;垃圾收集算法有哪些？&lt;/li&gt;
+&lt;li&gt;HopSpot的垃圾收器是怎么实现的？&lt;/li&gt;
+&lt;li&gt;经典的垃圾收集器有哪些？&lt;/li&gt;
+&lt;li&gt;低延迟的垃圾收集器有哪些？&lt;/li&gt;
+&lt;li&gt;如何选择垃圾收集器？&lt;/li&gt;
+&lt;li&gt;JVM提供了哪些监控工具？&lt;/li&gt;
+&lt;li&gt;市面上有哪些可视化的工具？&lt;/li&gt;
+&lt;li&gt;JVM是怎么调优的？&lt;/li&gt;
+&lt;li&gt;Class文件结构是什么样子的？&lt;/li&gt;
+&lt;li&gt;常见的字节码指令有哪些？&lt;/li&gt;
+&lt;li&gt;Java编译的流程是什么样子的？&lt;/li&gt;
+&lt;li&gt;后端编译的过程是什么样子的？&lt;/li&gt;
+&lt;li&gt;Java内存模型是什么样子的？&lt;/li&gt;
+&lt;li&gt;volatile关键字有什么用？&lt;/li&gt;
+&lt;li&gt;Java的多线程是怎么实现的？&lt;/li&gt;
+&lt;li&gt;Java中有哪些锁优化？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;希望对你有所帮助～&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/categories/java/"/>
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="jvm" scheme="https://github.com/CPyeah/tags/jvm/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Java之Netty.md</title>
+    <link href="https://github.com/CPyeah/2021/12/25/java/Java%E4%B9%8BNetty/"/>
+    <id>https://github.com/CPyeah/2021/12/25/java/Java%E4%B9%8BNetty/</id>
+    <published>2021-12-25T02:18:43.000Z</published>
+    <updated>2022-11-17T15:07:21.966Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;Netty是一套支持NIO的客户端-服务器框架。&lt;br&gt;高性能、高并发。&lt;br&gt;支持异步通信。&lt;br&gt;他是使用Java编写的。&lt;br&gt;在Java领域中，他是IO界的老大，特别是网络IO。&lt;br&gt;很多项目都用它，比如Dubbo，RocketMQ，Cassandra等等。&lt;/p&gt;
+&lt;p&gt;在这片文章中，我们会学习到：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;常见的IO模型&lt;/li&gt;
+&lt;li&gt;Netty项目&lt;/li&gt;
+&lt;li&gt;Netty实战&lt;/li&gt;
+&lt;li&gt;Netty在我司生产中的应用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;那我们开始吧！&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/categories/java/"/>
+    
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="netty" scheme="https://github.com/CPyeah/tags/netty/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Go语言学习-快速入门</title>
+    <link href="https://github.com/CPyeah/2021/11/27/go/basic-grammar/"/>
+    <id>https://github.com/CPyeah/2021/11/27/go/basic-grammar/</id>
+    <published>2021-11-27T07:29:29.000Z</published>
+    <updated>2022-11-17T15:07:21.965Z</updated>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;最近觉得Go语言很有前途，语法灵活，容器化部署方便，资源消耗小。&lt;br&gt;而且还有强力的并发能力：Goroutines&lt;br&gt;所以决定从今天开始，学习Go语言。&lt;/p&gt;
+&lt;p&gt;这一次我们将学习到：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Golang基本概念&lt;/li&gt;
+&lt;li&gt;基本数据类型&lt;/li&gt;
+&lt;li&gt;基本语法&lt;/li&gt;
+&lt;li&gt;复杂类型&lt;/li&gt;
+&lt;li&gt;方法与协程&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们现在开始吧！&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="go" scheme="https://github.com/CPyeah/categories/go/"/>
+    
+    
+    <category term="go" scheme="https://github.com/CPyeah/tags/go/"/>
+    
+    <category term="basic-grammar" scheme="https://github.com/CPyeah/tags/basic-grammar/"/>
+    
+  </entry>
+  
+  <entry>
     <title>SystemDesign:开放平台</title>
     <link href="https://github.com/CPyeah/2021/10/18/system_design/open_platform/"/>
     <id>https://github.com/CPyeah/2021/10/18/system_design/open_platform/</id>
     <published>2021-10-18T09:38:34.000Z</published>
-    <updated>2022-07-18T09:56:11.104Z</updated>
+    <updated>2022-11-17T15:07:22.009Z</updated>
     
     
     <summary type="html">&lt;blockquote&gt;
@@ -35,7 +140,7 @@
     
     
     
-    <category term="系统设计" scheme="https://github.com/CPyeah/categories/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/"/>
+    <category term="system_design" scheme="https://github.com/CPyeah/categories/system-design/"/>
     
     
     <category term="system_design" scheme="https://github.com/CPyeah/tags/system-design/"/>
@@ -49,7 +154,7 @@
     <link href="https://github.com/CPyeah/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/"/>
     <id>https://github.com/CPyeah/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/</id>
     <published>2021-09-11T05:47:39.000Z</published>
-    <updated>2022-07-11T09:37:50.848Z</updated>
+    <updated>2022-11-17T15:07:21.951Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这篇文章，我们将谈到SQL优化的相关知识。&lt;/p&gt;
@@ -64,7 +169,7 @@
     
     
     
-    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    <category term="database" scheme="https://github.com/CPyeah/categories/database/"/>
     
     
     <category term="mysql" scheme="https://github.com/CPyeah/tags/mysql/"/>
@@ -76,7 +181,7 @@
     <link href="https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/"/>
     <id>https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/</id>
     <published>2021-08-25T01:12:24.000Z</published>
-    <updated>2022-06-27T14:38:47.073Z</updated>
+    <updated>2022-11-17T15:07:21.950Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;什么是事务？！&lt;/p&gt;
@@ -85,7 +190,7 @@
     
     
     
-    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    <category term="database" scheme="https://github.com/CPyeah/categories/database/"/>
     
     
     <category term="mysql" scheme="https://github.com/CPyeah/tags/mysql/"/>
@@ -97,7 +202,7 @@
     <link href="https://github.com/CPyeah/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
     <id>https://github.com/CPyeah/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-08-13T03:06:53.000Z</published>
-    <updated>2022-06-27T14:38:47.073Z</updated>
+    <updated>2022-11-17T15:07:21.951Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;从今天开始，我们将学习目前最流行的一个数据库MySQL。&lt;/p&gt;
@@ -112,7 +217,7 @@
     
     
     
-    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    <category term="database" scheme="https://github.com/CPyeah/categories/database/"/>
     
     
     <category term="mysql" scheme="https://github.com/CPyeah/tags/mysql/"/>
@@ -124,20 +229,39 @@
     <link href="https://github.com/CPyeah/2021/07/18/english/clean-room/"/>
     <id>https://github.com/CPyeah/2021/07/18/english/clean-room/</id>
     <published>2021-07-18T02:00:51.000Z</published>
-    <updated>2022-07-18T09:56:11.109Z</updated>
+    <updated>2022-11-17T15:07:21.951Z</updated>
     
     
-      
-      
-        
-        
-    <summary type="html">&lt;span</summary>
-        
-      
+    <summary type="html">&lt;h4 id=&quot;&quot;&gt;&lt;a href=&quot;#&quot; class=&quot;headerlink&quot; title=&quot;&quot;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;使用下面的关键词，写一篇小短文。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;energetic&lt;/li&gt;
+&lt;li&gt;dust&amp;#x2F;dusting&lt;/li&gt;
+&lt;li&gt;lamp&lt;/li&gt;
+&lt;li&gt;furniture&lt;/li&gt;
+&lt;li&gt;wipe&lt;/li&gt;
+&lt;li&gt;rug&amp;#x2F;carpet&lt;/li&gt;
+&lt;li&gt;filthy&lt;/li&gt;
+&lt;li&gt;vacuum&lt;/li&gt;
+&lt;li&gt;sucking&lt;/li&gt;
+&lt;li&gt;mop&amp;#x2F;mopping&lt;/li&gt;
+&lt;li&gt;broom&lt;/li&gt;
+&lt;li&gt;scrub&amp;#x2F;scrubbing&lt;/li&gt;
+&lt;li&gt;tub&lt;/li&gt;
+&lt;li&gt;closet&lt;/li&gt;
+&lt;li&gt;newscast&lt;/li&gt;
+&lt;li&gt;cable television&lt;/li&gt;
+&lt;li&gt;flip through&amp;#x2F;thumb through&lt;/li&gt;
+&lt;li&gt;commercial&lt;/li&gt;
+&lt;li&gt;reality show&lt;/li&gt;
+&lt;li&gt;contest&lt;/li&gt;
+&lt;li&gt;There is nothing like …&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;</summary>
     
     
     
-    <category term="英语学习" scheme="https://github.com/CPyeah/categories/%E8%8B%B1%E8%AF%AD%E5%AD%A6%E4%B9%A0/"/>
+    <category term="english" scheme="https://github.com/CPyeah/categories/english/"/>
     
     
     <category term="english" scheme="https://github.com/CPyeah/tags/english/"/>
@@ -155,7 +279,7 @@
     <link href="https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
     <id>https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</id>
     <published>2021-07-06T01:52:41.000Z</published>
-    <updated>2022-06-27T14:38:47.179Z</updated>
+    <updated>2022-11-17T15:07:21.817Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;今天开启我们的算法系列，争取说简单➕通俗易懂。&lt;br&gt;我们从经典的排序算法开始。学习十大排序算法。&lt;br&gt;&lt;img src=&quot;https://cp-images.oss-cn-hangzhou.aliyuncs.com/zoOH3H.png&quot;&gt;&lt;/p&gt;
@@ -165,7 +289,7 @@
     
     
     
-    <category term="算法" scheme="https://github.com/CPyeah/categories/%E7%AE%97%E6%B3%95/"/>
+    <category term="algorithm" scheme="https://github.com/CPyeah/categories/algorithm/"/>
     
     
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
@@ -181,7 +305,7 @@
     <link href="https://github.com/CPyeah/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/"/>
     <id>https://github.com/CPyeah/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/</id>
     <published>2021-06-11T05:44:15.000Z</published>
-    <updated>2022-06-27T14:38:47.072Z</updated>
+    <updated>2022-11-17T15:07:21.966Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;今天我们将使用Java来操作ElasticSearch。&lt;br&gt;我们将：&lt;/p&gt;
@@ -194,12 +318,12 @@
     
     
     
-    <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
+    <category term="java" scheme="https://github.com/CPyeah/categories/java/"/>
     
-    
-    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
     <category term="springboot" scheme="https://github.com/CPyeah/tags/springboot/"/>
     
@@ -214,7 +338,7 @@
     <link href="https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
     <id>https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-05-27T07:29:29.000Z</published>
-    <updated>2022-07-18T09:56:11.116Z</updated>
+    <updated>2022-11-17T15:07:21.950Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;这篇文章我们一起来学习一下最最流行的搜索引擎 - &lt;code&gt;ElasticSearch&lt;/code&gt;&lt;br&gt;我们将学习到：&lt;/p&gt;
@@ -231,12 +355,12 @@
     
     
     
-    <category term="知识" scheme="https://github.com/CPyeah/categories/%E7%9F%A5%E8%AF%86/"/>
+    <category term="database" scheme="https://github.com/CPyeah/categories/database/"/>
     
-    
-    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
   </entry>
   
@@ -245,7 +369,7 @@
     <link href="https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
     <id>https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</id>
     <published>2021-04-26T07:15:43.000Z</published>
-    <updated>2022-06-27T14:38:47.074Z</updated>
+    <updated>2022-11-17T15:07:21.951Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这篇文章介绍一下高级Redis数据结构，及其用法。&lt;/p&gt;
@@ -262,14 +386,14 @@
     
     
     
-    <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
+    <category term="database" scheme="https://github.com/CPyeah/categories/database/"/>
     
-    
-    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
     <category term="redis" scheme="https://github.com/CPyeah/tags/redis/"/>
     
     <category term="redisson" scheme="https://github.com/CPyeah/tags/redisson/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
   </entry>
   
@@ -278,7 +402,7 @@
     <link href="https://github.com/CPyeah/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/"/>
     <id>https://github.com/CPyeah/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/</id>
     <published>2021-03-25T02:18:43.000Z</published>
-    <updated>2022-06-27T14:38:47.072Z</updated>
+    <updated>2022-11-17T15:07:21.966Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;Redis是目前最流行的缓存数据库，完全基于内存操作，速度非常快。&lt;br&gt;它是我们互联网公司高性能，高并发的基石。&lt;br&gt;它的功能包括但不限于：提供中央缓存功能，分布式锁，还有特殊数据结构的特殊应用。&lt;br&gt;本篇文章都会一一说到。&lt;/p&gt;
@@ -293,14 +417,14 @@
     
     
     
-    <category term="技术" scheme="https://github.com/CPyeah/categories/%E6%8A%80%E6%9C%AF/"/>
+    <category term="java" scheme="https://github.com/CPyeah/categories/java/"/>
     
-    
-    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
     <category term="redis" scheme="https://github.com/CPyeah/tags/redis/"/>
     
     <category term="redisson" scheme="https://github.com/CPyeah/tags/redisson/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
   </entry>
   

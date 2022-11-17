@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-cn">
+  
+
+    <head>
+      <meta charset="utf-8" />
+       
+      <meta name="keywords" content="Java" />
+       
+      <meta name="description" content="chengpeng&#39;s blogs" />
+      
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title>深入理解Java虚拟机 |  chengpeng&#39;s blogs</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
+
+      
+<link rel="stylesheet" href="/css/fonts/remixicon.css">
+
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.staticfile.org/pace/1.2.4/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    <link rel="alternate" href="/atom.xml" title="chengpeng's blogs" type="application/atom+xml">
+</head>
+  </html>
+</html>
+
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-java/深入理解Java虚拟机"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  深入理解Java虚拟机
+</h1>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/" class="article-date">
+  <time datetime="2022-03-05T12:54:21.000Z" itemprop="datePublished">2022-03-05</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">9.4k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">33 min</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>这边文章我们深入了解一下Java虚拟机。<br>我会了解到：</p>
+<ul>
+<li>虚拟机的种类大概有哪些？</li>
+<li>JVM的内存管理模型是什么样子的？</li>
+<li>Java对象的创建过程是什么样子的？</li>
+<li>Java对象的内存布局是什么样子的？</li>
+<li>如何判断对象是垃圾？</li>
+<li>Java中引用的类型有哪些？</li>
+<li>垃圾收集算法有哪些？</li>
+<li>HopSpot的垃圾收器是怎么实现的？</li>
+<li>经典的垃圾收集器有哪些？</li>
+<li>低延迟的垃圾收集器有哪些？</li>
+<li>如何选择垃圾收集器？</li>
+<li>JVM提供了哪些监控工具？</li>
+<li>市面上有哪些可视化的工具？</li>
+<li>JVM是怎么调优的？</li>
+<li>Class文件结构是什么样子的？</li>
+<li>常见的字节码指令有哪些？</li>
+<li>Java编译的流程是什么样子的？</li>
+<li>后端编译的过程是什么样子的？</li>
+<li>Java内存模型是什么样子的？</li>
+<li>volatile关键字有什么用？</li>
+<li>Java的多线程是怎么实现的？</li>
+<li>Java中有哪些锁优化？</li>
+</ul>
+<p>希望对你有所帮助～</p>
+<span id="more"></span>
+
+<h2 id="虚拟机的种类大概有哪些？"><a href="#虚拟机的种类大概有哪些？" class="headerlink" title="虚拟机的种类大概有哪些？"></a>虚拟机的种类大概有哪些？</h2><h3 id="HotSpot"><a href="#HotSpot" class="headerlink" title="HotSpot"></a>HotSpot</h3><p>首当其冲的就是使用最广泛的 <code>HotSpot</code> 虚拟机，它最重要的功能就是和它的名字一样，有<code>热点探测</code>的功能。<br>它的原理是通过方法计数器，找到多次调用的方法，和多次循环的方法，然后以方法为单位，进行二次编译成机器码，物理硬件可以直接执行。<br>还有就是它的准确式的内存管理。以前的虚拟机，都是通过句柄来操作对象的，而HotSpot可以直接识别栈上的地址是不是一个对象的引用。</p>
+<h3 id="Sun-Classic"><a href="#Sun-Classic" class="headerlink" title="Sun Classic"></a>Sun Classic</h3><p>还有<code>Sun Classic</code>是Java的第一款虚拟机，能编译一起，到处运行。这是Java一开始的口号。 但是有很多缺点。<br>性能慢，不支持即时编译，需要进行外挂。</p>
+<h3 id="Mobile-x2F-Embedded-VM"><a href="#Mobile-x2F-Embedded-VM" class="headerlink" title="Mobile&#x2F;Embedded VM"></a>Mobile&#x2F;Embedded VM</h3><p>还有一种就是运行在一些嵌入式设备，老年机上的Java虚拟机。它的特点就是需要的硬件资源少。</p>
+<p>还有一些其他公司的虚拟机，各有各的特点。。。</p>
+<h2 id="实战1：自己编译JDK"><a href="#实战1：自己编译JDK" class="headerlink" title="实战1：自己编译JDK"></a>实战1：自己编译JDK</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">/Users/chengpeng/Library/Java/JavaVirtualMachines/liberica-1.8.0_322/bin/java -version</span><br><span class="line"></span><br><span class="line">brew install autoconf</span><br><span class="line">brew install freetype ccache</span><br><span class="line"></span><br><span class="line">bash configure --enable-debug --with-jvm-variants=server</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="JVM的内存管理模型是什么样子的？"><a href="#JVM的内存管理模型是什么样子的？" class="headerlink" title="JVM的内存管理模型是什么样子的？"></a>JVM的内存管理模型是什么样子的？</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16455236088988.jpg"></p>
+<p>在java虚拟机中，最重要的两个分区就是堆和栈</p>
+<h3 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h3><p>堆空间就是我们一般放对象的地方，在栈里面放的都是基本数据类型和对象的引用。<br>堆也是会被垃圾收集的一块内存空间。可以在物理上不连续，但是在逻辑上连续。<br>通过JVM的版本不同（G1为分界），对堆的分区也有不同。</p>
+<h3 id="栈（虚拟机栈）"><a href="#栈（虚拟机栈）" class="headerlink" title="栈（虚拟机栈）"></a>栈（虚拟机栈）</h3><p>栈是属于线程的，每一个线程在开始的时候，都会同步创建一个栈空间，每一次方法调用的时候，都会创建一个栈帧，放到这个栈里面，方法调用结束的时候，栈帧就会出栈。栈帧是和方法向对应的，里面有：</p>
+<ul>
+<li>局部变量表，放一些方法里面的局部变量</li>
+<li>操作数栈，在做运算的时候需要的一种数据结构</li>
+<li>动态链接</li>
+<li>方法出口</li>
+<li>等等</li>
+</ul>
+<h3 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h3><p>和操作数栈类似，只不过本地方法栈是给一个native方法服务的。</p>
+<h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>程序计数器是<code>线程隔离</code>的，每一个线程都有一个程序计数器。我们的程序本质上是一个一个的字节码指令，像<code>LOP</code>什么的，我们的程序（线程）就是一条指令一条指令的往下执行，程序计数器就是记录的<code>当前程序执行的位置</code>，就是当前命令的<code>行号</code>。<br>因为在多线程 线程切换的时候，会记录下当前执行命令的行号，再当线程回来继续执行的时候。就会按照程序计数器中的行号继续往下执行。</p>
+<h3 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h3><p>方法区和堆一样，也是所有线程共用的。在逻辑上，它是数据堆空间的一部分，但是实际上是不同的实现。里面主要放一些：</p>
+<ul>
+<li>类的信息</li>
+<li>静态变量的信息</li>
+<li>常量</li>
+<li>即时编译后的一些缓存的代码</li>
+</ul>
+<p>以JDK8为分界，以前有个永久代，来完成现在方法区的工作，几乎不做垃圾收集（除非一些类的卸载）。因为和堆共用空间，可能会导致内存溢出。<br>所以现在通过元空间来实现方法区。使用本地内存来实现，不会占用堆空间的大小。</p>
+<h3 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h3><p>它是属于方法区的一部分。主要保存一些类在编译期的常量，还有运行时动态生成的一些常量。</p>
+<h3 id="其他内存"><a href="#其他内存" class="headerlink" title="其他内存"></a>其他内存</h3><p>堆外内存，不被GC，可以通过NIO直接分配堆外内存，通过堆里面的一个引用来操作堆外内存。在一些场景中可以提高效率。</p>
+<h2 id="Java对象的创建过程是什么样子的？"><a href="#Java对象的创建过程是什么样子的？" class="headerlink" title="Java对象的创建过程是什么样子的？"></a>Java对象的创建过程是什么样子的？</h2><ul>
+<li>通过字节码中的NEW命令来创建对象</li>
+<li>看类的字面量在常量池中有没有类的引用</li>
+<li>判断这个类有没有被加载，如果没有的话，执行类加载</li>
+<li>通过类，来判断对象多需要内存的大小</li>
+<li>在堆空间中（eden）占用内存空间，有两种方式<ul>
+<li>指针碰撞（Serial、ParNew等带压缩整理，需要对齐的堆空间，把判断空闲的指针向后移动特定距离）</li>
+<li>空闲列表（CMS中，维护了一个表，来判断哪些内存是空闲的）</li>
+</ul>
+</li>
+<li>占内存的并发问题<ul>
+<li>CAS（如果发现冲突，重试）</li>
+<li>本地线程分配缓冲（TLAB，-XX：+&#x2F;-UseTLAB配置开启。    每一个线程提前分配一定的堆内存大小，每个线程在自己的缓存中创建对象，如果自己的内存满了，分配新缓存时，使用同步锁）</li>
+</ul>
+</li>
+<li>对象初始化为0（在对象体中，实例数据）</li>
+<li>设置对象（对象头）。比如：来自于那个类，对象的Hash，偏向锁，存活年龄等。</li>
+<li>再执行构造函数，完成程序员对对象的初始化。</li>
+</ul>
+<h2 id="Java对象的内存布局是什么样子的？"><a href="#Java对象的内存布局是什么样子的？" class="headerlink" title="Java对象的内存布局是什么样子的？"></a>Java对象的内存布局是什么样子的？</h2><ul>
+<li>对象头<ul>
+<li>MarkWord：Hash，年龄，锁信息，偏向线程ID等</li>
+<li>类型指针、（数组长度）</li>
+</ul>
+</li>
+<li>实例数据<ul>
+<li>对象属性字段</li>
+<li>对象和方法的引用</li>
+</ul>
+</li>
+<li>数据填充<ul>
+<li>占位，8的整数倍</li>
+</ul>
+</li>
+<li>对象访问的两种方式<ul>
+<li>句柄</li>
+<li>直接指针引用</li>
+</ul>
+</li>
+</ul>
+<h2 id="实战2：OutOfMemoryError异常"><a href="#实战2：OutOfMemoryError异常" class="headerlink" title="实战2：OutOfMemoryError异常"></a>实战2：OutOfMemoryError异常</h2><ul>
+<li>堆内存溢出</li>
+<li>栈空间溢出（深度、内存大小）</li>
+<li>方法区溢出（永久代、元空间）</li>
+<li>直接内存溢出</li>
+</ul>
+<hr>
+<h2 id="如何判断对象是垃圾？"><a href="#如何判断对象是垃圾？" class="headerlink" title="如何判断对象是垃圾？"></a>如何判断对象是垃圾？</h2><h3 id="引用计数法"><a href="#引用计数法" class="headerlink" title="引用计数法"></a>引用计数法</h3><p>开辟一块空间来维护对象被引用的个数，如果为0，就表示该对象没有被引用。<br>优点：简单，判定效率高<br>缺点：没法解决循环引用的问题</p>
+<h3 id="可达性分析算法"><a href="#可达性分析算法" class="headerlink" title="可达性分析算法"></a>可达性分析算法</h3><p>从GC Root为根节点，往下开始遍历、引用，搜索到的对象都是被引用的对象，其他的就是没有被引用的对象，需要被清理。<br>GCRoot包括：</p>
+<ul>
+<li>栈空间（包括虚拟机栈、本地方法栈）</li>
+<li>方法区（静态变量，常量）</li>
+<li>JVM内部引用（Class对象，常驻异常，空指针，内存溢出的异常，类加载器）</li>
+<li>被synchronized锁住的对象</li>
+<li>等等</li>
+</ul>
+<p>会有两次标记的过程<br>没有被GCRoot调用链的对象，先回被标记一次，再做一次筛选，看需不需要执行finalize()方法。如果需要执行，会放到队列里面执行。<br>执行finalize()方法有时间限制，不会永久的等待。但是在finalize()方法中，可以把当前对象重新给引用上，以逃离被清除的命运。<br>队列中执行完了之后，会进行第二次标记，其中对象有可能被重新引用上了（把this赋值给了别的对象）<br>第二次还是被标记上是垃圾的对象，就真的会被执行清除。</p>
+<h3 id="对方法区的回收"><a href="#对方法区的回收" class="headerlink" title="对方法区的回收"></a>对方法区的回收</h3><ul>
+<li>字符串常量的回收</li>
+<li>类的卸载、回收（字节码创建的类）</li>
+</ul>
+<h2 id="Java中引用的类型有哪些？"><a href="#Java中引用的类型有哪些？" class="headerlink" title="Java中引用的类型有哪些？"></a>Java中引用的类型有哪些？</h2><h3 id="强引用-Strongly-Reference"><a href="#强引用-Strongly-Reference" class="headerlink" title="强引用 (Strongly Reference)"></a>强引用 (Strongly Reference)</h3><p>一般口中的引用，对象被强引用，就不会被回收</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br></pre></td></tr></table></figure>
+
+<h3 id="软引用-（Soft-Reference）"><a href="#软引用-（Soft-Reference）" class="headerlink" title="软引用 （Soft Reference）"></a>软引用 （Soft Reference）</h3><p>还有用，但是非必需的对象。一般GC不会清理，但是内存溢出前会清理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SoftReference&lt;Object&gt; softReference = <span class="keyword">new</span> <span class="title class_">SoftReference</span>&lt;&gt;(<span class="keyword">new</span> <span class="title class_">Object</span>());</span><br></pre></td></tr></table></figure>
+
+<h3 id="弱引用（Weak-Reference）"><a href="#弱引用（Weak-Reference）" class="headerlink" title="弱引用（Weak Reference）"></a>弱引用（Weak Reference）</h3><p>被弱引用关联的对象只 能生存到下一次垃圾收集发生为止.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WeakReference&lt;Object&gt; weakReference = <span class="keyword">new</span> <span class="title class_">WeakReference</span>&lt;&gt;(<span class="keyword">new</span> <span class="title class_">Object</span>());</span><br></pre></td></tr></table></figure>
+
+<h3 id="虚引用（Phantom-Reference）"><a href="#虚引用（Phantom-Reference）" class="headerlink" title="虚引用（Phantom Reference）"></a>虚引用（Phantom Reference）</h3><p>不能被访问，没啥用，唯一的用处，就是对象在被回收的时候，得到一个系统通知。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PhantomReference&lt;Object&gt; phantomReference = <span class="keyword">new</span> <span class="title class_">PhantomReference</span>&lt;&gt;(<span class="keyword">new</span> <span class="title class_">Object</span>(), <span class="keyword">new</span> <span class="title class_">ReferenceQueue</span>&lt;&gt;());</span><br></pre></td></tr></table></figure>
+
+<h2 id="垃圾收集算法有哪些？介绍一下。"><a href="#垃圾收集算法有哪些？介绍一下。" class="headerlink" title="垃圾收集算法有哪些？介绍一下。"></a>垃圾收集算法有哪些？介绍一下。</h2><h3 id="标记-清除算法"><a href="#标记-清除算法" class="headerlink" title="标记-清除算法"></a>标记-清除算法</h3><p>基础GC算法，先标记，后清除。</p>
+<p>问题：</p>
+<ul>
+<li>对象多，垃圾对象多的时候，效率不稳定，需要一个个的清除</li>
+<li>会产生内存碎片</li>
+</ul>
+<h3 id="标记-复制算法"><a href="#标记-复制算法" class="headerlink" title="标记-复制算法"></a>标记-复制算法</h3><p>把内存分为大小相等的两块，每次只使用一块。每次做完标记之后，把存活的对象（新生代中存活的对象往往都是少数），全部移动到另外一块空白的内存上去，再把之前的这块内存全部清除。</p>
+<p>好处：</p>
+<ul>
+<li>一次性的清除一块区域，效率高</li>
+<li>每次复制的时候做整理，没有内存碎片</li>
+<li>实现简单</li>
+<li>缺点：</li>
+<li>内存空间利用率低，每次只能用到一半的内存。</li>
+</ul>
+<h3 id="标记-整理算法"><a href="#标记-整理算法" class="headerlink" title="标记-整理算法"></a>标记-整理算法</h3><p>先标记，在进行整理，把存活的对象都整理到一边，再把边界之外的对象一次性全部清理掉。</p>
+<p>优点：</p>
+<ul>
+<li>没有内存碎片</li>
+<li>执行清理掉效率比较高</li>
+<li>缺点：</li>
+<li>移动对象的时候需要更长时间的Stop the world</li>
+</ul>
+<h2 id="HopSpot的垃圾收器是怎么实现的？"><a href="#HopSpot的垃圾收器是怎么实现的？" class="headerlink" title="HopSpot的垃圾收器是怎么实现的？"></a>HopSpot的垃圾收器是怎么实现的？</h2><ol>
+<li>通过<code>OopMap</code>，在栈、方法区找到引用类型的GCRoot枚举</li>
+<li>线程在<code>安全点</code>时，才会可能发生GC。比如一些方法调用、循环跳转、异常跳转等</li>
+<li>如何在需要GC时，让所有线程都停在安全点上。<ol>
+<li><code>主动式中断</code>，设置标志位，让线程轮训，自行中断</li>
+<li><code>抢先式中断</code>，先全部强制中断，再把没有到安全点点线程，让它运行到安全点。</li>
+</ol>
+</li>
+<li>对于挂起或者sleep中的线程，它可能永远不会走到安全点上，所以对于这样的线程，把它设为<code>安全区域</code>，随时可以做GC。</li>
+<li>处理跨代的收集-&gt;<code>记忆集</code>和它的实现 <code>卡表</code><ol>
+<li>卡表是记忆集的一种实现</li>
+<li>卡表维护的其他年龄代的一块Page</li>
+<li>如果有其他代的对象引用了当前代，对应卡表的元素变脏</li>
+<li>在GC中，会把变脏的其他代内存对象当成GCRoot来扫描</li>
+<li>在每次赋值操作是，会有个<code>写屏障</code>的过程，对赋值操作的AOP，会同时维护卡表元素</li>
+</ol>
+</li>
+<li>可达性分析，如何标记对象。 三色标记法<ul>
+<li>白色：未被扫描过，如果扫描结束了还是白色，说明这个对象就是垃圾</li>
+<li>黑色：不是垃圾，被扫描过，而且它所有引用的对象也被扫描过</li>
+<li>灰色：不是垃圾，但是它又被没有扫过的引用</li>
+<li>等到没有灰色的时候，表示一次扫描结束。这时候，清除所有白色的垃圾</li>
+<li>并发扫描的时候，对象消失的问题（本来应该被标记的对象，没有被标记上。<ul>
+<li>黑色对象获取了白色对象的引用</li>
+<li>灰色对象失去了所有对白色对象的引用</li>
+<li>增量更新 and 原始快照</li>
+<li>当扫描时，做赋值操作的时候，记录下来，在扫描结束的时候，再扫一次</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16458666178983.jpg"></p>
+<h2 id="经典的垃圾收集器有哪些？"><a href="#经典的垃圾收集器有哪些？" class="headerlink" title="经典的垃圾收集器有哪些？"></a>经典的垃圾收集器有哪些？</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16467271742313.jpg"></p>
+<h3 id="Serial收集器（年轻代）"><a href="#Serial收集器（年轻代）" class="headerlink" title="Serial收集器（年轻代）"></a>Serial收集器（年轻代）</h3><p>它需要把所有的用户线程全部停下来（Stop the world），然后专心的做垃圾清理。<br>缺点很明显，就是长时间的STW，影响用户体验，现在已经很少用了。<br>但是它也有优点，就是简单，单线程，使用的额外内存很少很少。有些场景可能回适用。</p>
+<h3 id="ParNew收集器（年轻代）"><a href="#ParNew收集器（年轻代）" class="headerlink" title="ParNew收集器（年轻代）"></a>ParNew收集器（年轻代）</h3><p>他几乎和Serial一样，就是加入了多线程的功能，可以多个线程同时进行GC，但是这样就会增加了线程间切换的开销。<br>但是它有个优势，就是它可以和CMS搭配使用。在java9之前，这都是官方默认配置。</p>
+<h3 id="Parallel-Scavenge收集器（年轻代）"><a href="#Parallel-Scavenge收集器（年轻代）" class="headerlink" title="Parallel Scavenge收集器（年轻代）"></a>Parallel Scavenge收集器（年轻代）</h3><p>他和ParNew收集器类似，但他有两个重要的特性：</p>
+<ol>
+<li>第一点就是它可以控制每次GC时STW的时间，和吞吐量的比率，但是如果配置的过小，它GC的就会更加频繁。</li>
+<li>第二点就是，它有个自适应开关，打开了之后，我们就不用配置年轻代的大小了，它会根据监控数据，自动适应。<h3 id="Serial-Old收集器（老年代）"><a href="#Serial-Old收集器（老年代）" class="headerlink" title="Serial Old收集器（老年代）"></a>Serial Old收集器（老年代）</h3>老年代，单线程，串型收集器， 标记-整理。<br>主要是为了和Parallel Scavenge收集器搭配使用。  还有个用途，就是做CMS的后备收集器。<h3 id="Parallel-Old收集器（老年代）"><a href="#Parallel-Old收集器（老年代）" class="headerlink" title="Parallel Old收集器（老年代）"></a>Parallel Old收集器（老年代）</h3>Parallel Scavenge收集器的老年代版本， 标记-整理，注重吞吐量和单次GC时间。和Parallel Scavenge搭配使用。<h3 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h3>java9之前最经典的收集器，STW的时间非常短。它的特点就是可以GC线程和用户线程的并发。<br>它在一次GC的过程中共有四个阶段：</li>
+<li>找到所有的GCRoot（STW）</li>
+<li>并发标记</li>
+<li>二次标记（STW）</li>
+<li>并发清除<br>优点：它只需要很短的时间STW来做一些标记工作，标记-清理算法，快。<br>缺点：需要额外的内存，来存放在并发期间的新对象。内存不足会抛异常。会执行Serial Old收集。    需要间隔的执行内存整理，防止内存碎片。<h3 id="G1收集器"><a href="#G1收集器" class="headerlink" title="G1收集器"></a>G1收集器</h3>它是在java9之后主要的收集器，在以后也会慢慢的替换掉CMS。它的内存模型有一个比较大的改变，它是把整个的JVM内存分成一个一个的region来管理。每个region可以有不同的角色，比如edian、surivior、老年代和大对象区域。<br>然后每次回收都会选择性的清理一部分的region，根据配置，来选择清理效率最高的一些region。<br>它的GC过程主要分成四步：</li>
+<li>初始标记（STW）<br>这一步主要是找GCRoot，耗时会比较短，因为会跨区域收集，所以每个region里面都会维护一个记忆集，是用来找到持有该region引用的内存区域。</li>
+<li>并发标记<br>这一步是和用户线程并发执行了，耗时会比较长。<br>会维护两个区域，一个是在此过程中，新new出对象存放的区域，这次GC不会被清理。  还有一个就是在此过程中，指针有变换的对象，通过写屏障，就是对赋值操作的切面。会在下一步最终标记里面，再检查一次。</li>
+<li>最终标记（STW）<br>这一步就是对在并发标记过程中，指针有变化的对象，再做一次确定操作，这一步也是需要STW的，保证不会把不是垃圾的对象收集掉。</li>
+<li>筛选清除（STW）<br>这一步的时候，就能确定region里面的垃圾了，也可以计算出清理region所需要的时间，大概，然后对清理的成本和价值做个排序，根据配置的清理时间，确定要清理哪一些region。 再做复制-清除操作，因为涉及到了复制对象，所以需要用户线程是STW的。</li>
+</ol>
+<p>相比CMS，它需要更多内存空间来维护一些东西，比如region的管理，每个region都会有一份的卡表（跨区域指针），而CMS只需要在年轻代维护一份卡表就行了。  它的主要优势是它把整个JVM内存化整为零，不会一次性清理全部的区域，而是根据配置，可控的清理一部分region。  还有一点就是，每次清理实际上是标记-复制法，所以不会有内存碎片，而CMS是标记-清除法，会有内存碎片的问题。   目前在大内存的服务器上，G1的性能会更好。</p>
+<h2 id="低延迟的垃圾收集器有哪些？"><a href="#低延迟的垃圾收集器有哪些？" class="headerlink" title="低延迟的垃圾收集器有哪些？"></a>低延迟的垃圾收集器有哪些？</h2><h3 id="Shenandoah收集器"><a href="#Shenandoah收集器" class="headerlink" title="Shenandoah收集器"></a>Shenandoah收集器</h3><p>它不是Oracle官方出的GC，是redhat搞的，所以不受官方的支持，只能在openJDK上使用。<br>它的内存分布和G1差不多，都是使用region把内存分成一个一个的小块，再进行收集。<br>它的收集过程</p>
+<ol>
+<li>GCRoot标记</li>
+<li>并发标记</li>
+<li>最终标记</li>
+<li>并发清理（清理全部是垃圾的region）</li>
+<li>并发回收（把region中存活的对象，移到新的region中）</li>
+<li>初始引用更新（这里把老对象的地址，和对应新对象的地址找出来，并做成一个Map映射， 短暂的STW）</li>
+<li>并发引用更新（按物理顺序扫描，按照映射修改引用地址）</li>
+<li>最终引用更新（更改GCTRoot的引用，短暂STW）</li>
+<li>最终并发清理（这时候老的region应该都是垃圾对象了，再并发清理掉）</li>
+</ol>
+<p>它的特点就是停顿时间很短，基本上大的操作都是并发执行的，但是就是因为是并发，会有很多线程竞争的场景，所以总体吞吐量不大。整体性能一般。</p>
+<h3 id="ZGC"><a href="#ZGC" class="headerlink" title="ZGC"></a>ZGC</h3><p>它是目前最先进的一款收集器，参考的是Azul公司的PGC和C4收集器。 它最大的特点，就是在对象在region间复制的过程中，不需要STW，而且复制过去了之后，立马生效，不同再等到全堆扫描更新引用。<br>它主要的技术是：</p>
+<ul>
+<li>染色指针（就是在指针上面打Flag，而不用存在对象头，或者单独维护）</li>
+<li>读屏障（在对象内存寻址的时候，可以重定向）</li>
+<li>内存多种映射（这是为了解决不同底层硬件，操作系统对染色指针的不支持）<br>它的主要GC过程：</li>
+</ul>
+<ol>
+<li>标记（初始、并发、最终）</li>
+<li>并发准备重分配（扫描所有的region，找到这次需要清理的region）</li>
+<li>并发重分配（就是把region里面不是垃圾的对象做复制转移，并在当前region里面，维护一个转发表，这个时候，就可以把老的对象给删了）     如果这个时候有新的寻址过来，通过读屏障，会在转发表里面，找到对象的新地址，并更新引用。</li>
+<li>并发重映射（就是扫描所有的对象，把引用全部更新成新的地址，在转发表里面找），因为这一步不需要立刻执行，所有它把这一步合并到下一次GC的标记操作中了。</li>
+</ol>
+<h2 id="如何选择垃圾收集器？"><a href="#如何选择垃圾收集器？" class="headerlink" title="如何选择垃圾收集器？"></a>如何选择垃圾收集器？</h2><p>场景：</p>
+<ol>
+<li>桌面程序，占用内存</li>
+<li>服务，注重停顿时间</li>
+<li>计算密集性服务，吞吐量</li>
+<li>老版本的JDK</li>
+<li>有充足预算，直接上Azul公司的C4</li>
+</ol>
+<h2 id="实战3：内存分配与回收策略"><a href="#实战3：内存分配与回收策略" class="headerlink" title="实战3：内存分配与回收策略"></a>实战3：内存分配与回收策略</h2><hr>
+<h2 id="JVM提供了哪些监控工具？"><a href="#JVM提供了哪些监控工具？" class="headerlink" title="JVM提供了哪些监控工具？"></a>JVM提供了哪些监控工具？</h2><ul>
+<li>jps [-lv]  查看所有jvm进程</li>
+<li>jstat [-option] pid  查看jvm状态</li>
+<li>jinfo [-option] pid 查看jvm配置信息</li>
+<li>jmap  查看内存信息<ul>
+<li><code>jmap -dump:format=b,file=eclipse.bin 3500</code></li>
+</ul>
+</li>
+<li>jstack pid  查看堆栈信息</li>
+</ul>
+<h2 id="市面上有哪些可视化的工具？"><a href="#市面上有哪些可视化的工具？" class="headerlink" title="市面上有哪些可视化的工具？"></a>市面上有哪些可视化的工具？</h2><ul>
+<li>JConsole</li>
+<li>VisualVM</li>
+<li>·Eclipse的Memory Analyzer Tool[5]（MAT）</li>
+</ul>
+<h2 id="JVM是怎么调优的？举例说明一下。"><a href="#JVM是怎么调优的？举例说明一下。" class="headerlink" title="JVM是怎么调优的？举例说明一下。"></a>JVM是怎么调优的？举例说明一下。</h2><h4 id="大内存大对象的优化"><a href="#大内存大对象的优化" class="headerlink" title="大内存大对象的优化"></a>大内存大对象的优化</h4><p>方案：</p>
+<ol>
+<li>用Shenandoah、ZGC等可控延迟的GC</li>
+<li>使用Full GC 时，控制频率</li>
+<li>拆分虚拟机，一个大内存的JVM变成多个小内存的JVM</li>
+</ol>
+<h4 id="缓存溢出"><a href="#缓存溢出" class="headerlink" title="缓存溢出"></a>缓存溢出</h4><p>因为某些原因，导致缓存一直没有被消除</p>
+<h4 id="堆外内存溢出"><a href="#堆外内存溢出" class="headerlink" title="堆外内存溢出"></a>堆外内存溢出</h4><p>使用NIO操作文件，可直接只用堆外内存。 需要注意堆外内存大小。</p>
+<h4 id="调用shell脚本导致内存溢出"><a href="#调用shell脚本导致内存溢出" class="headerlink" title="调用shell脚本导致内存溢出"></a>调用shell脚本导致内存溢出</h4><p>通过Java的Runtime.getRuntime().exec()，这个非常消耗资源，频繁调用，会导致内存溢出。</p>
+<h4 id="socket链接长时间等待"><a href="#socket链接长时间等待" class="headerlink" title="socket链接长时间等待"></a>socket链接长时间等待</h4><p>链接服务慢，导致本机长时间等待，socket链接堆积，导致内存溢出。<br>可更换链接方式。</p>
+<h4 id="数据分析，大批量数据存活"><a href="#数据分析，大批量数据存活" class="headerlink" title="数据分析，大批量数据存活"></a>数据分析，大批量数据存活</h4><p>大匹量对象在Eden中存活，在Surivor中来回复制，导致停顿时间长。</p>
+<h4 id="某线程到达安全点时间长"><a href="#某线程到达安全点时间长" class="headerlink" title="某线程到达安全点时间长"></a>某线程到达安全点时间长</h4><p>某线程使用int使用循环，是不会进入安全点的。导致该线程需要长时间到达安全点，其他线程只能等待。<br>方案：找到长时间运转的线程，把int-&gt;long</p>
+<h2 id="Class文件结构是什么样子的？"><a href="#Class文件结构是什么样子的？" class="headerlink" title="Class文件结构是什么样子的？"></a>Class文件结构是什么样子的？</h2><ol>
+<li>Magic Number</li>
+<li>版本号</li>
+<li>常量池（字面量+引用符号）</li>
+<li>类描述符、父类、接口列表</li>
+<li>字段集合</li>
+<li>方法集合</li>
+<li>属性集合（类的源文件、方法体）</li>
+</ol>
+<h2 id="你知道的字节码指令有哪些？"><a href="#你知道的字节码指令有哪些？" class="headerlink" title="你知道的字节码指令有哪些？"></a>你知道的字节码指令有哪些？</h2><h4 id="加载、存储指令"><a href="#加载、存储指令" class="headerlink" title="加载、存储指令"></a>加载、存储指令</h4><ul>
+<li>load：从局部变量表 加载 到操作数栈（入栈）</li>
+<li>store：从操作数栈 存储数据到局部变量表（出栈）</li>
+<li>const：加载一个常量到操作数栈（入栈）<h4 id="运算指令"><a href="#运算指令" class="headerlink" title="运算指令"></a>运算指令</h4></li>
+<li>加：add</li>
+<li>减：sub</li>
+<li>乘：mul</li>
+<li>除：div</li>
+<li>取余：rem</li>
+<li>取反：neg</li>
+<li>位移：shl、shr</li>
+<li>按位与、或：and、or</li>
+<li>按位异或：xor</li>
+<li>局部变量自增：inc</li>
+<li>比较：cmpg、cmpl<h4 id="对象创建与访问指令"><a href="#对象创建与访问指令" class="headerlink" title="对象创建与访问指令"></a>对象创建与访问指令</h4></li>
+<li>创建对象：new</li>
+<li>创建数组：newarray</li>
+<li>访问对象属性：getfield、putfield、getstatic、putstatic</li>
+<li>数组操作：aload、astore<h4 id="操作数栈管理指令"><a href="#操作数栈管理指令" class="headerlink" title="操作数栈管理指令"></a>操作数栈管理指令</h4></li>
+<li>出栈：pop、pop2</li>
+<li>复制栈顶的值：dup、dup2</li>
+<li>栈顶两个元素交换位置：swap<h4 id="控制转移指令"><a href="#控制转移指令" class="headerlink" title="控制转移指令"></a>控制转移指令</h4></li>
+<li>if</li>
+<li>switch</li>
+<li>goto<h4 id="方法调用和返回指令"><a href="#方法调用和返回指令" class="headerlink" title="方法调用和返回指令"></a>方法调用和返回指令</h4></li>
+<li><strong>invokevirtual</strong></li>
+<li>invokeinterface</li>
+<li>invokespecial</li>
+<li><strong>invokedynamic</strong><h4 id="异常指令"><a href="#异常指令" class="headerlink" title="异常指令"></a>异常指令</h4></li>
+<li>athrow<h4 id="同步指令（synchronized）"><a href="#同步指令（synchronized）" class="headerlink" title="同步指令（synchronized）"></a>同步指令（synchronized）</h4></li>
+<li>monitor enter</li>
+<li>monitor exit</li>
+</ul>
+<h2 id="Java的类加载过程是什么样子的？"><a href="#Java的类加载过程是什么样子的？" class="headerlink" title="Java的类加载过程是什么样子的？"></a>Java的类加载过程是什么样子的？</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16478477164166.jpg"></p>
+<ol>
+<li>加载（加载字节码）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 通过全限定类名找到改类的二进制流（字节码）</span><br><span class="line">2. 将字节码流转化成方法区的存储结构</span><br><span class="line">3. 在内存中生成一个Class对象，来作为这个类的访问入口</span><br></pre></td></tr></table></figure></li>
+<li>验证（验证字节码格式）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">对字节码的格式、语义做校验，要是不符合规范的，抛出VerifyException。</span><br></pre></td></tr></table></figure></li>
+<li>准备（基础数据类型的准备）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">为一些静态变量赋值，static修饰的变量，赋成 0 。</span><br><span class="line">但是使用final修饰的常量，直接赋成定义的值。</span><br></pre></td></tr></table></figure></li>
+<li>解析（引用类型的解析，找到对应的类，并做一些校验）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">将符号引用转换成直接引用。</span><br><span class="line">就是将字符串、字面量转换成其他类真正的引用。</span><br><span class="line">如果其他的类还没有加载，就先加载其他的类。</span><br></pre></td></tr></table></figure></li>
+<li>初始化（走一些静态语句脚本）<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JVM会汇总一个clinit方法，里面会包含所有变量的赋值操作，和静态代码块的内容。</span><br><span class="line">然后会对它们按顺序执行。</span><br><span class="line">如果它的父类有clinit方法，会先执行父类的。</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="有几种类加载器？双亲委派是什么？"><a href="#有几种类加载器？双亲委派是什么？" class="headerlink" title="有几种类加载器？双亲委派是什么？"></a>有几种类加载器？双亲委派是什么？</h2><p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16478551695468.jpg"></p>
+<ul>
+<li>启动类加载器（bootstrap）<ul>
+<li>加载java核心代码（lib目录下），比如rt.jar tools.jar</li>
+<li>C语言编写，我们没法使用</li>
+</ul>
+</li>
+<li>扩展类加载器（extension）<ul>
+<li>加载java扩展代码，ext目录下</li>
+<li>Java编写，可以获取到使用</li>
+</ul>
+</li>
+<li>应用程序类加载器（application）<ul>
+<li>加载我们自己编写的代码</li>
+<li>一般Class默认的类加载器</li>
+</ul>
+</li>
+<li>自定义类加载器<ul>
+<li>实现 <code>ClassLoader</code>接口</li>
+</ul>
+</li>
+</ul>
+<h4 id="双亲委派"><a href="#双亲委派" class="headerlink" title="双亲委派"></a>双亲委派</h4><p>当我们得到一个全限定类名，并尝试加载它的时候，会先让当前Classloader的父加载器去加载，如果该类不在父加载器的加载范围，再使用当前加载器加载。<br>这样的目的是保证一些核心类的安全。一些基础的类，比如Object，只能使用bootstrap加载器加载。<br>以为在Java中，判断一个类的唯一性，是通过 类加载器+全限定类名 来判断的，如果使用两个类加载器加载Object，会导致程序错乱。</p>
+<h4 id="打破双亲委派"><a href="#打破双亲委派" class="headerlink" title="打破双亲委派"></a>打破双亲委派</h4><ol>
+<li>java1.2以前</li>
+<li>热部署、osgi</li>
+</ol>
+<h4 id="在java9之后的双亲委派"><a href="#在java9之后的双亲委派" class="headerlink" title="在java9之后的双亲委派"></a>在java9之后的双亲委派</h4><p>在java9之后，引入了模块系统，每个模块是隔离的，所以在ApplicationClassLoader和PlatfromClassLoader中，在向上委派之前，会现在其他的module中找一下这个类的归属，如果属于别的module，就让别的module的classloader加载。</p>
+<h2 id="Java运行时候的栈帧是什么样子的？"><a href="#Java运行时候的栈帧是什么样子的？" class="headerlink" title="Java运行时候的栈帧是什么样子的？"></a>Java运行时候的栈帧是什么样子的？</h2><ul>
+<li>局部变量表（变量保存）<ul>
+<li>它主要存储在当前作用域中的一些局部变量，存储单元是变量槽，0号变量槽是this，其他的变量（方法参数，定义的变量）从1开始往后。</li>
+<li>变量槽可以复用，但是不会主动擦除数据。</li>
+</ul>
+</li>
+<li>操作数栈（函数、方法的参数传递）<ul>
+<li>栈结构，用来做运算和方法调用</li>
+</ul>
+</li>
+<li>动态链接（找调用方法的入口）<ul>
+<li>在多态的情况下，只有在运行时才能知道，到底是调用的哪个类的方法，所以要保存一个动态链接。</li>
+</ul>
+</li>
+<li>方法返回地址（当前方法的出口）</li>
+</ul>
+<h2 id="Java运行时，方法调用的过程是什么样子的？"><a href="#Java运行时，方法调用的过程是什么样子的？" class="headerlink" title="Java运行时，方法调用的过程是什么样子的？"></a>Java运行时，方法调用的过程是什么样子的？</h2><p>方法调用主要分为两种，静态的和动态的。</p>
+<ul>
+<li>invoke字节码命令</li>
+<li>静态分配<ul>
+<li>在编译期间就能够去定需要调用的是哪个方法</li>
+<li>在一些static方法调用，无继承的（finial修饰）方法调用</li>
+</ul>
+</li>
+<li>动态分配<ul>
+<li>在运行期间才能够确定，到底调用的是哪个方法</li>
+<li>典型的就是多态，在运行的时候，才能确定调用的是哪个子类对象</li>
+</ul>
+</li>
+<li>在方法区中，虚拟机会对每个类维护一个虚方法表，来记录它调用地址的入口，如果是继承的方法且没有重写，就会指向父类的对应方法入口。</li>
+<li>接口同理（接口方法表）</li>
+<li>没有别final修饰的方法，都是虚方法</li>
+</ul>
+<h2 id="Java的动态语言类型支持是什么样子的？"><a href="#Java的动态语言类型支持是什么样子的？" class="headerlink" title="Java的动态语言类型支持是什么样子的？"></a>Java的动态语言类型支持是什么样子的？</h2><p>通过<code>invokedynamic</code>字节码命令实现。<br>在别的动态类型语言里面，类似JavaScript、Grvooy，通过<code>var</code>来定义对象，这个时候就不能确定引用的类型，所以在实际运行时方法调用的时候，需要找到真正执行方法，就有一个lookup的过程。</p>
+<h2 id="实战4：掌控方法分派规则"><a href="#实战4：掌控方法分派规则" class="headerlink" title="实战4：掌控方法分派规则"></a>实战4：掌控方法分派规则</h2><h2 id="字节码解释执行的过程是什么样子的？"><a href="#字节码解释执行的过程是什么样子的？" class="headerlink" title="字节码解释执行的过程是什么样子的？"></a>字节码解释执行的过程是什么样子的？</h2><p>我们编写的Java源代码，本质上就是一堆字符串，计算机肯定不认识，所以我们把这段字符串交给JVM编译，编译的结果有两种：<br>一种是字节码，JVM认识，物理机不认识，只能通过JVM解释执行。<br>还有一种就是CPU的指令集，汇编，本质上就是0101，物理机能直接执行。</p>
+<p>在JVM的解释执行字节码的过程中，是通过操作数栈进行指令执行的，它是基于内存的，所以速度理论上会慢一点，但是它不会依赖物理机器，可移植。 而物理机执行的话，是基于寄存器的，速度会很快，但是不同架构的CPU的寄存器和指令集都是不同的，就没有可移植性。</p>
+<h2 id="你了解的字节码生成技术是什么样子的？"><a href="#你了解的字节码生成技术是什么样子的？" class="headerlink" title="你了解的字节码生成技术是什么样子的？"></a>你了解的字节码生成技术是什么样子的？</h2><h2 id="实战5：自己动手实现远程执行功能"><a href="#实战5：自己动手实现远程执行功能" class="headerlink" title="实战5：自己动手实现远程执行功能"></a>实战5：自己动手实现远程执行功能</h2><h2 id="Java编译的流程是什么样子的？"><a href="#Java编译的流程是什么样子的？" class="headerlink" title="Java编译的流程是什么样子的？"></a>Java编译的流程是什么样子的？</h2><p>Java的编译主要依靠javac工具来执行的，他的任务就是把java源代码，编译成 .class的字节码。<br>主要通过<code>JavaCompiler</code>类来实现的。<br>有4个过程：</p>
+<ul>
+<li>准备过程<ul>
+<li>准备插入式注解处理器（<code>initProcessAnnotations</code>）</li>
+</ul>
+</li>
+<li>语法解析 and 填充符号表 -&gt; 生成抽象语法树<ul>
+<li>语法、词法解析。（<code>parseFiles</code>）<ul>
+<li>有点像ES中的分词，生成抽象语法树（AST）。</li>
+<li>后续的操作都基于这个抽象语法树了。</li>
+<li>有插件可以查看。</li>
+</ul>
+</li>
+<li>填充符号表。 产生符号地址和符号信息内容（<code>enterTrees</code>）</li>
+</ul>
+</li>
+<li>注解处理器的处理过程。 （<code>processAnnotations</code>）<ul>
+<li>通过注解，在编译期间对抽象语法树做出处理。 著名的案例就是Lombok。</li>
+</ul>
+</li>
+<li>分析语法树 and 字节码生成（<code>compile2()</code>）<ul>
+<li>标注检查分析（静态）（<code>attribute()</code>）</li>
+<li>控制流检查分析（动态）（<code>flow()</code>）</li>
+<li>解语法糖（<code>desugar()</code>）</li>
+<li>字节码生成（<code>generate()</code>）</li>
+</ul>
+</li>
+</ul>
+<h2 id="实战6：插入式注解处理器"><a href="#实战6：插入式注解处理器" class="headerlink" title="实战6：插入式注解处理器"></a>实战6：插入式注解处理器</h2><h2 id="后端编译的过程是什么样子的？"><a href="#后端编译的过程是什么样子的？" class="headerlink" title="后端编译的过程是什么样子的？"></a>后端编译的过程是什么样子的？</h2><p>后端编译就是java的字节码编译成机器码的过程。在机器上直接跑机器码，速度和性能就会更快。<br>后端编译就是即时编译，是HotSpot虚拟机有的一个主要的功能，其他虚拟机有的也有。<br>它主要的作用，就是在运行期间，对代码的热度，进行统计分析，针对的是方法级别和循环体级别，然后把热点的字节码编译成机器码，让计算机原生之行。</p>
+<p>热点统计方式主要有两种：<br>1、采样。  定时在所有栈的顶部采集栈帧，统计方法调用的次数。<br>2、方法计数器。 每个方法、代码块，维护一个调用计数器。到达一定的阈值，就会成为热点代码，会被即时编译期异步的编译成为原生的机器码。</p>
+<p>在HotSpot虚拟机中，主要有三种即时编译器，C1、C2和Java10才出来的Graal。 其中Graal的作用是C2的升级版。</p>
+<p>在JVM中，使用的是分层编译的方式。<br>第0层，就是纯解释执行<br>第1层，是使用C1编译器，简单快速的编译，并不做统计。<br>第2层，使用C1编译器编译，并做有限的性能监控。<br>第3层，使用C1编译器，并开启全部都性能监控<br>第4层，使用C2编译器，做激进的性能优化<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16487127229876.jpg"></p>
+<h2 id="编译的优化方法有哪些？"><a href="#编译的优化方法有哪些？" class="headerlink" title="编译的优化方法有哪些？"></a>编译的优化方法有哪些？</h2><ul>
+<li>方法内联（多态方法内联缓存）</li>
+<li>逃逸分析（看这个对象有没有超过方法的范围（栈帧），有没有超过线程的范围（方法栈））<ul>
+<li>栈上分配（把对象直接在栈上创建，不在堆内存创建）</li>
+<li>标量替换（不new出对象，用几个局部变量来代替）</li>
+<li>同步消除（如果有锁，而这个对象并没有超出线程的范围，就把锁的过程给优化掉）</li>
+</ul>
+</li>
+<li>无效代码消除</li>
+<li>公共子表达式消除（在一个表达式中，如果有重复计算的地方，给他做合并消除，即只需要计算一次）</li>
+<li>代数化简（数学操作）</li>
+<li>数组边界检查、隐式异常处理、自动装箱消除</li>
+</ul>
+<h4 id="客户端编译器-C1"><a href="#客户端编译器-C1" class="headerlink" title="客户端编译器  C1"></a>客户端编译器  C1</h4><p>在整体的编译过程一共有几个阶段。</p>
+<p>第一个就是从 <code>字节码</code>  编译成  <code>HIR</code>（高级的中间表示编码，与硬件指令集无关）<br>这个时候，会做一些优化。如：<code>方法内联</code>、<code>常数传播</code></p>
+<p>第二阶段就是 对  <code>HIR</code>编码做优化<br>会做一些 <code>范围检查消除</code>、<code>空值检查消除</code>等优化</p>
+<p>第三阶段就是 把 <code>HIR</code>  编译成  <code>LIR</code>（低等级的中间表示，与硬件指令集有关）</p>
+<p>最后一阶段，就是在<code>LIR</code>上做<code>线性算法扫描</code>，<code>分配寄存器</code>，做<code>窥孔</code>（Peephole）优化， 最后生成<code>机器码</code>。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16487136001857.jpg"></p>
+<h4 id="服务端编译器-C2"><a href="#服务端编译器-C2" class="headerlink" title="服务端编译器  C2"></a>服务端编译器  C2</h4><p>服务端编译器的优化会更加的激进。</p>
+<p>无用代码消除（Dead Code Elimination）、<br>循环展开 （Loop Unrolling）、<br>循环表达式外提（Loop Expression Hoisting）、<br>消除公共子表达式（Common Subexpression Elimination）、<br>常量传播（Constant Propagation）、<br>基本块重排序（Basic Block Reordering）等</p>
+<p>范围检查消除（Range Check Elimination）、<br>空值检查消除（Null Check Elimination）</p>
+<p>如守护内联（Guarded Inlining）、<br>分支频率预测 （Branch Frequency Prediction）</p>
+<h2 id="提前编译-和-即时编译-各有什么优缺点？"><a href="#提前编译-和-即时编译-各有什么优缺点？" class="headerlink" title="提前编译 和 即时编译 各有什么优缺点？"></a>提前编译 和 即时编译 各有什么优缺点？</h2><p>提前编译的优点：</p>
+<ol>
+<li>独立的资源，在程序运行之前编译，可以享受大量的资源。</li>
+<li>一开始运行时的程序的速度就会非常快，不会有预热的过程。<br>及时编译的优点：</li>
+<li>实时监控，编译需要编译的代码，并且按层级编译，最高效的使用资源。</li>
+<li>可以执行激进的编译优化策略，也是根据性能监控。</li>
+<li>动态链接时优化，在运行时，可以确定动态链接库，可以做一些优化，比如方法内联。</li>
+</ol>
+<h2 id="实战6：深入理解Graal编译器"><a href="#实战6：深入理解Graal编译器" class="headerlink" title="实战6：深入理解Graal编译器"></a>实战6：深入理解Graal编译器</h2><p>字节码 -&gt; 理想图 -&gt; 优化 -&gt; 机器码</p>
+<h2 id="Java内存模型是什么样子的？"><a href="#Java内存模型是什么样子的？" class="headerlink" title="Java内存模型是什么样子的？"></a>Java内存模型是什么样子的？</h2><p>首先要从计算机的发展说起，摩尔定律慢慢的失效，硬件发展到了一个瓶颈，而在这种情况下，并行化的发展越来越被看重。 所以就CPU的核心数就越来越多。<br>而有一个客观问题的存在，CPU的速度实在太快了，跟内存的IO不是一个数量级的，我们为了能更加的压榨CPU的性能，就在CPU的每个核心中设立了高速缓存，一般是三层。<br>而这样就会出现一个问题，在多个核心同时对主内存中的数据做操作的时候，会先把内存中的数据缓存一份到自己的高速缓存中，再进行操作。这样就会有了一个数据不一致的并发的问题。  解决这个问题的方法，就是设定一个缓存一致性协议。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16493208068770.jpg"></p>
+<p>而JAVA在这样的基础上，对CPU、高速缓存、主内存这样的硬件结构的基础上，做了一个抽象。就成了JMM（JAVA内存模型）<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/16493208196376.jpg"></p>
+<h2 id="volatile关键字有什么用？"><a href="#volatile关键字有什么用？" class="headerlink" title="volatile关键字有什么用？"></a>volatile关键字有什么用？</h2><ol>
+<li>保证变量的可见性<ul>
+<li>线程1和线程2，同时操作主内存里面的一个数据。</li>
+<li>两个线程都会把数据缓存到自己的工作内存中（高速缓存或寄存器）</li>
+<li>如果线程1操作了这个数据，会立刻把更新过后的数据同步到主内存之中</li>
+<li>线程2在操作这个数据之前，会先从主内存中拉取最新的数据，再进行操作。</li>
+</ul>
+</li>
+<li>阻止指令重排序<ul>
+<li>CPU在执行程序的时候，不一定会按照我们代码编写的顺序执行</li>
+<li>CPU为了优化，在编译成汇编语言的时候，会对程序进行各种优化</li>
+<li>在赋值操作的时候，顺序的变化可能会导致意想不到的问题</li>
+<li>volatile会防止指令的重排序，会添加一个<code>lock add</code>的指令，内存屏障</li>
+<li>指令重排的意义在于，CPU把不同的指令，同时分配给不同的电路单元，以提高性能</li>
+</ul>
+</li>
+</ol>
+<h2 id="Java的多线程是怎么实现的？"><a href="#Java的多线程是怎么实现的？" class="headerlink" title="Java的多线程是怎么实现的？"></a>Java的多线程是怎么实现的？</h2><p>在主流的操作系统中，线程一般有三种实现方式：</p>
+<ol>
+<li>内核线程，操作系统自己实现</li>
+<li>用户线程，应用程序实现</li>
+<li>混合模式，内核线程+用户线程  在一个核心线程上，再扩展N个用户线程</li>
+</ol>
+<p>JAVA中，主流的JVM都是使用的内核线程，具体的调度由操作系统控制。<br>在GO中，主要使用的是用户线程</p>
+<p>核心线程的重要的性能消耗是操作系统在内核态与用户态之间的转换，但是它的优点就是实现起来方便，调操作系统的接口就行了， 上下文的保持工作也是由操作系统实现。<br>而用户线程的有点就是实现起来非常复杂，线程的调度，线程上下文的保持都需要代码实现。而它的优点就是运行效率更高一些。<br>在新版本的JAVA中，也引入的用户线程的实现，fiber，纤程&#x2F;协程。 JAVA可以同时支持核心线程和用户线程</p>
+<h2 id="Java中线程安全是怎么保证的？"><a href="#Java中线程安全是怎么保证的？" class="headerlink" title="Java中线程安全是怎么保证的？"></a>Java中线程安全是怎么保证的？</h2><ol>
+<li>synchronized关键字</li>
+<li>concurrent包， ReentrantLock</li>
+<li>分布式锁  redis&#x2F;zk</li>
+</ol>
+<h2 id="Java中有哪些锁优化？"><a href="#Java中有哪些锁优化？" class="headerlink" title="Java中有哪些锁优化？"></a>Java中有哪些锁优化？</h2><ul>
+<li>自旋锁 CAS 忙循环，不会进入线程阻塞  JVM监控子系统还会推算忙循环的次数</li>
+<li>锁消除  如果JVM发现没有共享内存变量，即不需要锁，就会把锁给去了</li>
+<li>锁粗化  如果检测到一连串的锁，比如StringBuffer连续append，会粗化成一个锁</li>
+<li>轻量级锁   由对象头的MarkWord中的标志位 标记。<ul>
+<li>如果对象的标志位为<code>01</code>，表示未上锁，线程会通过CSA把标志位改成<code>00</code>，并持有这个锁对象</li>
+<li>如果这时候有另外的线程来抢占这个锁，会把锁升级成重量级锁，标志位<code>10</code></li>
+</ul>
+</li>
+<li>偏向锁  在无锁状态下的优化<ul>
+<li>在一个线程占用了一个锁对象，又释放了，这时候这个对象是无锁的状态，还会把偏向模式设成1，并记录这个线程的ID</li>
+<li>如果这个线程再次获取锁，且在无并发竞争的情况下，不需要上锁了</li>
+</ul>
+</li>
+</ul>
+ 
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>Copyright： </strong>
+          
+          Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/CPyeah/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/" rel="tag">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/jvm/" rel="tag">jvm</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+    
+      <a href="/2021/12/25/java/Java%E4%B9%8BNetty/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">Java之Netty.md</div>
+      </a>
+    
+  </nav>
+
+  
+   
+    
+    <script src="https://cdn.staticfile.org/twikoo/1.4.18/twikoo.all.min.js"></script>
+    <div id="twikoo" class="twikoo"></div>
+    <script>
+        twikoo.init({
+            envId: ""
+        })
+    </script>
+ 
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020-2022
+        <i class="ri-heart-fill heart_icon"></i> chengpeng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></span>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+    </div>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="chengpeng&#39;s blogs"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/java">JAVA</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/go">GO</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/database">数据库</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/system-design">系统设计</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/algorithm">算法</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/devops">DevOps</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/english">英语学习</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+ 
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: ".tocbot",
+    contentSelector: ".article-entry",
+    headingSelector: "h1, h2, h3, h4, h5, h6",
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: "main",
+    positionFixedSelector: ".tocbot",
+    positionFixedClass: "is-position-fixed",
+    fixedSidebarOffset: "auto",
+  });
+</script>
+
+<script src="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.staticfile.org/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/default-skin/default-skin.min.css">
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.js"></script>
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+ 
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+ 
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.staticfile.org/clipboard.js/2.0.10/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
+
+
+    
+    
+
+  </div>
+</body>
+
+</html>

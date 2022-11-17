@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-cn">
+  
+
+    <head>
+      <meta charset="utf-8" />
+       
+      <meta name="keywords" content="Java" />
+       
+      <meta name="description" content="chengpeng&#39;s blogs" />
+      
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title>Go语言学习-快速入门 |  chengpeng&#39;s blogs</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
+
+      
+<link rel="stylesheet" href="/css/fonts/remixicon.css">
+
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.staticfile.org/pace/1.2.4/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    <link rel="alternate" href="/atom.xml" title="chengpeng's blogs" type="application/atom+xml">
+</head>
+  </html>
+</html>
+
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-go/basic-grammar"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  Go语言学习-快速入门
+</h1>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2021/11/27/go/basic-grammar/" class="article-date">
+  <time datetime="2021-11-27T07:29:29.000Z" itemprop="datePublished">2021-11-27</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/go/">go</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">2.9k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">13 min</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>最近觉得Go语言很有前途，语法灵活，容器化部署方便，资源消耗小。<br>而且还有强力的并发能力：Goroutines<br>所以决定从今天开始，学习Go语言。</p>
+<p>这一次我们将学习到：</p>
+<ul>
+<li>Golang基本概念</li>
+<li>基本数据类型</li>
+<li>基本语法</li>
+<li>复杂类型</li>
+<li>方法与协程</li>
+</ul>
+<p>我们现在开始吧！</p>
+<span id="more"></span>
+
+<h2 id="Golang基本概念"><a href="#Golang基本概念" class="headerlink" title="Golang基本概念"></a>Golang基本概念</h2><p>Go， 他是一款Google开发的语言。<br>他是静态的<br>他是编译形语言<br>他拥有垃圾回收器<br>他有强大的并发机制</p>
+<p>在容器越来越流行的今天，Go语言拥有着非常大的潜力。</p>
+<h2 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h2><p>我们使用<code>var</code>来声明一个变量，用<code>const</code>来声明一个常量。<br>当然还有一个简便的写法，使用<code>:</code></p>
+<h3 id="int类型"><a href="#int类型" class="headerlink" title="int类型"></a>int类型</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">		i1       = <span class="number">1</span></span><br><span class="line">		i2       = <span class="number">1000</span></span><br><span class="line">		i3 <span class="type">int8</span>  = <span class="number">127</span></span><br><span class="line">		i4 <span class="type">int16</span> = <span class="number">128</span></span><br><span class="line">		i5 <span class="type">uint</span>  = <span class="number">257</span></span><br><span class="line">		i6 <span class="type">int</span>   = <span class="number">0</span>b101</span><br><span class="line">		i7       = <span class="number">0</span>o77</span><br><span class="line">		i8       = <span class="number">0xAF</span></span><br><span class="line">	)</span><br><span class="line">	fmt.Println(i1, i2, i3, i4, i5, i6, i7, i8)</span><br></pre></td></tr></table></figure>
+<p>上面的代码，展示了不同类型的int类型。大家酌情使用。</p>
+<h3 id="float类型"><a href="#float类型" class="headerlink" title="float类型"></a>float类型</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	f1         = <span class="number">0.1</span></span><br><span class="line">	f2 <span class="type">float64</span> = <span class="number">0.0001</span></span><br><span class="line">)</span><br><span class="line">fmt.Println(f1, f2)</span><br></pre></td></tr></table></figure>
+<p>float类型有两种，对应Java中的Float和Double。</p>
+<h3 id="byte类型"><a href="#byte类型" class="headerlink" title="byte类型"></a>byte类型</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	c1 <span class="type">byte</span></span><br><span class="line">	c2 = <span class="string">&#x27;c&#x27;</span></span><br><span class="line">	c3 = <span class="string">&#x27;鹏&#x27;</span></span><br><span class="line">)</span><br><span class="line">fmt.Printf(<span class="string">&quot;\&quot;%v, %T; %v, %T; %v, %T \n&quot;</span>, c1, c1, c2, c2, c3, c3)</span><br><span class="line"></span><br><span class="line">c4 := <span class="string">&#x27;a&#x27;</span></span><br><span class="line">c5 := <span class="string">&#x27;A&#x27;</span></span><br><span class="line">c6 := <span class="string">&#x27;x&#x27;</span> + c5 - c4</span><br><span class="line">fmt.Println(c6, <span class="type">string</span>(c6))</span><br></pre></td></tr></table></figure>
+<p>为了节约内存，go使用了byte来做string的底层，所以中文可能会被截断。<br>Java在9之后，String的底层也从char变成了byte。</p>
+<h3 id="boolean"><a href="#boolean" class="headerlink" title="boolean"></a>boolean</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> b1 <span class="type">bool</span> = <span class="literal">true</span></span><br><span class="line"><span class="keyword">var</span> b2 = <span class="literal">false</span></span><br><span class="line">b3 := b1 &amp;&amp; b2</span><br><span class="line">fmt.Println(b1, b2, b3)</span><br></pre></td></tr></table></figure>
+
+<h3 id="string"><a href="#string" class="headerlink" title="string"></a>string</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">s1 := <span class="string">&quot;hello&quot;</span></span><br><span class="line">s2 := <span class="string">&quot;世界&quot;</span></span><br><span class="line">fmt.Println(s1 + s2)</span><br><span class="line">fmt.Println(<span class="built_in">len</span>(s1), <span class="built_in">len</span>(s2))</span><br></pre></td></tr></table></figure>
+
+<h2 id="基本语法"><a href="#基本语法" class="headerlink" title="基本语法"></a>基本语法</h2><h3 id="变量与常量"><a href="#变量与常量" class="headerlink" title="变量与常量"></a>变量与常量</h3><h4 id="变量声明的几种方式"><a href="#变量声明的几种方式" class="headerlink" title="变量声明的几种方式"></a>变量声明的几种方式</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> v1 <span class="type">int</span></span><br><span class="line">v1 = <span class="number">1</span></span><br><span class="line"><span class="keyword">var</span> v2 <span class="type">int</span> = <span class="number">2</span></span><br><span class="line"><span class="keyword">var</span> v3 = <span class="number">3</span></span><br><span class="line">v4 := <span class="number">4</span></span><br><span class="line">fmt.Println(v1, v2, v3, v4)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	v5 = <span class="number">5</span></span><br><span class="line">	v6 = <span class="number">6</span></span><br><span class="line">)</span><br><span class="line">fmt.Println(v5, v6)</span><br><span class="line">fmt.Println(globalVariable)</span><br></pre></td></tr></table></figure>
+<p>变量不会定义成特定的类型，他会进行类型推断。<br>还有比较有特色的声明方式是使用<code>:=</code></p>
+<h4 id="常量声明"><a href="#常量声明" class="headerlink" title="常量声明"></a>常量声明</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> c1 = <span class="number">1</span> <span class="comment">// 1</span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	c2 = <span class="number">2</span>    <span class="comment">//2</span></span><br><span class="line">	c3 = <span class="literal">iota</span> <span class="comment">//1 当前行数（从0开始）</span></span><br><span class="line">	c4 = <span class="literal">iota</span> <span class="comment">//2</span></span><br><span class="line">	c5        <span class="comment">//3 默认值为上一行</span></span><br><span class="line">	c6        <span class="comment">//4</span></span><br><span class="line">	c7 = <span class="number">7</span>    <span class="comment">//7</span></span><br><span class="line">	c8        <span class="comment">//7 默认值为上一行</span></span><br><span class="line">	c9        <span class="comment">//7</span></span><br><span class="line">)</span><br><span class="line">fmt.Println(c1, c2, c3, c4, c5, c6, c7, c8, c9)</span><br><span class="line">fmt.Println(globalConstant)</span><br></pre></td></tr></table></figure>
+<p>常量充当的是Java中final关键字的功能，还有枚举的功能。</p>
+<h3 id="执行顺序"><a href="#执行顺序" class="headerlink" title="执行顺序"></a>执行顺序</h3><p>我们通过<code>if else</code>， <code>for loop</code> 等来控制程序的执行流程。</p>
+<h4 id="条件"><a href="#条件" class="headerlink" title="条件"></a>条件</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> s = rand.Int31n(<span class="number">100</span>)</span><br><span class="line">fmt.Println(s)</span><br><span class="line"><span class="keyword">if</span> s &gt; <span class="number">60</span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;pass&quot;</span>)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;fall&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> s <span class="type">int32</span> = rand.Int31n(<span class="number">100</span>)</span><br><span class="line">fmt.Println(s)</span><br><span class="line"><span class="keyword">switch</span> &#123;</span><br><span class="line"><span class="keyword">case</span> s &lt; <span class="number">10</span>:</span><br><span class="line">	fmt.Println(<span class="string">&quot;太差了&quot;</span>)</span><br><span class="line"><span class="keyword">case</span> s &lt; <span class="number">60</span>:</span><br><span class="line">	fmt.Println(<span class="string">&quot;不及格&quot;</span>)</span><br><span class="line"><span class="keyword">case</span> s &lt; <span class="number">80</span>:</span><br><span class="line">	<span class="keyword">fallthrough</span></span><br><span class="line"><span class="keyword">case</span> s &lt; <span class="number">100</span>:</span><br><span class="line">	fmt.Println(<span class="string">&quot;good&quot;</span>)</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>两种条件的方式，更多的是使用if。</p>
+<h4 id="循环"><a href="#循环" class="headerlink" title="循环"></a>循环</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">i := <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> i &gt;= <span class="number">10</span> &#123;</span><br><span class="line">		<span class="keyword">break</span></span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Print(i)</span><br><span class="line">	i++</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">fmt.Println()</span><br><span class="line"></span><br><span class="line">i = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> i &lt; <span class="number">10</span> &#123;</span><br><span class="line">	fmt.Print(i)</span><br><span class="line">	i++</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">fmt.Println()</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">	fmt.Print(i)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>不想Java有三种循环方式<code>while</code>、<code>do while</code>、<code>for</code>，<br>Go只有<code>for</code>这一种方式，当时功能依旧强大，有类似python的<code>range</code>关键字。<br>当然，依旧有<code>break</code>和<code>continue</code>的支持</p>
+<h3 id="init函数"><a href="#init函数" class="headerlink" title="init函数"></a>init函数</h3><p>init()函数会在当前go文件加载前加载，<br>他的加载顺序是：<br>被依赖包的全局变量 -&gt; 被依赖包的init函数 -&gt; 当前包的全局变量 -&gt; 当前包的init函数 -&gt; 当前包的函数</p>
+<p>这个方法可以在程序一开始的时候，创建一些数据连接什么的。</p>
+<p>使用方法如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;this main init function&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="异常与错误"><a href="#异常与错误" class="headerlink" title="异常与错误"></a>异常与错误</h3><p>每一种程序都会有一场，在go语言种，使用panic机制来表示异常。<br>恐慌，很形象。</p>
+<p>比如抛出一个异常可以这样：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">panic</span>(Error)</span><br></pre></td></tr></table></figure>
+
+<p>我们可以生成一个error，来让panic抛出。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> lovelyError = errors.New(<span class="string">&quot;this is a lovely error&quot;</span>)</span><br><span class="line"><span class="keyword">var</span> cuteError = fmt.Errorf(<span class="string">&quot;this is a cute error&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>有了异常和抛出异常，当然会有捕获异常，<br>在go里面是使用<code>defer</code>（延迟）和 <code>recover</code>（恢复）来做的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">errorOperation</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">var</span> e = <span class="built_in">recover</span>()</span><br><span class="line">		fmt.Println(<span class="string">&quot;recover:&quot;</span>, e)</span><br><span class="line">	&#125;()</span><br><span class="line">	<span class="keyword">var</span> lovelyError = errors.New(<span class="string">&quot;this is a lovely error&quot;</span>)</span><br><span class="line">	<span class="keyword">var</span> cuteError = fmt.Errorf(<span class="string">&quot;this is a cute error&quot;</span>)</span><br><span class="line">	fmt.Println(lovelyError, <span class="string">&quot;;&quot;</span>, cuteError)</span><br><span class="line"></span><br><span class="line">	<span class="built_in">panic</span>(cuteError)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="函数与接口"><a href="#函数与接口" class="headerlink" title="函数与接口"></a>函数与接口</h3><h4 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h4><p>go的函数声明类似Java的方法声明，但是又有所增强。</p>
+<p>简单的函数声明</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(a <span class="type">int</span>, b <span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>返回两个变量</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">sumAndDiff</span><span class="params">(a <span class="type">int</span>, b <span class="type">int</span>)</span></span> (<span class="type">int</span>, <span class="type">int</span>) &#123;</span><br><span class="line">	sum := a + b</span><br><span class="line">	diff := a - b</span><br><span class="line">	<span class="keyword">return</span> sum, diff</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>匿名函数</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">anonymousFunc</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> f = <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		fmt.Println(<span class="string">&quot;I am anonymous function&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	f()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>闭包</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">incr</span><span class="params">()</span></span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> <span class="type">int</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> x <span class="type">int</span></span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> <span class="type">int</span> &#123;</span><br><span class="line">        x++</span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h4><blockquote>
+<p>如果它看起来像鸭子、游泳像鸭子、叫声像鸭子，那么它可能就是只鸭子。</p>
+</blockquote>
+<p>go的接口和接口的实现，参考的是这种思想。</p>
+<p>我们先声明一个接口：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Message <span class="keyword">interface</span> &#123;</span><br><span class="line">	getType() <span class="type">string</span></span><br><span class="line">	send()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这个接口，定义了两个函数。</p>
+<p>再来声明一个struct来实现这个接口</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// TextMsg obj</span></span><br><span class="line"><span class="keyword">type</span> TextMsg <span class="keyword">struct</span> &#123;</span><br><span class="line">	text <span class="type">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(tm *TextMsg)</span></span> getType() <span class="type">string</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;text&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(tm *TextMsg)</span></span> send() &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;sendText -&gt; &quot;</span>, tm.text, <span class="string">&quot;; type is &quot;</span>, tm.getType())</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>大家可以看到， TextMsg并没有直接声明 implement Message接口<br>但是 TextMsg 绑定了Message接口的两个函数，当然，还可以绑定自己的函数。</p>
+<p>这样的话，程序就会认为，TextMsg就是Message的实现结构体。</p>
+<h2 id="复杂类型"><a href="#复杂类型" class="headerlink" title="复杂类型"></a>复杂类型</h2><h3 id="array"><a href="#array" class="headerlink" title="array"></a>array</h3><p>和Java中的数组一样，需要提前定义好数组的容量。<br>直接分配内存，效率高。</p>
+<p>使用方式如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> array [<span class="number">3</span>]<span class="type">int</span> = [<span class="number">3</span>]<span class="type">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">fmt.Println(array[<span class="number">1</span>], <span class="built_in">len</span>(array))</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> array1 = [...]<span class="type">int</span>&#123;<span class="number">4</span>,</span><br><span class="line">	<span class="number">5</span>,</span><br><span class="line">	<span class="number">6</span>&#125;</span><br><span class="line">fmt.Println(array1[<span class="number">0</span>])</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i, v := <span class="keyword">range</span> array1 &#123;</span><br><span class="line">	fmt.Println(i, <span class="string">&quot;的值是&quot;</span>, v)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>二维数组：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> points = [<span class="number">3</span>][<span class="number">2</span>]<span class="type">int</span>&#123;&#123;<span class="number">1</span>, <span class="number">1</span>&#125;, &#123;<span class="number">2</span>, <span class="number">2</span>&#125;, &#123;<span class="number">3</span>, <span class="number">3</span>&#125;&#125;</span><br><span class="line"><span class="keyword">for</span> _, point := <span class="keyword">range</span> points &#123;</span><br><span class="line">	fmt.Println(point)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="slice"><a href="#slice" class="headerlink" title="slice"></a>slice</h3><p>切片是Go中使用的最多的列表，类似Java中的ArrayList。</p>
+<p>很多种方法可以创建一个切片。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">createSlice</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// from array</span></span><br><span class="line">	array := [<span class="number">5</span>]<span class="type">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>&#125;</span><br><span class="line">	<span class="keyword">var</span> s1 = array[<span class="number">0</span> : <span class="built_in">len</span>(array)<span class="number">-1</span>]</span><br><span class="line">	fmt.Println(s1)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// from slice</span></span><br><span class="line">	<span class="keyword">var</span> s2 = s1[<span class="number">1</span>:<span class="number">3</span>]</span><br><span class="line">	fmt.Println(s2)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// make</span></span><br><span class="line">	s3 := <span class="built_in">make</span>([]<span class="type">int</span>, <span class="number">0</span>)</span><br><span class="line">	fmt.Println(s3)</span><br><span class="line">	s3 = <span class="built_in">append</span>(s3, <span class="number">3</span>)</span><br><span class="line">	fmt.Println(s3)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// sugar</span></span><br><span class="line">	s4 := []<span class="type">int</span>&#123;<span class="number">4</span>&#125;</span><br><span class="line">	fmt.Println(s4)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>他是一种动态数组，支持自动扩容，底层当然是array。<br>可以参考Java中ArrayList的实现和扩容方式。<br>他有着长度和容量两个数值。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">lenAndCap</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> slice = <span class="built_in">make</span>([]<span class="type">int</span>, <span class="number">8</span>, <span class="number">10</span>)</span><br><span class="line">	fmt.Println(slice, <span class="built_in">len</span>(slice), <span class="built_in">cap</span>(slice))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然还支持着拼接和copy</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">appendSlice</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> s1 = []<span class="type">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">	fmt.Println(s1, <span class="built_in">len</span>(s1), <span class="built_in">cap</span>(s1))</span><br><span class="line">	s1 = <span class="built_in">append</span>(s1, <span class="number">4</span>)</span><br><span class="line">	fmt.Println(s1, <span class="built_in">len</span>(s1), <span class="built_in">cap</span>(s1))</span><br><span class="line">	s1 = <span class="built_in">append</span>(s1, []<span class="type">int</span>&#123;<span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>&#125;...)</span><br><span class="line">	fmt.Println(s1, <span class="built_in">len</span>(s1), <span class="built_in">cap</span>(s1))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">copySlice</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> s1 = []<span class="type">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>&#125;</span><br><span class="line">	<span class="keyword">var</span> s2 = []<span class="type">int</span>&#123;<span class="number">6</span>, <span class="number">7</span>&#125;</span><br><span class="line">	fmt.Println(s1, s2)</span><br><span class="line">	<span class="built_in">copy</span>(s1, s2)</span><br><span class="line">	fmt.Println(s1, s2)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在go中没有栈和队列的数据结构，一般都是用slice来模拟的。</p>
+<h3 id="map"><a href="#map" class="headerlink" title="map"></a>map</h3><p>go中的map类似与Java中的HashMap，基本操作如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">createMap</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> m1 = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>)</span><br><span class="line">	m1[<span class="string">&quot;morning&quot;</span>] = <span class="string">&quot;eat breakfast&quot;</span></span><br><span class="line">	m1[<span class="string">&quot;noon&quot;</span>] = <span class="string">&quot;have lunch&quot;</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> m2 = <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>&#123;</span><br><span class="line">		<span class="string">&quot;evening&quot;</span>: <span class="string">&quot;get dinner&quot;</span>,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(m1, m2)</span><br><span class="line"></span><br><span class="line">	fmt.Println(m1[<span class="string">&quot;noom&quot;</span>], m2[<span class="string">&quot;evening&quot;</span>])</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">findDeleteRange</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> m1 = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>)</span><br><span class="line">	m1[<span class="string">&quot;morning&quot;</span>] = <span class="string">&quot;eat breakfast&quot;</span></span><br><span class="line">	m1[<span class="string">&quot;noon&quot;</span>] = <span class="string">&quot;have lunch&quot;</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> v, ok = m1[<span class="string">&quot;noon&quot;</span>]</span><br><span class="line">	fmt.Println(v, ok)</span><br><span class="line"></span><br><span class="line">	<span class="built_in">delete</span>(m1, <span class="string">&quot;noon&quot;</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> key, value := <span class="keyword">range</span> m1 &#123;</span><br><span class="line">		fmt.Println(key, value)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="方法与协程"><a href="#方法与协程" class="headerlink" title="方法与协程"></a>方法与协程</h2><h3 id="goroutine"><a href="#goroutine" class="headerlink" title="goroutine"></a>goroutine</h3><p>Go语言的核心之一，最最重要的特点，就是goroutine。<br>就是Go语言原生帮我实现的协程，又成用户线程。<br>可以非常快速和方便的实现异步操作。</p>
+<p>使用方法非常简单：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> function()</span><br></pre></td></tr></table></figure>
+<p>这样就会表示，新开一个协程来调用<code>function()</code>函数。</p>
+<p>在Java中需要这样写：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; function()).start();</span><br></pre></td></tr></table></figure>
+<p>当然还可以使用协程池来开启一个新线程。</p>
+<p>但是不管那种方式，不管是在使用方便的程度，还是程序的运行效率。<br>Go 的 goroutine都更加优异。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">test</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">go</span> doWork1()</span><br><span class="line">	<span class="keyword">go</span> doWork2()</span><br><span class="line">	fmt.Println(<span class="string">&quot;END&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork2</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-2&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork1</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-1&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/2Ml3uc.png"></p>
+<p>类似这个图，<code>END</code>,<code>WORK-1</code>,<code>WORK-2</code>的顺序是没办法保证的。</p>
+<p>但是在实际的操作中，我们可能看不到<code>WORK-1</code>,<code>WORK-2</code>，<br>因为在协程执行完之前，整个程序的进程就结束了。</p>
+<p>为了解决这个这个问题，我们需要<code>wait group</code>来同步结果。</p>
+<h3 id="wait-group"><a href="#wait-group" class="headerlink" title="wait group"></a>wait group</h3><p>我们使用WG来保证所有协程都能够结束</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">test</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(<span class="number">2</span>)</span><br><span class="line">	<span class="keyword">go</span> doWork1(&amp;wg)</span><br><span class="line">	<span class="keyword">go</span> doWork2(&amp;wg)</span><br><span class="line">	wg.Wait()</span><br><span class="line">	fmt.Println(<span class="string">&quot;END&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork2</span><span class="params">(wg *sync.WaitGroup)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> wg.Done()</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-2&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork1</span><span class="params">(wg *sync.WaitGroup)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> wg.Done()</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-1&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用<code>WaitGroup</code>，可以保证，在<code>END</code>之前，保证<code>WORK-1</code>,<code>WORK-2</code>执行完毕。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/OxRa4Q.png"></p>
+<h3 id="channel"><a href="#channel" class="headerlink" title="channel"></a>channel</h3><p>channel类似一个管道，可以又缓存，可以往里面输入东西，可以从里面取出东西。<br>在Java中，有个很类似的东西，BlockingQueue。<br>两者都具备阻塞队列的功能。</p>
+<p>但是他们核心不同点是，Go里面的channel使用的<a target="_blank" rel="noopener" href="http://www.usingcsp.com/cspbook.pdf">CSP</a>模型。<br>channel的使用也更简洁，还支持select语法，和定向channel。</p>
+<p>使用方法如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">test</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(<span class="number">2</span>)</span><br><span class="line">	<span class="keyword">var</span> c = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">string</span>)</span><br><span class="line">	<span class="keyword">go</span> doWork1(&amp;wg, &amp;c)</span><br><span class="line">	<span class="keyword">go</span> doWork2(&amp;wg, &amp;c)</span><br><span class="line">	wg.Wait()</span><br><span class="line">	fmt.Println(<span class="string">&quot;END&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork2</span><span class="params">(wg *sync.WaitGroup, c *<span class="keyword">chan</span> <span class="type">string</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> wg.Done()</span><br><span class="line">	m := &lt;-*c</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-2&quot;</span>)</span><br><span class="line">	fmt.Println(m)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork1</span><span class="params">(wg *sync.WaitGroup, c *<span class="keyword">chan</span> <span class="type">string</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> wg.Done()</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-1&quot;</span>)</span><br><span class="line">	*c &lt;- <span class="string">&quot;test message&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出的结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">WORK-1</span><br><span class="line">WORK-2</span><br><span class="line">test message</span><br><span class="line">END</span><br></pre></td></tr></table></figure>
+<p>我们可以使用channel来把信息跨协程传输，<br>我们还可以保证<code>WORK-1</code>在<code>WORK-2</code>之前被打印。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/0peR0n.png"></p>
+<h3 id="context"><a href="#context" class="headerlink" title="context"></a>context</h3><p>上下文，我们可以通过它，来控制协程的活动，比如中断一个协程。<br>我们来看段代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">test</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// wait group</span></span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// channel</span></span><br><span class="line">	<span class="keyword">var</span> c = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">string</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// context</span></span><br><span class="line">	ctx, cancel := context.WithCancel(context.Background())</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> doWork1(&amp;wg, &amp;c, ctx)</span><br><span class="line">	<span class="keyword">go</span> doWork2(&amp;wg, &amp;c, ctx)</span><br><span class="line"></span><br><span class="line">	time.Sleep(<span class="number">5</span> * time.Second)</span><br><span class="line">	<span class="comment">// 中断</span></span><br><span class="line">	cancel()</span><br><span class="line"></span><br><span class="line">	wg.Wait()</span><br><span class="line">	fmt.Println(<span class="string">&quot;END&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork2</span><span class="params">(wg *sync.WaitGroup, c *<span class="keyword">chan</span> <span class="type">string</span>, ctx context.Context)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> wg.Done()</span><br><span class="line">	m := &lt;-*c</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-2&quot;</span>)</span><br><span class="line">	fmt.Println(m)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doWork1</span><span class="params">(wg *sync.WaitGroup, c *<span class="keyword">chan</span> <span class="type">string</span>, ctx context.Context)</span></span> &#123;</span><br><span class="line">	<span class="keyword">defer</span> wg.Done()</span><br><span class="line">	fmt.Println(<span class="string">&quot;WORK-1&quot;</span>)</span><br><span class="line">	*c &lt;- <span class="string">&quot;test message&quot;</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">100</span>; i++ &#123;</span><br><span class="line">		time.Sleep(time.Second)</span><br><span class="line">		fmt.Println(<span class="string">&quot;WORK-1&quot;</span>, i)</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">			fmt.Println(<span class="string">&quot;WORK-1 DONE&quot;</span>)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在work1里面 我们有段逻辑，是打印 0～99，但是如果主线程通知我们中断，我们就会中断当前操作。</p>
+<p>我们就会打印出这样的结果。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">WORK-1</span><br><span class="line">WORK-2</span><br><span class="line">test message</span><br><span class="line">WORK-1 0</span><br><span class="line">WORK-1 1</span><br><span class="line">WORK-1 2</span><br><span class="line">WORK-1 3</span><br><span class="line">WORK-1 4</span><br><span class="line">WORK-1 DONE</span><br><span class="line">END</span><br></pre></td></tr></table></figure>
+<p>我们的示意图，就会变成这样：<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/rWNJKX.png"></p>
+<p>我们除了<code>func WithCancel(parent Context) (ctx Context, cancel CancelFunc)</code>之外，<br>还有</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithDeadline</span><span class="params">(parent Context, deadline time.Time)</span></span> (Context, CancelFunc)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithTimeout</span><span class="params">(parent Context, timeout time.Duration)</span></span> (Context, CancelFunc)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithValue</span><span class="params">(parent Context, key <span class="keyword">interface</span>&#123;&#125;, val <span class="keyword">interface</span>&#123;&#125;)</span></span> (Context)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>大家如果感兴趣，可以自己尝试一下。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次，我们快速入门了Go，这是一种非常新的语言。<br>我相信它会在不久的未来会大展宏图。在市场上有自己的一席之地。</p>
+<p>希望这片文章对大家有所帮助～</p>
+<p>Bye！</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://go.dev/">https://go.dev/</a></li>
+<li><a href="https://github.com/CPyeah/hello-go/tree/master/grammar">https://github.com/CPyeah/hello-go/tree/master/grammar</a></li>
+</ul>
+ 
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>Copyright： </strong>
+          
+          Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/CPyeah/2021/11/27/go/basic-grammar/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/basic-grammar/" rel="tag">basic-grammar</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go/" rel="tag">go</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+      <a href="/2021/12/25/java/Java%E4%B9%8BNetty/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            Java之Netty.md
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2021/10/18/system_design/open_platform/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">SystemDesign:开放平台</div>
+      </a>
+    
+  </nav>
+
+  
+   
+    
+    <script src="https://cdn.staticfile.org/twikoo/1.4.18/twikoo.all.min.js"></script>
+    <div id="twikoo" class="twikoo"></div>
+    <script>
+        twikoo.init({
+            envId: ""
+        })
+    </script>
+ 
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020-2022
+        <i class="ri-heart-fill heart_icon"></i> chengpeng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></span>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+    </div>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="chengpeng&#39;s blogs"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/java">JAVA</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/go">GO</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/database">数据库</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/system-design">系统设计</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/algorithm">算法</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/devops">DevOps</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/english">英语学习</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+ 
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: ".tocbot",
+    contentSelector: ".article-entry",
+    headingSelector: "h1, h2, h3, h4, h5, h6",
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: "main",
+    positionFixedSelector: ".tocbot",
+    positionFixedClass: "is-position-fixed",
+    fixedSidebarOffset: "auto",
+  });
+</script>
+
+<script src="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.staticfile.org/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/default-skin/default-skin.min.css">
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.js"></script>
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+ 
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+ 
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.staticfile.org/clipboard.js/2.0.10/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
+
+
+    
+    
+
+  </div>
+</body>
+
+</html>
