@@ -63,7 +63,7 @@ bash configure --enable-debug --with-jvm-variants=server
 ```
 ---
 ## JVM的内存管理模型是什么样子的？
-![](assets/16455236088988.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16455236088988.jpg)
 
 在java虚拟机中，最重要的两个分区就是堆和栈
 ### 堆
@@ -239,11 +239,11 @@ PhantomReference<Object> phantomReference = new PhantomReference<>(new Object(),
         - 增量更新 and 原始快照
         - 当扫描时，做赋值操作的时候，记录下来，在扫描结束的时候，再扫一次
 
-![](assets/16458666178983.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16458666178983.jpg)
 
 
 ## 经典的垃圾收集器有哪些？
-![](assets/16467271742313.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16467271742313.jpg)
 
 ### Serial收集器（年轻代）
 它需要把所有的用户线程全部停下来（Stop the world），然后专心的做垃圾清理。
@@ -418,7 +418,7 @@ java9之前最经典的收集器，STW的时间非常短。它的特点就是可
 - monitor exit
 
 ## Java的类加载过程是什么样子的？
-![](assets/16478477164166.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16478477164166.jpg)
 
 1. 加载（加载字节码）
 ```
@@ -449,7 +449,7 @@ JVM会汇总一个clinit方法，里面会包含所有变量的赋值操作，�
 ```
 
 ## 有几种类加载器？双亲委派是什么？
-![](assets/16478551695468.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16478551695468.jpg)
 
 - 启动类加载器（bootstrap）
     - 加载java核心代码（lib目录下），比如rt.jar tools.jar
@@ -553,7 +553,7 @@ Java的编译主要依靠javac工具来执行的，他的任务就是把java源�
 第2层，使用C1编译器编译，并做有限的性能监控。
 第3层，使用C1编译器，并开启全部都性能监控
 第4层，使用C2编译器，做激进的性能优化
-![](assets/16487127229876.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16487127229876.jpg)
 
 ## 编译的优化方法有哪些？
 - 方法内联（多态方法内联缓存）
@@ -578,7 +578,7 @@ Java的编译主要依靠javac工具来执行的，他的任务就是把java源�
 第三阶段就是 把 `HIR`  编译成  `LIR`（低等级的中间表示，与硬件指令集有关）
 
 最后一阶段，就是在`LIR`上做`线性算法扫描`，`分配寄存器`，做`窥孔`（Peephole）优化， 最后生成`机器码`。
-![](assets/16487136001857.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16487136001857.jpg)
 
 #### 服务端编译器  C2
 服务端编译器的优化会更加的激进。
@@ -612,10 +612,10 @@ Java的编译主要依靠javac工具来执行的，他的任务就是把java源�
 首先要从计算机的发展说起，摩尔定律慢慢的失效，硬件发展到了一个瓶颈，而在这种情况下，并行化的发展越来越被看重。 所以就CPU的核心数就越来越多。
 而有一个客观问题的存在，CPU的速度实在太快了，跟内存的IO不是一个数量级的，我们为了能更加的压榨CPU的性能，就在CPU的每个核心中设立了高速缓存，一般是三层。
 而这样就会出现一个问题，在多个核心同时对主内存中的数据做操作的时候，会先把内存中的数据缓存一份到自己的高速缓存中，再进行操作。这样就会有了一个数据不一致的并发的问题。  解决这个问题的方法，就是设定一个缓存一致性协议。
-![](assets/16493208068770.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16493208068770.jpg)
 
 而JAVA在这样的基础上，对CPU、高速缓存、主内存这样的硬件结构的基础上，做了一个抽象。就成了JMM（JAVA内存模型）
-![](assets/16493208196376.jpg)
+![](https://cp-images.oss-cn-hangzhou.aliyuncs.com/16493208196376.jpg)
 
 
 ## volatile关键字有什么用？

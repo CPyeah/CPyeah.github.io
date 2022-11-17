@@ -17,7 +17,7 @@ categories: basic
 我们通过拨号，接通电话链接，再相互通信。
 在电视上，我们还经常看到电话接线员在一个房间里，拔插头，插插头。 
 这是当时很重要的一个部门，邮电局。
-![](assets/jGGGSd.png)
+![](source/_posts/basic/assets/jGGGSd.png)
 
 
 随着冷战的来临，电话通信渐渐显示出弊端，就是单点故障。
