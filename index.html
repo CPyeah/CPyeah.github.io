@@ -117,6 +117,249 @@
     
     
     <article
+  id="post-database/Dynamo paper"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2022/06/07/database/Dynamo%20paper/"
+    >DynamoDB</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2022/06/07/database/Dynamo%20paper/" class="article-date">
+  <time datetime="2022-06-07T12:31:15.000Z" itemprop="datePublished">2022-06-07</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/database/">database</a>
+  </div>
+   
+    </div>
+      
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>Amazon 是世界上最大的电商之一。</p>
+<p>在这里我们所遇到的最大挑战之一就是 <strong>超大规模下的稳定性问题</strong> （reliability at massive scale）。即使是最微小的故障（the slightest outage），也会造成巨大的经济 损失，而且会降低客户对我们的信任。Amazon.com 作为一个为全球提供 web 服务的平台， 其底层的基础设施是由分布在全球的数据中心中成千上万的服务器和网络设备组成的。在如 此庞大的规模下，大大小小的组件故障是不断在发生的，而我们应对这些故障时所采取 的 <strong>管理持久状态的方式</strong> （the way persistent state is managed）， <strong>驱动着软件系 统的可靠性（reliability）和可扩展性（scalability）的发展</strong> 。</p>
+<p>本文介绍 Dynamo —— 一个<strong>高可用键值存储系统</strong> —— 的设计和实现。Amazon 的一些核心 服务就是基于 Dynamo 提供不间断服务的（always-on experience）。为了达到这种等级的 可用性（level of availability），Dynamo  <strong>牺牲了几种特定故障场景下的一致性</strong> 。另 外，Dynamo 大量使用了 <strong>对象版本化</strong> （object versioning）和<strong>应用协助的冲突解决</strong> （application-assisted conflict resolution）机制，给开发者提供了一种新颖的接口。</p> 
+      <a class="article-more-link" href="/2022/06/07/database/Dynamo%20paper/"
+        >阅读更多...</a
+      >
+       
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <footer class="article-footer">
+       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/distributed/" rel="tag">distributed</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dynamo/" rel="tag">dynamo</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+    
+</article>
+
+    
+    <article
+  id="post-database/Redis 集群"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2022/05/01/database/Redis%20%E9%9B%86%E7%BE%A4/"
+    >使用 Redis 集群进行扩展</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2022/05/01/database/Redis%20%E9%9B%86%E7%BE%A4/" class="article-date">
+  <time datetime="2022-05-01T08:22:31.000Z" itemprop="datePublished">2022-05-01</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/database/">database</a>
+  </div>
+   
+    </div>
+      
+    <div class="article-entry" itemprop="articleBody">
+       
+  <p>使用 Redis 集群进行横向扩展</p>
+<p>Redis 使用称为 Redis 集群的部署拓扑进行水平扩展。本主题将教您如何在生产环境中设置、测试和操作 Redis 集群。您将从最终用户的角度了解 Redis 集群的可用性和一致性特征。</p>
+<p>如果您计划运行生产 Redis 集群部署或想要更好地了解 Redis 集群的内部工作原理，请参阅<a target="_blank" rel="noopener" href="https://redis.io/topics/cluster-spec">Redis 集群规范</a> 。要了解 Redis Enterprise 如何处理缩放，请参阅<a target="_blank" rel="noopener" href="https://redis.com/redis-enterprise/technology/linear-scaling-redis-enterprise/">使用 Redis Enterprise 进行线性缩放</a> 。</p> 
+      <a class="article-more-link" href="/2022/05/01/database/Redis%20%E9%9B%86%E7%BE%A4/"
+        >阅读更多...</a
+      >
+       
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <footer class="article-footer">
+       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis/" rel="tag">redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis-cluster/" rel="tag">redis cluster</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+    
+</article>
+
+    
+    <article
+  id="post-database/Redis Sentinel 的高可用性"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2022/04/28/database/Redis%20Sentinel%20%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7/"
+    >Redis Sentinel 的高可用性</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2022/04/28/database/Redis%20Sentinel%20%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7/" class="article-date">
+  <time datetime="2022-04-28T12:11:45.000Z" itemprop="datePublished">2022-04-28</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/database/">database</a>
+  </div>
+   
+    </div>
+      
+    <div class="article-entry" itemprop="articleBody">
+       
+  <p>非集群Redis的高可用</p>
+<p>Redis Sentinel 在不使用<a target="_blank" rel="noopener" href="https://redis.io/docs/manual/scaling">Redis Cluster</a> 时为 Redis 提供高可用性。</p>
+<p>Redis Sentinel 还提供其他附带任务，例如监控、通知并充当客户端的配置提供程序。</p>
+<p>这是宏观层面（即 <em>大图</em> ）的 Sentinel 功能的完整列表：</p>
+<ul>
+<li><strong>监控</strong> 。Sentinel 不断检查您的主实例和副本实例是否按预期工作。</li>
+<li><strong>通知</strong> 。Sentinel 可以通过 API 通知系统管理员或其他计算机程序，其中一个受监控的 Redis 实例出现问题。</li>
+<li><strong>自动故障转移</strong> 。如果 master 没有按预期工作，Sentinel 可以启动一个故障转移过程，其中一个副本被提升为 master，其他额外的副本被重新配置为使用新的 master，并且使用 Redis 服务器的应用程序被告知要使用的新地址连接时。</li>
+<li><strong>配置提供商</strong> 。Sentinel 充当客户端服务发现的权威来源：客户端连接到 Sentinels 以询问负责给定服务的当前 Redis master 的地址。如果发生故障转移，Sentinels 将报告新地址。</li>
+</ul> 
+      <a class="article-more-link" href="/2022/04/28/database/Redis%20Sentinel%20%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7/"
+        >阅读更多...</a
+      >
+       
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <footer class="article-footer">
+       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis/" rel="tag">redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis-sentinel/" rel="tag">redis sentinel</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+    
+</article>
+
+    
+    <article
+  id="post-database/Redis集群规范"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/"
+    >Redis高级数据结构</a> 
+</h2>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/" class="article-date">
+  <time datetime="2022-04-21T14:35:23.000Z" itemprop="datePublished">2022-04-21</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/database/">database</a>
+  </div>
+   
+    </div>
+      
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="设计的主要特性和原理"><a href="#设计的主要特性和原理" class="headerlink" title="设计的主要特性和原理"></a>设计的主要特性和原理</h2><h3 id="Redis-集群目标"><a href="#Redis-集群目标" class="headerlink" title="Redis 集群目标"></a>Redis 集群目标</h3><p>Redis Cluster 是 Redis 的分布式实现，按照设计中的重要性顺序具有以下目标：</p>
+<ul>
+<li>高性能和线性可扩展性高达 1000 个节点。没有代理，使用异步复制，不对值执行合并操作。</li>
+<li>可接受的写入安全程度：系统尝试（以最大努力的方式）保留所有来自与大多数主节点连接的客户端的写入。通常有一些小窗口，其中确认的写入可能会丢失。当客户端位于少数分区中时，丢失已确认写入的窗口更大。</li>
+<li>可用性：Redis 集群能够在大多数主节点可访问的分区中存活下来，并且每个不再可访问的主节点至少有一个可访问的副本。此外，使用 <em>replicas migration</em> ，不再被任何副本复制的 masters 将从被多个副本覆盖的 master 接收一个。</li>
+</ul>
+<p>本文档中描述的内容在 Redis 3.0 或更高版本中实现。</p> 
+      <a class="article-more-link" href="/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/"
+        >阅读更多...</a
+      >
+       
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <footer class="article-footer">
+       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis/" rel="tag">redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis-cluster/" rel="tag">redis cluster</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+    
+</article>
+
+    
+    <article
   id="post-java/深入理解Java虚拟机"
   class="article article-type-post"
   itemscope
@@ -502,272 +745,6 @@
     <footer class="article-footer">
        
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/mysql/" rel="tag">mysql</a></li></ul>
-
-    </footer>
-  </div>
-
-   
-    
-</article>
-
-    
-    <article
-  id="post-database/MySQL学习及原理浅析"
-  class="article article-type-post"
-  itemscope
-  itemprop="blogPost"
-  data-scroll-reveal
->
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"
-    >MySQL学习及原理浅析</a> 
-</h2>
- 
-
-      
-    </header>
-     
-    <div class="article-meta">
-      <a href="/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="article-date">
-  <time datetime="2021-08-13T03:06:53.000Z" itemprop="datePublished">2021-08-13</time>
-</a> 
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/database/">database</a>
-  </div>
-   
-    </div>
-      
-    <div class="article-entry" itemprop="articleBody">
-       
-  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>从今天开始，我们将学习目前最流行的一个数据库MySQL。</p>
-<p>这篇文章，带大家走进Mysql的世界。</p>
-<ul>
-<li>MySQL的底层结构</li>
-<li>MySQL的查询过程</li>
-<li>索引结构</li>
-<li>MySQL的三种Log</li>
-<li>MySQL的存储引擎</li>
-</ul> 
-      <a class="article-more-link" href="/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"
-        >阅读更多...</a
-      >
-       
-      <!-- reward -->
-      
-    </div>
-    
-
-    <!-- copyright -->
-    
-    <footer class="article-footer">
-       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/mysql/" rel="tag">mysql</a></li></ul>
-
-    </footer>
-  </div>
-
-   
-    
-</article>
-
-    
-    <article
-  id="post-english/clean-room"
-  class="article article-type-post"
-  itemscope
-  itemprop="blogPost"
-  data-scroll-reveal
->
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2021/07/18/english/clean-room/"
-    >ESL - Clean the house and relax</a> 
-</h2>
- 
-
-      
-    </header>
-     
-    <div class="article-meta">
-      <a href="/2021/07/18/english/clean-room/" class="article-date">
-  <time datetime="2021-07-18T02:00:51.000Z" itemprop="datePublished">2021-07-18</time>
-</a> 
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/english/">english</a>
-  </div>
-   
-    </div>
-      
-    <div class="article-entry" itemprop="articleBody">
-       
-  <h4 id=""><a href="#" class="headerlink" title=""></a></h4><p>使用下面的关键词，写一篇小短文。</p>
-<blockquote>
-<ul>
-<li>energetic</li>
-<li>dust&#x2F;dusting</li>
-<li>lamp</li>
-<li>furniture</li>
-<li>wipe</li>
-<li>rug&#x2F;carpet</li>
-<li>filthy</li>
-<li>vacuum</li>
-<li>sucking</li>
-<li>mop&#x2F;mopping</li>
-<li>broom</li>
-<li>scrub&#x2F;scrubbing</li>
-<li>tub</li>
-<li>closet</li>
-<li>newscast</li>
-<li>cable television</li>
-<li>flip through&#x2F;thumb through</li>
-<li>commercial</li>
-<li>reality show</li>
-<li>contest</li>
-<li>There is nothing like …</li>
-</ul>
-</blockquote> 
-      <a class="article-more-link" href="/2021/07/18/english/clean-room/"
-        >阅读更多...</a
-      >
-       
-      <!-- reward -->
-      
-    </div>
-    
-
-    <!-- copyright -->
-    
-    <footer class="article-footer">
-       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ESL/" rel="tag">ESL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/clean-room/" rel="tag">clean_room</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/english/" rel="tag">english</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/write/" rel="tag">write</a></li></ul>
-
-    </footer>
-  </div>
-
-   
-    
-</article>
-
-    
-    <article
-  id="post-algorithm/十大排序算法"
-  class="article article-type-post"
-  itemscope
-  itemprop="blogPost"
-  data-scroll-reveal
->
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"
-    >十大排序算法</a> 
-</h2>
- 
-
-      
-    </header>
-     
-    <div class="article-meta">
-      <a href="/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" class="article-date">
-  <time datetime="2021-07-06T01:52:41.000Z" itemprop="datePublished">2021-07-06</time>
-</a> 
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/algorithm/">algorithm</a>
-  </div>
-   
-    </div>
-      
-    <div class="article-entry" itemprop="articleBody">
-       
-  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>今天开启我们的算法系列，争取说简单➕通俗易懂。<br>我们从经典的排序算法开始。学习十大排序算法。<br><img src="https://cp-images.oss-cn-hangzhou.aliyuncs.com/zoOH3H.png"></p>
-<p>排序算法可以分为两大类：基于比较的排序 and 不基于比较的排序。<br>基于比较的排序，是通过元素间的两两比较，来判断大小，继而排序。<br>不基于比较的排序，就是通过各种其他的方法，来让元素排序。</p>
-<p>在表格中，上面的7种都是基于比较的排序算法。下3种是不基于比较的排序。</p>
-<p>接下来我们一个一个的来仔细看。</p> 
-      <a class="article-more-link" href="/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"
-        >阅读更多...</a
-      >
-       
-      <!-- reward -->
-      
-    </div>
-    
-
-    <!-- copyright -->
-    
-    <footer class="article-footer">
-       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/" rel="tag">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" rel="tag">排序算法</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li></ul>
-
-    </footer>
-  </div>
-
-   
-    
-</article>
-
-    
-    <article
-  id="post-java/Java操作ElasticSearch"
-  class="article article-type-post"
-  itemscope
-  itemprop="blogPost"
-  data-scroll-reveal
->
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/"
-    >Java操作ElasticSearch</a> 
-</h2>
- 
-
-      
-    </header>
-     
-    <div class="article-meta">
-      <a href="/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/" class="article-date">
-  <time datetime="2021-06-11T05:44:15.000Z" itemprop="datePublished">2021-06-11</time>
-</a> 
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/java/">java</a>
-  </div>
-   
-    </div>
-      
-    <div class="article-entry" itemprop="articleBody">
-       
-  <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>今天我们将使用Java来操作ElasticSearch。<br>我们将：</p>
-<ul>
-<li>使用Docker搭建ES集群环境</li>
-<li>使用SpringBoot搭建Java环境</li>
-<li>在Java模型中定义ES的索引</li>
-<li>使用两种方式来操作ES（JPA和ElasticSearchTemplate）</li>
-</ul> 
-      <a class="article-more-link" href="/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/"
-        >阅读更多...</a
-      >
-       
-      <!-- reward -->
-      
-    </div>
-    
-
-    <!-- copyright -->
-    
-    <footer class="article-footer">
-       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/docker/" rel="tag">docker</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/elasticsearch/" rel="tag">elasticsearch</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/" rel="tag">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/jpa/" rel="tag">jpa</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/springboot/" rel="tag">springboot</a></li></ul>
 
     </footer>
   </div>

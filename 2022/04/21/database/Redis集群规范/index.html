@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-cn">
+  
+
+    <head>
+      <meta charset="utf-8" />
+       
+      <meta name="keywords" content="Java" />
+       
+      <meta name="description" content="chengpeng&#39;s blogs" />
+      
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+      />
+      <title>Redis高级数据结构 |  chengpeng&#39;s blogs</title>
+  <meta name="generator" content="hexo-theme-ayer">
+      
+      <link rel="shortcut icon" href="/favicon.ico" />
+       
+<link rel="stylesheet" href="/dist/main.css">
+
+      
+<link rel="stylesheet" href="/css/fonts/remixicon.css">
+
+      
+<link rel="stylesheet" href="/css/custom.css">
+ 
+      <script src="https://cdn.staticfile.org/pace/1.2.4/pace.min.js"></script>
+       
+ 
+
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bulma@5.0.1/bulma.min.css"
+      />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+      <!-- mermaid -->
+      
+      <style>
+        .swal2-styled.swal2-confirm {
+          font-size: 1.6rem;
+        }
+      </style>
+    <link rel="alternate" href="/atom.xml" title="chengpeng's blogs" type="application/atom+xml">
+</head>
+  </html>
+</html>
+
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-database/Redis集群规范"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  Redis高级数据结构
+</h1>
+ 
+
+      
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/" class="article-date">
+  <time datetime="2022-04-21T14:35:23.000Z" itemprop="datePublished">2022-04-21</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/database/">database</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">19.5k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">71 min</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="设计的主要特性和原理"><a href="#设计的主要特性和原理" class="headerlink" title="设计的主要特性和原理"></a>设计的主要特性和原理</h2><h3 id="Redis-集群目标"><a href="#Redis-集群目标" class="headerlink" title="Redis 集群目标"></a>Redis 集群目标</h3><p>Redis Cluster 是 Redis 的分布式实现，按照设计中的重要性顺序具有以下目标：</p>
+<ul>
+<li>高性能和线性可扩展性高达 1000 个节点。没有代理，使用异步复制，不对值执行合并操作。</li>
+<li>可接受的写入安全程度：系统尝试（以最大努力的方式）保留所有来自与大多数主节点连接的客户端的写入。通常有一些小窗口，其中确认的写入可能会丢失。当客户端位于少数分区中时，丢失已确认写入的窗口更大。</li>
+<li>可用性：Redis 集群能够在大多数主节点可访问的分区中存活下来，并且每个不再可访问的主节点至少有一个可访问的副本。此外，使用 <em>replicas migration</em> ，不再被任何副本复制的 masters 将从被多个副本覆盖的 master 接收一个。</li>
+</ul>
+<p>本文档中描述的内容在 Redis 3.0 或更高版本中实现。</p>
+<span id="more"></span>
+
+<h3 id="实现的子集"><a href="#实现的子集" class="headerlink" title="实现的子集"></a>实现的子集</h3><p>Redis Cluster 实现了非分布式 Redis 版本中可用的所有单键命令。执行复杂的多键操作（如集合并集和交集）的命令是针对操作中涉及的所有键散列到同一个槽的情况实现的。</p>
+<p>Redis Cluster 实现了一个称为<strong>散列标签</strong>的概念，可用于强制将某些键存储在同一个散列槽中。但是，在手动重分片过程中，多键操作可能会在一段时间内不可用，而单键操作始终可用。</p>
+<p>Redis Cluster 不像 Redis 的独立版本那样支持多数据库。我们只支持数据库<code>0</code>；该<a target="_blank" rel="noopener" href="https://redis.io/commands/select"><code>SELECT</code></a>  命令是不允许的。</p>
+<h2 id="Redis-集群协议中的客户端和服务器角色"><a href="#Redis-集群协议中的客户端和服务器角色" class="headerlink" title="Redis 集群协议中的客户端和服务器角色"></a>Redis 集群协议中的客户端和服务器角色</h2><p>在 Redis 集群中，节点负责保存数据并获取集群的状态，包括将键映射到正确的节点。集群节点还能够自动发现其他节点，检测非工作节点，并在需要时将副本节点提升为主节点，以便在发生故障时继续运行。</p>
+<p>为了执行它们的任务，所有集群节点都使用 TCP 总线和称为<strong>Redis Cluster Bus</strong>的二进制协议连接。每个节点都使用集群总线连接到集群中的每个其他节点。节点使用八卦协议传播有关集群的信息以发现新节点，发送 ping 数据包以确保所有其他节点正常工作，并发送信号特定条件所需的集群消息。集群总线还用于跨集群传播 Pub&#x2F;Sub 消息，并在用户请求时协调手动故障转移（手动故障转移不是由 Redis 集群故障检测器发起的故障转移，而是由系统管理员直接发起）。</p>
+<p>由于集群节点无法代理请求，客户端可能会使用重定向错误<code>-MOVED</code>和<code>-ASK</code>. 理论上，客户端可以自由地向集群中的所有节点发送请求，如果需要则进行重定向，因此客户端不需要保存集群的状态。然而，能够缓存键和节点之间的映射的客户端可以以明智的方式提高性能。</p>
+<h3 id="写入安全"><a href="#写入安全" class="headerlink" title="写入安全"></a>写入安全</h3><p>Redis Cluster节点间采用异步复制，<strong>最后故障转移胜</strong>隐式合并功能。这意味着最后选出的主数据集最终会替换所有其他副本。总有一个时间窗口可能会在分区期间丢失写入。然而，对于连接到大多数 master 的客户端和连接到少数 master 的客户端，这些窗口非常不同。</p>
+<p>与在少数方面执行的写入相比，Redis 集群更努力地保留由连接到大多数主服务器的客户端执行的写入。以下是导致故障期间大多数分区中接收到的已确认写入丢失的场景示例：</p>
+<ol>
+<li>写入可能会到达主节点，但虽然主节点可能能够回复客户端，但写入可能不会通过主节点和副本节点之间使用的异步复制传播到副本。如果 master 在写入未到达副本的情况下死亡，并且 master 在足够长的时间内无法访问以提升其副本之一，则写入将永远丢失。这在主节点突然完全失效的情况下通常很难观察到，因为主节点试图几乎同时回复客户端（确认写入）和副本（传播写入）。然而，它是真实世界的故障模式。</li>
+<li>写入丢失的另一种理论上可能的故障模式如下：</li>
+</ol>
+<ul>
+<li>由于分区，无法访问 master。</li>
+<li>它被它的一个副本故障转移。</li>
+<li>一段时间后，它可能会再次可达。</li>
+<li>具有过时路由表的客户端可能会在旧主控器被集群转换为（新主控器的）副本之前写入旧主控器。</li>
+</ul>
+<p>第二种故障模式不太可能发生，因为主节点无法在足够的时间内与大多数其他主节点通信以进行故障转移，将不再接受写入，并且当分区固定时，仍然会在一小段时间内拒绝写入允许其他节点通知配置更改。这种故障模式还要求客户端的路由表尚未更新。</p>
+<p>针对分区的少数端的写入具有更大的丢失窗口。例如，Redis 集群在只有少数 master 和至少一个或多个 clients 的分区上丢失了大量的写入，因为如果 master 在多数派。</p>
+<p>具体来说，对于要故障转移的 master，它必须不能被大多数 master 访问至少<code>NODE_TIMEOUT</code>，因此如果分区在此之前修复，则不会丢失任何写入。当分区持续时间超过<code>NODE_TIMEOUT</code>时，到那时在少数方面执行的所有写入都可能丢失。然而，Redis 集群的少数端会在<code>NODE_TIMEOUT</code>没有与多数端联系的时间过去后立即开始拒绝写入，因此存在一个最大窗口，之后少数端将不再可用。因此，在那之后没有写入被接受或丢失。</p>
+<h3 id="可用性"><a href="#可用性" class="headerlink" title="可用性"></a>可用性</h3><p>Redis Cluster 在分区的少数端不可用。在分区的大多数侧，假设至少有大多数主节点和每个无法访问的主节点的副本，集群在<code>NODE_TIMEOUT</code>一段时间后再次可用加上副本被选出并故障转移其主节点所需的几秒（故障转移通常在 1 或 2 秒内执行）。</p>
+<p>这意味着 Redis Cluster 旨在承受集群中少数节点的故障，但对于需要在大网络分裂情况下保持可用性的应用程序来说，它不是一个合适的解决方案。</p>
+<p>在由 N 个主节点组成的集群的示例中，其中每个节点都有一个副本，只要单个节点被分区，集群的多数端将保持可用，并且<code>1-(1/(N*2-1) ) </code>在两个节点被分区时保持可用的概率分区（在第一个节点失败后，我们<code>N*2-1</code>总共剩下节点，唯一没有副本的主节点失败的概率是<code>1/(N*2-1) ) </code>。</p>
+<p>例如，在一个有 5 个节点且每个节点只有一个副本的集群中，有<code>1/(5*2-1)  = 11.11%</code>可能在两个节点从多数节点中分离出来后，集群将不再可用。</p>
+<p>多亏了称为<strong>副本迁移</strong>的 Redis 集群功能，通过副本迁移到孤立的主服务器（主服务器不再有副本）这一事实，集群可用性在许多现实世界场景中得到了提高。因此，在每次成功的故障事件中，集群可能会重新配置副本布局，以便更好地抵抗下一次故障。</p>
+<h3 id="表现"><a href="#表现" class="headerlink" title="表现"></a>表现</h3><p>在 Redis 集群中，节点不会将命令代理到负责给定密钥的正确节点，而是将客户端重定向到为密钥空间的给定部分提供服务的正确节点。</p>
+<p>最终客户端获得集群的最新表示以及哪个节点服务哪个密钥子集，因此在正常操作期间客户端直接联系正确的节点以发送给定命令。</p>
+<p>由于使用异步复制，节点不会等待其他节点对写入的确认（如果未使用<a target="_blank" rel="noopener" href="https://redis.io/commands/wait"><code>WAIT</code></a>  命令明确请求）。</p>
+<p>此外，由于多键命令仅限于<em>近</em>键，因此除非重新分片，否则数据永远不会在节点之间移动。</p>
+<p>正常操作的处理方式与单个 Redis 实例的处理方式完全相同。这意味着在具有 N 个主节点的 Redis 集群中，您可以预期与单个 Redis 实例相同的性能乘以 N，因为设计是线性扩展的。同时，查询通常在单次往返中执行，因为客户端通常与节点保持持久连接，因此延迟数据也与单个独立 Redis 节点情况相同。</p>
+<p>非常高的性能和可扩展性，同时保持弱但合理的数据安全和可用性形式是 Redis 集群的主要目标。</p>
+<h3 id="为什么要避免合并操作"><a href="#为什么要避免合并操作" class="headerlink" title="为什么要避免合并操作"></a>为什么要避免合并操作</h3><p>Redis 集群设计避免了多个节点中相同键值对的版本冲突，因为在 Redis 数据模型的情况下，这并不总是可取的。Redis 中的值通常非常大；看到包含数百万个元素的列表或排序集很常见。数据类型在语义上也很复杂。传输和合并这些类型的值可能是一个主要瓶颈和&#x2F;或可能需要应用程序端逻辑的重要参与、额外的内存来存储元数据等。</p>
+<p>这里没有严格的技术限制。CRDT 或同步复制状态机可以模拟类似于 Redis 的复杂数据类型。但是，此类系统的实际运行时行为与 Redis 集群不同。Redis Cluster 旨在涵盖非集群 Redis 版本的确切用例。</p>
+<h2 id="Redis-Cluster主要组件概览"><a href="#Redis-Cluster主要组件概览" class="headerlink" title="Redis Cluster主要组件概览"></a>Redis Cluster主要组件概览</h2><h3 id="密钥分发模型"><a href="#密钥分发模型" class="headerlink" title="密钥分发模型"></a>密钥分发模型</h3><p>集群的密钥空间被分成 16384 个槽，有效地设置了 16384 个主节点的集群大小上限（但是，建议的最大节点大小约为 1000 个节点）。</p>
+<p>集群中的每个主节点处理 16384 个哈希槽的一个子集。当没有正在进行的集群重新配置（即哈希槽从一个节点移动到另一个节点）时，集群是 <strong>稳定的。</strong> 当集群稳定时，单个哈希槽将由单个节点提供服务（但是，服务节点可以有一个或多个副本，在网络分裂或故障的情况下替换它，并且可以用于扩展读取陈旧数据是可接受的操作）。</p>
+<p>用于将键映射到散列槽的基本算法如下（阅读下一段以了解此规则的散列标签例外）：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">HASH_SLOT</span> = CRC16(key)  mod <span class="number">16384</span></span><br></pre></td></tr></table></figure>
+
+<p>CRC16 指定如下：</p>
+<ul>
+<li>名称：XMODEM（也称为 ZMODEM 或 CRC-16&#x2F;ACORN）</li>
+<li>宽度：16位</li>
+<li>多边形：1021（实际上是 x^16 + x^12 + x^5 + 1）</li>
+<li>初始化：0000</li>
+<li>反映输入字节：False</li>
+<li>反映输出 CRC：假</li>
+<li>Xor 常量输出 CRC：0000</li>
+<li>“123456789”的输出：31C3</li>
+</ul>
+<p>使用了 16 个 CRC16 输出位中的 14 个（这就是上面公式中有模 16384 运算的原因）。</p>
+<p>在我们的测试中，CRC16 在将不同类型的密钥均匀分布在 16384 个槽位方面表现得非常好。</p>
+<p><strong>注意</strong> ：本文档的附录 A 中提供了所使用的 CRC16 算法的参考实现。</p>
+<h3 id="哈希标签"><a href="#哈希标签" class="headerlink" title="哈希标签"></a>哈希标签</h3><p>用于实现<strong>散列标签</strong>的散列槽的计算有一个例外。哈希标签是一种确保多个键分配在同一个哈希槽中的方法。这用于在 Redis 集群中实现多键操作。</p>
+<p>为了实现散列标签，在某些情况下，键的散列槽的计算方式略有不同。如果密钥包含“{…}”模式，则仅对 和 之间的子字符串进行 <code>&#123;</code>哈希<code>&#125;</code>处理以获得哈希槽。但是，由于可能多次出现<code>&#123;</code>或<code>&#125;</code>算法由以下规则很好地指定：</p>
+<ul>
+<li>如果键包含一个<code>&#123;</code>字符。</li>
+<li>AND IF<code>&#125;</code>的右边有一个字符<code>&#123;</code>。</li>
+<li><code>&#123;</code>AND IF 在第一次出现的和第一次出现的之间有一个或多个字符<code>&#125;</code>。</li>
+</ul>
+<p>然后，不是对密钥进行哈希处理，而是仅对第一次出现的<code>&#123;</code>和随后第一次出现的之间的内容<code>&#125;</code>进行哈希处理。</p>
+<p>例子：</p>
+<ul>
+<li>这两个键<code>&#123;user1000&#125;.following</code>和<code>&#123;user1000&#125;.followers</code>将散列到相同的散列槽，因为只有子字符串<code>user1000</code>将被散列以计算散列槽。</li>
+<li>对于密钥<code>foo&#123;&#125;&#123;bar&#125;</code>，整个密钥将像往常一样被散列，因为第一次出现的<code>&#123;</code>后面是<code>&#125;</code>右边没有中间字符的。</li>
+<li>对于密钥<code>foo&#123;&#123;bar&#125;&#125;zap</code>，子字符串<code>&#123;bar</code>将被散列，因为它是第一次出现的<code>&#123;</code>和<code>&#125;</code>右侧第一次出现之间的子字符串。</li>
+<li>对于密钥<code>foo&#123;bar&#125;&#123;zap&#125;</code>，子字符串<code>bar</code>将被散列，因为算法在 和 的第一个有效或无效（内部没有字节）匹配时<code>&#123;</code>停止<code>&#125;</code>。</li>
+<li>从该算法可以看出，如果密钥以 开头<code>&#123;&#125;</code>，则可以保证将其作为一个整体进行哈希处理。这在使用二进制数据作为键名时很有用。</li>
+</ul>
+<p>添加hash标签例外，以下是该<code>HASH_SLOT</code>函数在Ruby和C语言中的实现。</p>
+<p>红宝石示例代码：</p>
+<figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">def HASH_SLOT(<span class="keyword">key</span>) </span><br><span class="line">    s = <span class="keyword">key</span>.index <span class="string">&quot;&#123;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> s</span><br><span class="line">        e = <span class="keyword">key</span>.index <span class="string">&quot;&#125;&quot;</span>,s+<span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> e &amp;&amp; e != s+<span class="number">1</span></span><br><span class="line">            <span class="keyword">key</span> = <span class="keyword">key</span>[s+<span class="number">1</span>..e-<span class="number">1</span>]</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    crc16(<span class="keyword">key</span>)  % <span class="number">16384</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<p>C示例代码：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">unsigned int <span class="built_in">HASH_SLOT</span>(char *key, int keylen)  &#123;</span><br><span class="line">    int s, e; <span class="comment">/* start-end indexes of &#123; and &#125; */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Search the first occurrence of &#x27;&#123;&#x27;. */</span></span><br><span class="line">    for (s = <span class="number">0</span>; s &lt; keylen; s++) </span><br><span class="line">        if (key[s] == &#x27;&#123;&#x27;)  break;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* No &#x27;&#123;&#x27; ? Hash the whole key. This is the base case. */</span></span><br><span class="line">    if (s == keylen)  return <span class="built_in">crc16</span>(key,keylen)  &amp; <span class="number">16383</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* &#x27;&#123;&#x27; found? Check if we have the corresponding &#x27;&#125;&#x27;. */</span></span><br><span class="line">    for (e = s+<span class="number">1</span>; e &lt; keylen; e++) </span><br><span class="line">        if (key[e] == &#x27;&#125;&#x27;)  break;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* No &#x27;&#125;&#x27; or nothing between &#123;&#125; ? Hash the whole key. */</span></span><br><span class="line">    if (e == keylen || e == s+<span class="number">1</span>)  return <span class="built_in">crc16</span>(key,keylen)  &amp; <span class="number">16383</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If we are here there is both a &#123; and a &#125; on its right. Hash</span></span><br><span class="line"><span class="comment">     * what is in the middle between &#123; and &#125;. */</span></span><br><span class="line">    return <span class="built_in">crc16</span>(key+s+<span class="number">1</span>,e-s-<span class="number">1</span>)  &amp; <span class="number">16383</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="集群节点属性"><a href="#集群节点属性" class="headerlink" title="集群节点属性"></a>集群节点属性</h3><p>每个节点在集群中都有一个唯一的名称。节点名称是一个 160 位随机数的十六进制表示，在节点第一次启动时获得（通常使用 &#x2F;dev&#x2F;urandom）。节点会将其 ID 保存在节点配置文件中，并将永远使用相同的 ID，或者至少只要节点配置文件没有被系统管理员删除，或者通过命令请求<em>硬重置。</em><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-reset"><code>CLUSTER RESET</code></a> </p>
+<p>节点 ID 用于标识整个集群中的每个节点。给定节点可以更改其 IP 地址，而无需同时更改节点 ID。集群还能够检测 IP&#x2F;端口的变化，并使用运行在集群总线上的八卦协议重新配置。</p>
+<p>节点 ID 不是与每个节点关联的唯一信息，而是唯一始终全局一致的信息。每个节点还具有以下相关信息集。一些信息是关于这个特定节点的集群配置细节，并且最终在整个集群中是一致的。一些其他信息，例如上次对节点执行 ping 操作的时间，对于每个节点都是本地的。</p>
+<p>每个节点都维护集群中它所知道的其他节点的以下信息：节点 ID、节点的 IP 和端口、一组标志、如果节点被标记<code>replica</code>为节点被 ping 和上次收到 pong 的时间、节点的当前  <em>配置纪元</em> （在本规范后面解释）、链路状态和最后服务的哈希槽集。</p>
+<p>文档中描述了<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-nodes">所有节点字段</a>  的详细说明<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-nodes"><code>CLUSTER NODES</code></a>  。</p>
+<p>该<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-nodes"><code>CLUSTER NODES</code></a>  命令可以发送到集群中的任何节点，并根据查询节点对集群的本地视图提供集群的状态和每个节点的信息。</p>
+<p>以下是<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-nodes"><code>CLUSTER NODES</code></a>  发送到包含三个节点的小型集群中的主节点的命令输出示例。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">$</span> <span class="string">redis-cli</span> <span class="string">cluster</span> <span class="string">nodes</span></span><br><span class="line"><span class="string">d1861060fe6a534d42d8a19aeb36600e18785e04</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6379</span> <span class="string">myself</span> <span class="bullet">-</span> <span class="number">0</span> <span class="number">1318428930</span> <span class="number">1</span> <span class="string">connected</span> <span class="number">0</span><span class="number">-1364</span></span><br><span class="line"><span class="string">3886e65cc906bfd9b1f7e7bde468726a052d1dae</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6380</span> <span class="string">master</span> <span class="bullet">-</span> <span class="number">1318428930</span> <span class="number">1318428931</span> <span class="number">2</span> <span class="string">connected</span> <span class="number">1365</span><span class="number">-2729</span></span><br><span class="line"><span class="string">d289c575dcbc4bdd2931585fd4339089e461a27d</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6381</span> <span class="string">master</span> <span class="bullet">-</span> <span class="number">1318428931</span> <span class="number">1318428931</span> <span class="number">3</span> <span class="string">connected</span> <span class="number">2730</span><span class="number">-4095</span></span><br></pre></td></tr></table></figure>
+
+<p>在上面的列表中，不同的字段按顺序排列：节点 ID、地址：端口、标志、最后发送的 ping、最后接收的 pong、配置纪元、链路状态、插槽。当我们谈到 Redis Cluster 的特定部分时，将涵盖有关上述字段的详细信息。</p>
+<h3 id="集群总线"><a href="#集群总线" class="headerlink" title="集群总线"></a>集群总线</h3><p>每个 Redis 集群节点都有一个额外的 TCP 端口，用于接收来自其他 Redis 集群节点的传入连接。此端口将通过向数据端口添加 10000 派生，或者可以使用 cluster-port 配置指定。</p>
+<p>示例 1：</p>
+<p>如果一个 Redis 节点正在监听 6379 端口上的客户端连接，并且你没有在 redis.conf 中添加 cluster-port 参数，那么 Cluster 总线端口 16379 将被打开。</p>
+<p>示例 2：</p>
+<p>如果 Redis 节点正在端口 6379 上侦听客户端连接，并且您在 redis.conf 中设置了 cluster-port 20000，则 Cluster 总线端口 20000 将被打开。</p>
+<p>节点到节点的通信仅使用集群总线和集群总线协议进行：一种由不同类型和大小的帧组成的二进制协议。集群总线二进制协议没有公开记录，因为它不适用于外部软件设备使用此协议与 Redis 集群节点通信。但是，您可以通过阅读Redis 集群源代码中的<code>cluster.h</code>和文件来获取有关集群总线协议的更多详细信息 。<code>cluster.c</code></p>
+<h3 id="集群拓扑"><a href="#集群拓扑" class="headerlink" title="集群拓扑"></a>集群拓扑</h3><p>Redis 集群是一个全网状结构，其中每个节点都使用 TCP 连接与其他每个节点相连。</p>
+<p>在一个由 N 个节点组成的集群中，每个节点都有 N-1 个传出 TCP 连接和 N-1 个传入连接。</p>
+<p>这些 TCP 连接始终保持活动状态，而不是按需创建。当节点期望 pong 响应集群总线中的 ping 响应时，在等待足够长的时间将节点标记为不可访问之前，它将尝试通过从头重新连接来刷新与节点的连接。</p>
+<p>而 Redis Cluster 节点形成全网状，<strong>节点使用八卦协议和配置更新机制，以避免在正常情况下节点之间交换过多</strong>的消息，因此交换的消息数量不是指数级的。</p>
+<h3 id="节点握手"><a href="#节点握手" class="headerlink" title="节点握手"></a>节点握手</h3><p>节点始终接受集群总线端口上的连接，甚至在收到 ping 时回复，即使 ping 节点不受信任。但是，如果发送节点不被视为集群的一部分，则所有其他数据包将被接收节点丢弃。</p>
+<p>一个节点将仅通过两种方式接受另一个节点作为集群的一部分：</p>
+<ul>
+<li>如果一个节点向自己展示一条<code>MEET</code>消息（<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-meet"><code>CLUSTER MEET</code></a>  命令）。meet 消息与消息完全一样<a target="_blank" rel="noopener" href="https://redis.io/commands/ping"><code>PING</code></a>  ，但会强制接收方接受该节点作为集群的一部分。仅当系统管理员通过以下命令请求时，节点才会<code>MEET</code>向其他节点发送消息：<br>集群满足 ip 端口</li>
+<li>如果已经信任的节点将八卦另一个节点，则该节点还将注册另一个节点作为集群的一部分。因此，如果 A 认识 B，而 B 认识 C，最终 B 会向 A 发送关于 C 的八卦消息。发生这种情况时，A 会将 C 注册为网络的一部分，并尝试与 C 建立联系。</li>
+</ul>
+<p>这意味着只要我们加入任何连接图中的节点，它们最终都会自动形成一个完全连接的图。这意味着集群能够自动发现其他节点，但前提是存在系统管理员强制建立的信任关系。</p>
+<p>这种机制使集群更加健壮，但可以防止不同的 Redis 集群在 IP 地址更改或其他网络相关事件发生后意外混合。</p>
+<h2 id="重定向和重新分片"><a href="#重定向和重新分片" class="headerlink" title="重定向和重新分片"></a>重定向和重新分片</h2><h3 id="移动重定向"><a href="#移动重定向" class="headerlink" title="移动重定向"></a>移动重定向</h3><p>Redis 客户端可以自由地向集群中的每个节点发送查询，包括副本节点。该节点将分析查询，如果可接受（即查询中仅提及单个键，或者提及的多个键都指向同一个哈希槽），它将查找哪个节点负责该哈希槽钥匙或钥匙所属的地方。</p>
+<p>如果哈希槽由节点提供服务，则简单地处理查询，否则节点将检查其内部哈希槽到节点映射，并将用 MOVED 错误回复客户端，如下例所示：</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET x</span><br><span class="line"><span class="deletion">-MOVED 3999 127.0.0.1:6381</span></span><br></pre></td></tr></table></figure>
+
+<p>该错误包括密钥的哈希槽 (3999)  和可以为查询提供服务的实例的端点：端口。客户端需要重新向指定节点的端点地址和端口发出查询。端点可以是 IP 地址、主机名，也可以为空（例如<code>-MOVED 3999 :6380</code>）。空端点表示服务器节点有一个未知端点，客户端应该将下一个请求发送到与当前请求相同的端点，但使用提供的端口。</p>
+<p>请注意，即使客户端在重新发出查询之前等待了很长时间，同时集群配置发生了变化，如果哈希槽 3999 现在由另一个节点提供服务，目标节点将再次回复 MOVED 错误。如果联系的节点没有更新信息，也会发生同样的情况。</p>
+<p>因此，从集群节点的角度来看，我们尝试简化我们与客户端的接口，仅公开散列槽和由端点：端口对标识的 Redis 节点之间的映射。</p>
+<p>客户端不需要，但应该记住哈希槽 3999 由 127.0.0.1:6381 提供服务。这样，一旦需要发出新命令，它就可以计算目标密钥的哈希槽，并有更大的机会选择正确的节点。</p>
+<p>另一种方法是在收到 MOVED 重定向时使用<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-shards"><code>CLUSTER SHARDS</code></a>  或已弃用的命令刷新整个客户端集群布局。<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-slots"><code>CLUSTER SLOTS</code></a>  遇到重定向时，很可能会重新配置多个槽而不是一个槽，因此尽快更新客户端配置通常是最好的策略。</p>
+<p>请注意，当集群稳定时（配置没有持续变化），最终所有客户端都将获得哈希槽 -&gt; 节点的映射，从而使集群高效，客户端直接寻址正确的节点而无需重定向，代理或其他单一故障点实体。</p>
+<p>客户端<strong>还必须能够处理</strong>本文档后面描述的 -ASK 重定向，否则它不是一个完整的 Redis 集群客户端。</p>
+<h3 id="实时重新配置"><a href="#实时重新配置" class="headerlink" title="实时重新配置"></a>实时重新配置</h3><p>Redis Cluster 支持在集群运行时添加和删除节点的能力。添加或删除节点被抽象为相同的操作：将哈希槽从一个节点移动到另一个节点。这意味着可以使用相同的基本机制来重新平衡集群、添加或删除节点等。</p>
+<ul>
+<li>为了向集群中添加一个新节点，将一个空节点添加到集群中，并将一些哈希槽集从现有节点移动到新节点。</li>
+<li>要从集群中删除节点，分配给该节点的哈希槽将移动到其他现有节点。</li>
+<li>为了重新平衡集群，一组给定的哈希槽在节点之间移动。</li>
+</ul>
+<p>实现的核心是移动散列槽的能力。从实际的角度来看，哈希槽只是一组键，因此 Redis 集群在重新分片期间真正做的<em>是</em>将键从一个实例移动到另一个实例。移动一个hash slot就是把所有碰巧hash的key都移到这个hash slot中。</p>
+<p>为了理解这是如何工作的，我们需要展示<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster"><code>CLUSTER</code></a>  用于操作 Redis 集群节点中的槽转换表的子命令。</p>
+<p>以下子命令可用（在这种情况下没有用的其他命令）：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-addslots"><code>CLUSTER ADDSLOTS</code></a>  插槽 1 [插槽 2] … [插槽 N]</li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-delslots"><code>CLUSTER DELSLOTS</code></a>  插槽 1 [插槽 2] … [插槽 N]</li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-addslotsrange"><code>CLUSTER ADDSLOTSRANGE</code></a>  start-slot1 end-slot1 [start-slot2 end-slot2] … [start-slotN end-slotN]</li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-delslotsrange"><code>CLUSTER DELSLOTSRANGE</code></a>  start-slot1 end-slot1 [start-slot2 end-slot2] … [start-slotN end-slotN]</li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-setslot"><code>CLUSTER SETSLOT</code></a>  插槽 NODE 节点</li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-setslot"><code>CLUSTER SETSLOT</code></a>  插槽迁移节点</li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-setslot"><code>CLUSTER SETSLOT</code></a>  插槽导入节点</li>
+</ul>
+<p>前四个命令 、<code>ADDSLOTS</code>和<code>DELSLOTS</code>仅<code>ADDSLOTSRANGE</code>用于<code>DELSLOTSRANGE</code>将槽分配（或删除）到 Redis 节点。分配一个槽意味着告诉给定的主节点它将负责为指定的哈希槽存储和提供内容。</p>
+<p>分配哈希槽后，它们将使用八卦协议在集群中传播，如稍后在 <em>配置传播</em>部分中指定的那样。</p>
+<p>当从头开始创建新集群时，通常使用<code>ADDSLOTS</code>和命令为每个主节点分配所有 16384 个可用哈希槽的子集。<code>ADDSLOTSRANGE</code></p>
+<p>和主要用于手动修改集群配置<code>DELSLOTS</code> 或<code>DELSLOTSRANGE</code>调试任务：实际上很少使用。</p>
+<p>如果使用该形式，该<code>SETSLOT</code>子命令用于将插槽分配给特定的节点 ID <code>SETSLOT &lt;slot&gt; NODE</code>。否则插槽可以设置为两种特殊状态<code>MIGRATING</code>和<code>IMPORTING</code>。这两个特殊状态用于将哈希槽从一个节点迁移到另一个节点。</p>
+<ul>
+<li>当一个槽被设置为 MIGRATING 时，节点将接受所有关于这个哈希槽的查询，但前提是存在问题的键，否则查询将使用<code>-ASK</code>重定向转发到作为迁移目标的节点。</li>
+<li>当一个槽被设置为 IMPORTING 时，节点将接受所有关于这个哈希槽的查询，但前提是请求之前有一个<a target="_blank" rel="noopener" href="https://redis.io/commands/asking"><code>ASKING</code></a>  命令。如果<a target="_blank" rel="noopener" href="https://redis.io/commands/asking"><code>ASKING</code></a> 客户端未给出命令，则查询将通过<code>-MOVED</code>重定向错误重定向到真正的哈希槽所有者，这与正常情况一样。</li>
+</ul>
+<p>让我们用一个哈希槽迁移的例子来说明这一点。假设我们有两个 Redis 主节点，分别称为 A 和 B。我们想将哈希槽 8 从 A 移动到 B，因此我们发出如下命令：</p>
+<ul>
+<li>我们发送 B：CLUSTER SETSLOT 8 IMPORTING A</li>
+<li>我们发送 A：CLUSTER SETSLOT 8 MIGRATING B</li>
+</ul>
+<p>每次使用属于哈希槽 8 的密钥查询所有其他节点时，所有其他节点将继续将客户端指向节点“A”，因此发生的情况是：</p>
+<ul>
+<li>所有关于现有密钥的查询都由“A”处理。</li>
+<li>所有关于 A 中不存在的键的查询都由“B”处理，因为“A”会将客户端重定向到“B”。</li>
+</ul>
+<p>这样我们就不再在“A”中创建新密钥。同时，<code>redis-cli</code>在重新分片和 Redis 集群配置期间使用会将哈希槽 8 中的现有键从 A 迁移到 B。这是使用以下命令执行的：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CLUSTER</span> GETKEYSINSLOT slot count</span><br></pre></td></tr></table></figure>
+
+<p>上面的命令将返回<code>count</code>指定哈希槽中的键。对于返回的密钥，<code>redis-cli</code>向节点“A”发送一个<a target="_blank" rel="noopener" href="https://redis.io/commands/migrate"><code>MIGRATE</code></a> 命令，该命令将以原子方式将指定的密钥从 A 迁移到 B（两个实例都锁定迁移密钥所需的时间（通常是非常短的时间），因此没有竞争条件) . 这是如何<a target="_blank" rel="noopener" href="https://redis.io/commands/migrate"><code>MIGRATE</code></a> 工作的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MIGRATE target_host target_port <span class="string">&quot;&quot;</span> target_database <span class="built_in">id</span> <span class="built_in">timeout</span> KEYS key1 key2 ...</span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://redis.io/commands/migrate"><code>MIGRATE</code></a> 将连接到目标实例，发送密钥的序列化版本，一旦收到 OK 代码，它自己数据集中的旧密钥将被删除。从外部客户端的角度来看，在任何给定时间，密钥都存在于 A 或 B 中。</p>
+<p>在 Redis Cluster 中不需要指定除 0 以外的数据库，而是 <a target="_blank" rel="noopener" href="https://redis.io/commands/migrate"><code>MIGRATE</code></a> 一个通用命令，可以用于不涉及 Redis Cluster 的其他任务。 <a target="_blank" rel="noopener" href="https://redis.io/commands/migrate"><code>MIGRATE</code></a> 即使在移动复杂键（如长列表）时也被优化为尽可能快，但在 Redis 集群中，如果使用数据库的应用程序存在延迟限制，则重新配置存在大键的集群被认为不是一个明智的过程。</p>
+<p>当迁移过程最终完成时，<code>SETSLOT &lt;slot&gt; NODE &lt;node-id&gt;</code>命令被发送到迁移中涉及的两个节点，以便将插槽再次设置为正常状态。相同的命令通常会发送到所有其他节点，以避免等待新配置在集群中自然传播。</p>
+<h3 id="询问重定向"><a href="#询问重定向" class="headerlink" title="询问重定向"></a>询问重定向</h3><p>在上一节中，我们简要介绍了 ASK 重定向。为什么我们不能简单地使用 MOVED 重定向？因为虽然 MOVED 意味着我们认为哈希槽永久由不同的节点提供服务，并且下一个查询应该针对指定的节点进行尝试。ASK 表示只向指定节点发送下一个查询。</p>
+<p>这是必需的，因为关于哈希槽 8 的下一个查询可能是关于仍在 A 中的键，所以我们总是希望客户端先尝试 A，然后在需要时尝试 B。由于这仅发生在 16384 个可用哈希槽中的一个，因此对集群的性能影响是可以接受的。</p>
+<p>我们需要强制客户端行为，以确保客户端仅在尝试 A 之后尝试节点 B，如果客户端在发送查询之前发送 ASKING 命令，则节点 B 将仅接受设置为 IMPORTING 的槽的查询。</p>
+<p>基本上，ASKING 命令会在客户端设置一个一次性标志，强制节点为有关 IMPORTING 槽的查询提供服务。</p>
+<p>从客户端的角度来看，ASK 重定向的完整语义如下：</p>
+<ul>
+<li>如果收到 ASK 重定向，则只发送重定向到指定节点的查询，但继续将后续查询发送到旧节点。</li>
+<li>使用 ASKING 命令启动重定向查询。</li>
+<li>不要更新本地客户端表以将哈希槽 8 映射到 B。</li>
+</ul>
+<p>一旦哈希槽 8 迁移完成，A 将发送一条 MOVED 消息，客户端可以将哈希槽 8 永久映射到新的端点和端口对。请注意，如果有错误的客户端更早执行映射，这不是问题，因为它不会在发出查询之前发送 ASKING 命令，因此 B 将使用 MOVED 重定向错误将客户端重定向到 A。</p>
+<p><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-setslot"><code>CLUSTER SETSLOT</code></a>  插槽迁移在命令文档中以类似的术语解释，但措辞不同（为了文档中的冗余） 。</p>
+<h3 id="客户端连接和重定向处理"><a href="#客户端连接和重定向处理" class="headerlink" title="客户端连接和重定向处理"></a>客户端连接和重定向处理</h3><p>为了提高效率，Redis 集群客户端维护当前插槽配置的映射。但是，此配置<em>不需要</em>是最新的。当联系错误的节点导致重定向时，客户端可以相应地更新其内部槽映射。</p>
+<p>客户端通常需要在两种不同的情况下获取完整的插槽列表和映射的节点地址：</p>
+<ul>
+<li>在启动时，填充初始插槽配置</li>
+<li>当客户端收到<code>MOVED</code>重定向时</li>
+</ul>
+<p>请注意，客户端可以<code>MOVED</code>通过仅更新其表中移动的插槽来处理重定向；然而，这通常效率不高，因为通常会同时修改多个插槽的配置。例如，如果一个副本被提升为主控，则旧主控服务的所有槽都将被重新映射）。<code>MOVED</code>通过从头开始获取槽到节点的完整映射来对重定向做出反应要简单得多。</p>
+<p>客户端可以发出<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-slots"><code>CLUSTER SLOTS</code></a> 命令来检索槽范围数组以及服务于指定范围的关联主节点和副本节点。</p>
+<p>以下是 的输出示例<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-slots"><code>CLUSTER SLOTS</code></a> ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:7000&gt; cluster slots</span><br><span class="line">1)  1)  (<span class="built_in">integer</span>)  5461</span><br><span class="line">   2)  (<span class="built_in">integer</span>)  10922</span><br><span class="line">   3)  1)  <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">      2)  (<span class="built_in">integer</span>)  7001</span><br><span class="line">   4)  1)  <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">      2)  (<span class="built_in">integer</span>)  7004</span><br><span class="line">2)  1)  (<span class="built_in">integer</span>)  0</span><br><span class="line">   2)  (<span class="built_in">integer</span>)  5460</span><br><span class="line">   3)  1)  <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">      2)  (<span class="built_in">integer</span>)  7000</span><br><span class="line">   4)  1)  <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">      2)  (<span class="built_in">integer</span>)  7003</span><br><span class="line">3)  1)  (<span class="built_in">integer</span>)  10923</span><br><span class="line">   2)  (<span class="built_in">integer</span>)  16383</span><br><span class="line">   3)  1)  <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">      2)  (<span class="built_in">integer</span>)  7002</span><br><span class="line">   4)  1)  <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">      2)  (<span class="built_in">integer</span>)  7005</span><br></pre></td></tr></table></figure>
+
+<p>返回数组的每个元素的前两个子元素是范围的开始和结束槽。附加元素表示地址-端口对。第一个地址-端口对是服务于插槽的主服务器，其他地址-端口对是服务于同一插槽的副本。仅当不处于错误状态时（即，当它们的 FAIL 标志未设置时）才会列出副本。</p>
+<p>上面输出中的第一个元素表示从 5461 到 10922（包括开始和结束）的插槽由 127.0.0.1:7001 提供服务，并且可以扩展与 127.0.0.1:7004 的副本联系的只读负载。</p>
+<p><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-slots"><code>CLUSTER SLOTS</code></a> 如果集群配置错误，则不能保证返回覆盖完整 16384 个槽的范围，因此客户端应初始化槽配置映射，用 NULL 对象填充目标节点，如果用户尝试执行有关属于的键的命令，则报告错误未分配的插槽。</p>
+<p>在发现槽未分配时向调用者返回错误之前，客户端应尝试再次获取槽配置以检查集群现在是否已正确配置。</p>
+<h3 id="多按键操作"><a href="#多按键操作" class="headerlink" title="多按键操作"></a>多按键操作</h3><p>使用哈希标签，客户可以自由使用多键操作。例如，以下操作是有效的：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MSET &#123;user:<span class="number">1000</span>&#125;<span class="selector-class">.name</span> Angela &#123;user:<span class="number">1000</span>&#125;<span class="selector-class">.surname</span> White</span><br></pre></td></tr></table></figure>
+
+<p>当键所属的哈希槽的重新分片正在进行时，多键操作可能变得不可用。</p>
+<p>更具体地说，即使在重新分片期间，多键操作的目标键仍然可用，这些键都存在并且仍然散列到同一个槽（源节点或目标节点）。</p>
+<p>对不存在或在重新分片期间在源节点和目标节点之间拆分的键的操作将产生<code>-TRYAGAIN</code>错误。客户端可以在一段时间后尝试操作，或者报告错误。</p>
+<p>一旦指定哈希槽的迁移终止，所有多键操作就可以再次用于该哈希槽。</p>
+<h3 id="使用副本节点缩放读取"><a href="#使用副本节点缩放读取" class="headerlink" title="使用副本节点缩放读取"></a>使用副本节点缩放读取</h3><p>通常，副本节点会将客户端重定向到给定命令中涉及的哈希槽的权威主节点，但是客户端可以使用副本来使用<a target="_blank" rel="noopener" href="https://redis.io/commands/readonly"><code>READONLY</code></a> 命令扩展读取。</p>
+<p><a target="_blank" rel="noopener" href="https://redis.io/commands/readonly"><code>READONLY</code></a> 告诉 Redis 集群副本节点客户端可以读取可能过时的数据并且对运行写入查询不感兴趣。</p>
+<p>当连接处于只读模式时，只有当操作涉及副本的主节点不提供服务的密钥时，集群才会向客户端发送重定向。这可能是因为：</p>
+<ol>
+<li>客户端发送了一个关于哈希槽的命令，这个哈希槽从未被这个副本的主人服务过。</li>
+<li>集群被重新配置（例如重新分片）并且副本不再能够为给定的哈希槽提供命令。</li>
+</ol>
+<p>当发生这种情况时，客户端应该更新其哈希槽映射，如前几节所述。</p>
+<p>可以使用<a target="_blank" rel="noopener" href="https://redis.io/commands/readwrite"><code>READWRITE</code></a> 命令清除连接的只读状态。</p>
+<h2 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h2><h3 id="心跳和八卦消息"><a href="#心跳和八卦消息" class="headerlink" title="心跳和八卦消息"></a>心跳和八卦消息</h3><p>Redis 集群节点不断地交换 ping 和 pong 数据包。这两种数据包具有相同的结构，都携带重要的配置信息。唯一的实际区别是消息类型字段。我们将 ping 和 pong 数据包的总和称为 <em>心跳数据包</em> 。</p>
+<p>通常节点会发送 ping 数据包，这将触发接收方使用 pong 数据包进行回复。然而，这不一定是真的。节点可以只发送 pong 数据包来向其他节点发送有关其配置的信息，而不会触发回复。这很有用，例如，为了尽快广播新配置。</p>
+<p>通常一个节点每秒会 ping 几个随机节点，这样无论集群中有多少个节点，每个节点发送的 ping 数据包（和接收到的 pong 数据包）的总数都是一个常数。</p>
+<p>但是，每个节点都确保对所有其他未发送 ping 或未收到 pong 的时间超过一半的节点执行 ping<code>NODE_TIMEOUT</code>操作。在<code>NODE_TIMEOUT</code>过去之前，节点还尝试重新连接与另一个节点的 TCP 链接，以确保不会仅因为当前 TCP 连接存在问题而认为节点不可达。</p>
+<p>如果设置为一个小数字并且节点数 (N)  非常大，则全局交换的消息数可能会<code>NODE_TIMEOUT</code>很大，因为每半个节点都会尝试 ping 没有新信息的所有其他节点<code>NODE_TIMEOUT</code>时间。</p>
+<p>例如，在节点超时设置为 60 秒的 100 节点集群中，每个节点将尝试每 30 秒发送 99 个 ping，总计每秒 3.3 个 ping。乘以 100 个节点，这就是整个集群中每秒 330 次 ping。</p>
+<p>有一些方法可以减少消息的数量，但是目前没有关于 Redis 集群故障检测使用的带宽问题的报告，所以现在使用明显和直接的设计。请注意，即使在上面的示例中，每秒交换的 330 个数据包平均分配给 100 个不同的节点，因此每个节点接收的流量是可以接受的。</p>
+<h3 id="心跳包内容"><a href="#心跳包内容" class="headerlink" title="心跳包内容"></a>心跳包内容</h3><p>Ping 和 Pong 数据包包含一个对所有类型的数据包（例如请求故障转移投票的数据包）通用的标头，以及一个特定于 Ping 和 Pong 数据包的特殊八卦部分。</p>
+<p>公共标头具有以下信息：</p>
+<ul>
+<li>节点 ID，一个 160 位的伪随机字符串，在第一次创建节点时分配，并在 Redis 集群节点的整个生命周期内保持不变。</li>
+<li>用于挂载 Redis Cluster 使用的分布式算法的发送节点的<code>currentEpoch</code>和<code>configEpoch</code>字段（这将在下一节中详细说明）。如果该节点是副本，则它<code>configEpoch</code>是其主节点的最后一个已知节点<code>configEpoch</code>。</li>
+<li>节点标志，表示该节点是否为副本、主节点等单比特节点信息。</li>
+<li>发送节点服务的哈希槽的位图，或者如果节点是副本，则它的主节点服务的槽的位图。</li>
+<li>发送方 TCP 基本端口，即 Redis 用于接受客户端命令的端口。</li>
+<li>集群端口，即 Redis 用于节点到节点通信的端口。</li>
+<li>从发送者的角度来看集群的状态（关闭或正常）。</li>
+<li>发送节点的主节点 ID（如果它是副本）。</li>
+</ul>
+<p>ping 和 pong 数据包也包含八卦部分。此部分向接收方提供发送方节点对集群中其他节点的看法。八卦部分仅包含有关发送方已知的节点集中的几个随机节点的信息。八卦部分中提到的节点数与集群大小成正比。</p>
+<p>对于添加到八卦部分的每个节点，都会报告以下字段：</p>
+<ul>
+<li>节点 ID。</li>
+<li>节点的 IP 和端口。</li>
+<li>节点标志。</li>
+</ul>
+<p>八卦部分允许接收节点从发送方的角度获取有关其他节点状态的信息。这对于故障检测和发现集群中的其他节点都很有用。</p>
+<h3 id="故障检测"><a href="#故障检测" class="headerlink" title="故障检测"></a>故障检测</h3><p>Redis 集群故障检测用于识别大多数节点何时不再可以访问主节点或副本节点，然后通过将副本提升为主节点角色来做出响应。当无法进行副本提升时，集群将处于错误状态以停止接收来自客户端的查询。</p>
+<p>如前所述，每个节点都有一个与其他已知节点相关联的标志列表。有两个标志用于故障检测，称为<code>PFAIL</code>和<code>FAIL</code>。<code>PFAIL</code>表示 <em>Possible failure</em> ，并且是一种未确认的故障类型。<code>FAIL</code>意味着一个节点出现故障，并且这种情况在固定时间内得到了大多数主节点的确认。</p>
+<p><strong>PFAIL 标志：</strong></p>
+<p><code>PFAIL</code>当一个节点在超过 time 的时间内无法访问时，该节点会用 flag 标记另一个节点<code>NODE_TIMEOUT</code>。<code>PFAIL</code>无论其类型如何，主节点和副本节点都可以将另一个节点标记为。</p>
+<p>Redis 集群节点的不可访问性的概念是我们有一个 <strong>活动的 ping</strong> （我们发送的 ping，但我们还没有得到回复）等待的时间超过<code>NODE_TIMEOUT</code>。为了使这种机制起作用，<code>NODE_TIMEOUT</code>与网络往返时间相比必须很大。为了在正常操作期间增加可靠性，节点将尝试在一半时间过去后立即重新连接集群中的其他节点<code>NODE_TIMEOUT</code>而没有对 ping 的回复。这种机制确保连接保持活动状态，因此断开的连接通常不会导致节点之间出现错误的故障报告。</p>
+<p><strong>失败标志：</strong></p>
+<p>单独的<code>PFAIL</code>标志只是每个节点拥有的关于其他节点的本地信息，但不足以触发副本提升。对于要被视为关闭的节点，<code>PFAIL</code>需要将条件升级为<code>FAIL</code>条件。</p>
+<p>正如本文档的节点心跳部分所述，每个节点都会向其他每个节点发送八卦消息，包括一些随机已知节点的状态。每个节点最终都会收到一组用于其他每个节点的节点标志。这样每个节点都有一种机制来向其他节点发送有关它们检测到的故障情况的信号。</p>
+<p>当满足以下一组条件时，<code>PFAIL</code>条件将升级为<code>FAIL</code>条件：</p>
+<ul>
+<li>一些节点，我们称之为 A，有另一个节点 B 标记为<code>PFAIL</code>。</li>
+<li>节点 A 通过八卦部分从集群中大多数主节点的角度收集了关于 B 状态的信息。</li>
+<li>大多数大师会及时发出信号<code>PFAIL</code>或<code>FAIL</code>条件<code>NODE_TIMEOUT * FAIL_REPORT_VALIDITY_MULT</code>。（当前实现中有效性因子设置为 2，所以这只是时间的两倍<code>NODE_TIMEOUT</code>）。</li>
+</ul>
+<p>如果以上所有条件都为真，节点 A 将：</p>
+<ul>
+<li>将节点标记为<code>FAIL</code>。</li>
+<li>向所有可达节点发送<code>FAIL</code>消息（而不是心跳消息中的条件）。<code>FAIL</code></li>
+</ul>
+<p>该<code>FAIL</code>消息将强制每个接收节点将节点标记为处于<code>FAIL</code>状态，无论它是否已经将节点标记为处于<code>PFAIL</code>状态。</p>
+<p>请注意， <em>FAIL 标志主要是一种方式</em> 。也就是说，一个节点可以从<code>PFAIL</code>到<code>FAIL</code>，但是<code>FAIL</code>只有在以下情况下才能清除标志：</p>
+<ul>
+<li>该节点已经可达并且是一个副本。在这种情况下，<code>FAIL</code>可以清除标志，因为副本没有故障转移。</li>
+<li>该节点已经可达并且是不为任何槽提供服务的主节点。在这种情况下，<code>FAIL</code>可以清除标志，因为没有插槽的主节点并不真正参与集群，而是在等待配置以加入集群。</li>
+<li>该节点已经可以访问并且是主节点，但是已经过去了很长时间（N 倍<code>NODE_TIMEOUT</code>）而没有任何可检测到的副本提升。在这种情况下，它最好重新加入集群并继续。</li>
+</ul>
+<p>值得注意的是，虽然<code>PFAIL</code>-&gt;<code>FAIL</code>转换使用一种协议形式，但所使用的协议很弱：</p>
+<ol>
+<li>节点在一段时间内收集其他节点的意见，所以即使大多数主节点需要“同意”，实际上这只是我们在不同时间从不同节点收集的状态，我们不确定，也不需要，在特定时刻，大多数大师都同意。然而，我们丢弃了旧的失败报告，因此大多数大师在一个时间窗口内发出了失败信号。</li>
+<li>虽然每个检测到该<code>FAIL</code>条件的节点都会使用该消息在集群中的其他节点上强制该条件<code>FAIL</code>，但无法确保该消息将到达所有节点。例如，一个节点可能会检测到这种<code>FAIL</code>情况，并且由于分区将无法到达任何其他节点。</li>
+</ol>
+<p>然而，Redis 集群故障检测有一个活性要求：最终所有节点都应该就给定节点的状态达成一致。有两种情况可能源于裂脑情况。少数节点认为节点处于<code>FAIL</code>状态，或者少数节点认为节点不处于<code>FAIL</code>状态。在这两种情况下，最终集群将拥有给定节点状态的单一视图：</p>
+<p><strong>情况 1</strong> ：如果大多数主节点将一个节点标记为<code>FAIL</code>，由于故障检测及其产生的 <em>连锁效应</em> ，每个其他节点最终都会将主节点标记为<code>FAIL</code>，因为在指定的时间窗口内将报告足够多的故障。</p>
+<p><strong>情况 2</strong> ：当只有少数 master 将节点标记为<code>FAIL</code>时，副本提升不会发生（因为它使用更正式的算法确保每个人最终都知道提升）并且每个节点都会根据<code>FAIL</code>状态清除<code>FAIL</code>状态上面的清算规则（即经过 N 次后没有提升<code>NODE_TIMEOUT</code>）。</p>
+<p><strong>该<code>FAIL</code>标志仅用作运行</strong>副本提升算法的安全部分的触发器。理论上，副本可以独立行动并在其主人不可到达时开始副本提升，如果大多数人实际上可以到达主人，则等待主人拒绝提供确认。然而，状态的增加的复杂性<code>PFAIL -&gt; FAIL</code>、弱协议和<code>FAIL</code>消息在集群的可达部分中强制在最短时间内传播状态，具有实际优势。由于这些机制，如果集群处于错误状态，通常所有节点将大约同时停止接受写入。从使用 Redis 集群的应用程序的角度来看，这是一个理想的特性。也避免了由于本地问题而无法到达其主节点的副本发起的错误选举尝试（主节点可以被大多数其他主节点访问）。</p>
+<h2 id="配置处理、传播和故障转移"><a href="#配置处理、传播和故障转移" class="headerlink" title="配置处理、传播和故障转移"></a>配置处理、传播和故障转移</h2><h3 id="集群当前纪元"><a href="#集群当前纪元" class="headerlink" title="集群当前纪元"></a>集群当前纪元</h3><p>Redis Cluster 使用了一个类似于 Raft 算法“term”的概念。在 Redis Cluster 中，这个术语被称为 epoch，它用于为事件提供增量版本控制。当多个节点提供相互冲突的信息时，另一个节点可以了解哪个状态是最新的。</p>
+<p>是<code>currentEpoch</code>一个 64 位无符号数。</p>
+<p>在创建节点时，每个 Redis 集群节点（包括副本节点和主节点）都将 设置<code>currentEpoch</code>为 0。</p>
+<p>每次从另一个节点接收到数据包时，如果发送方的纪元（集群总线消息头的一部分）大于本地节点纪元，<code>currentEpoch</code>则更新为发送方纪元。</p>
+<p>由于这些语义，最终所有节点都会同意<code>currentEpoch</code>集群中最大的节点。</p>
+<p>当集群的状态发生变化并且节点寻求同意以执行某些操作时，将使用此信息。</p>
+<p>目前，这仅在副本提升期间发生，如下一节所述。基本上，纪元是集群的逻辑时钟，并指示给定的信息胜过纪元较小的信息。</p>
+<h3 id="配置纪元"><a href="#配置纪元" class="headerlink" title="配置纪元"></a>配置纪元</h3><p>每个 master 总是<code>configEpoch</code>在 ping 和 pong 数据包中通告它，连同一个位图通告它所服务的插槽集。</p>
+<p><code>configEpoch</code>创建新节点时，masters 中的 设置为零。</p>
+<p><code>configEpoch</code>在副本选举期间创建一个新的。试图替换失败的主人的副本增加他们的纪元并试图从大多数主人那里获得授权。当一个副本被授权时，一个新的 unique<code>configEpoch</code> 被创建并且副本使用新的<code>configEpoch</code>.</p>
+<p>正如下一节中所解释的那样，<code>configEpoch</code>当不同的节点声明不同的配置时（这种情况可能由于网络分区和节点故障而发生），这有助于解决冲突。</p>
+<p>副本节点也在<code>configEpoch</code>ping 和 pong 数据包中通告该字段，但在副本的情况下，该字段代表<code>configEpoch</code>其主节点上次交换数据包时的字段。这允许其他实例检测副本何时具有需要更新的旧配置（主节点不会向具有旧配置的副本授予投票）。</p>
+<p>每次<code>configEpoch</code>某个已知节点发生更改时，所有接收此信息的节点都会将其永久存储在 nodes.conf 文件中。价值也是如此<code>currentEpoch</code>。<code>fsync-ed</code>在节点继续其操作之前更新时，保证这两个变量被保存并写入磁盘。</p>
+<p>在故障转移期间使用简单算法生成的<code>configEpoch</code>值保证是新的、增量的和唯一的。</p>
+<h3 id="副本选举和推广"><a href="#副本选举和推广" class="headerlink" title="副本选举和推广"></a>副本选举和推广</h3><p>副本选举和升级由副本节点处理，在主节点的帮助下投票支持副本升级。<code>FAIL</code>从至少一个具有成为主节点的先决条件的副本的角度来看，当主节点处于状态时，就会发生副本选举。</p>
+<p>In order for a replica to promote itself to master, it needs to start an election and win it. All the replicas for a given master can start an election if the master is in <code>FAIL</code>state, however only one replica will win the election and promote itself to master.</p>
+<p>当满足以下条件时，副本开始选举：</p>
+<ul>
+<li>副本的主人处于<code>FAIL</code>状态。</li>
+<li>主人服务于非零数量的插槽。</li>
+<li>副本复制链接与主副本断开的时间不超过给定的时间，以确保提升副本的数据相当新鲜。这个时间是用户可配置的。</li>
+</ul>
+<p>In order to be elected, the first step for a replica is to increment its <code>currentEpoch</code>counter, and request votes from master instances.</p>
+<p>副本通过<code>FAILOVER_AUTH_REQUEST</code>向集群的每个主节点广播数据包来请求投票。然后它最多等待回复到达时间的两倍<code>NODE_TIMEOUT</code>（但总是至少 2 秒）。</p>
+<p>一旦一个 master 投票给了一个给定的副本，并用 a 肯定地回复<code>FAILOVER_AUTH_ACK</code>，它就不能再投票给同一 master 的另一个副本一段时间了<code>NODE_TIMEOUT * 2</code>。在此期间将无法回复同一master的其他授权请求。这不是保证安全所必需的，但对于防止多个副本在大约同一时间被选中（即使具有不同的<code>configEpoch</code>）很有用，这通常是不希望的。</p>
+<p>副本会丢弃任何<code>AUTH_ACK</code>纪元小于<code>currentEpoch</code>发送投票请求时的纪元的回复。这确保它不会计算用于之前选举的选票。</p>
+<p>一旦副本收到来自大多数主服务器的 ACK，它就赢得了选举。否则，如果在两次<code>NODE_TIMEOUT</code>（但始终至少 2 秒）内未达到多数，则选举中止，并在之后<code>NODE_TIMEOUT * 4</code>（且始终至少 4 秒）再次尝试新的选举。</p>
+<h3 id="副本等级"><a href="#副本等级" class="headerlink" title="副本等级"></a>副本等级</h3><p>As soon as a master is in <code>FAIL</code>state, a replica waits a short period of time before trying to get elected. 该延迟计算如下：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DELAY = <span class="number">500</span> milliseconds + <span class="built_in">random</span> delay between <span class="number">0</span> <span class="keyword">and</span> <span class="number">500</span> milliseconds +</span><br><span class="line">        REPLICA_RANK * <span class="number">1000</span> milliseconds.</span><br></pre></td></tr></table></figure>
+
+<p>The fixed delay ensures that we wait for the <code>FAIL</code>state to propagate across the cluster, otherwise the replica may try to get elected while the masters are still unaware of the <code>FAIL</code>state, refusing to grant their vote.</p>
+<p>随机延迟用于使副本不同步，因此它们不太可能同时开始选举。</p>
+<p><code>REPLICA_RANK</code>是此副本关于它从主服务器处理的复制数据量的排名。副本在主服务器发生故障时交换消息以建立（尽力而为）等级：具有最新复制偏移量的副本在等级 0，第二个更新的副本在等级 1，依此类推。以这种方式，最新的副本试图在其他副本之前被选出。</p>
+<p>排名顺序没有严格执行；如果更高级别的副本未能被选出，其他人将很快尝试。</p>
+<p>一旦复制品赢得了选举，它将获得一种新的独特和增量<code>configEpoch</code>，该独特和增量高于任何其他现有主人。它开始在 ping 和 pong 数据包中将自己宣传为 master，为一组服务插槽提供一个<code>configEpoch</code>将胜过过去的插槽。</p>
+<p>为了加速其他节点的重新配置，一个 pong 数据包被广播到集群的所有节点。当前无法访问的节点最终将在从另一个节点接收到 ping 或 pong 数据包时重新配置，或者<code>UPDATE</code>如果检测到它通过心跳数据包发布的信息已过时，则会从另一个节点接收数据包。</p>
+<p>其他节点将检测到有一个新的 master 服务于旧 master 服务的相同 slot 但具有更大的<code>configEpoch</code>，并将升级它们的配置。旧主控（或故障转移主控，如果它重新加入集群）的副本不仅会升级配置，还会重新配置以从新主控复制。下一节将解释如何配置重新加入集群的节点。</p>
+<h3 id="大师回复副本投票请求"><a href="#大师回复副本投票请求" class="headerlink" title="大师回复副本投票请求"></a>大师回复副本投票请求</h3><p>在上一节中，我们讨论了复制品如何试图选举产生。本节从请求为给定副本投票的主节点的角度解释发生了什么。</p>
+<p>主人以副本请求的形式接收投票<code>FAILOVER_AUTH_REQUEST</code>请求。</p>
+<p>要获得投票权，需要满足以下条件：</p>
+<ol>
+<li>master 只对给定的 epoch 进行一次投票，并且拒绝对更早的 epoch 进行投票：每个 master 都有一个 lastVoteEpoch 字段，并且只要<code>currentEpoch</code>auth 请求数据包中的不大于 lastVoteEpoch 就会拒绝再次投票。当主人对投票请求作出肯定答复时， lastVoteEpoch 会相应更新，并安全地存储在磁盘上。</li>
+<li>仅当副本的主节点标记为 时，主节点才会投票给副本<code>FAIL</code>。</li>
+<li><code>currentEpoch</code>a小于 master的授权请求将<code>currentEpoch</code>被忽略。因此，主回复将始终<code>currentEpoch</code>与授权请求相同。如果同一个副本再次请求投票，递增<code>currentEpoch</code>，则可以保证新投票不能接受主服务器的旧延迟回复。</li>
+</ol>
+<p>不使用规则 3 导致的问题示例：</p>
+<p>master 为 5， lastVoteEpoch<code>currentEpoch</code>为 1（几次选举失败后可能会出现这种情况）</p>
+<ul>
+<li>副本<code>currentEpoch</code>为 3。</li>
+<li>Replica 尝试在 epoch 4 (3+1)  中被选举，master 回复 ok <code>currentEpoch</code>5，但是回复被延迟了。</li>
+<li>副本将在稍后的时间再次尝试被选举，纪元为 5 (4+1) ，延迟回复到达副本为<code>currentEpoch</code>5，并被接受为有效。</li>
+</ul>
+<ol start="4">
+<li><code>NODE_TIMEOUT * 2</code>如果已经投票给该主控的副本，那么在该主控的副本过去之前，主控不会投票给该主控的副本。This is not strictly required as it is not possible for two replicas to win the election in the same epoch. 然而，实际上，它确保当一个副本被选中时，它有足够的时间通知其他副本，并避免另一个副本赢得新选举的可能性，从而执行不必要的第二次故障转移。</li>
+<li>大师们不会以任何方式努力选择最好的复制品。如果副本的 master 处于<code>FAIL</code>状态并且 master 在当前任期内没有投票，则授予赞成票。The best replica is the most likely to start an election and win it before the other replicas, since it will usually be able to start the voting process earlier because of its <em>higher rank</em> as explained in the previous section.</li>
+<li>当一个主人拒绝为给定的副本投票时，没有否定的回应，这个请求被简单地忽略了。</li>
+<li>Masters 不会投票给副本发送<code>configEpoch</code>小于<code>configEpoch</code>master 表中副本声明的槽的任何 a 的副本。请记住，副本发送<code>configEpoch</code>其主服务器的位图，以及其主服务器所服务的插槽的位图。这意味着请求投票的副本必须具有其要进行故障转移的插槽的配置，该配置更新或等于授予投票的主服务器的配置。</li>
+</ol>
+<h3 id="分区期间配置时期有用性的实际示例"><a href="#分区期间配置时期有用性的实际示例" class="headerlink" title="分区期间配置时期有用性的实际示例"></a>分区期间配置时期有用性的实际示例</h3><p>本节说明如何使用纪元概念来使副本提升过程对分区更具抵抗力。</p>
+<ul>
+<li>不再可以无限期地访问 master。master 有 A、B、C 三个副本。</li>
+<li>Replica A wins the election and is promoted to master.</li>
+<li>网络分区使 A 对大多数集群不可用。</li>
+<li>Replica B wins the election and is promoted as master.</li>
+<li>A 分区使 B 对大多数集群不可用。</li>
+<li>之前的分区是固定的，A又可用了。</li>
+</ul>
+<p>此时 B 已关闭，A 再次可用，角色为 master（实际上<code>UPDATE</code>消息会立即重新配置它，但这里我们假设所有<code>UPDATE</code>消息都丢失了）。At the same time, replica C will try to get elected in order to fail over B. This is what happens:</p>
+<ol>
+<li>C will try to get elected and will succeed, since for the majority of masters its master is actually down. 它将获得一个新的增量<code>configEpoch</code>。</li>
+<li>A 将无法声称自己是其哈希槽的主人，因为与 A 发布的相比，其他节点已经具有与更高配置时期（B 中的那个）相关联的相同哈希槽。</li>
+<li>因此，所有节点将升级其表以将哈希槽分配给 C，集群将继续其操作。</li>
+</ol>
+<p>正如您将在下一节中看到的那样，重新加入集群的陈旧节点通常会尽快收到有关配置更改的通知，因为只要它对任何其他节点执行 ping 操作，接收方就会检测到它有陈旧信息并发送一个<code>UPDATE</code>信息。</p>
+<h3 id="哈希槽配置传播"><a href="#哈希槽配置传播" class="headerlink" title="哈希槽配置传播"></a>哈希槽配置传播</h3><p>Redis 集群的一个重要部分是用于传播有关哪个集群节点正在为一组给定的哈希槽服务的信息的机制。这对于新集群的启动以及在副本被提升以服务于其故障主节点的插槽后升级配置的能力都至关重要。</p>
+<p>相同的机制允许在不确定的时间内分区的节点以合理的方式重新加入集群。</p>
+<p>散列槽配置有两种传播方式：</p>
+<ol>
+<li>心跳消息。ping 或 pong 数据包的发送者总是添加有关它（或它的主人，如果它是副本）所服务的哈希槽集的信息。</li>
+<li><code>UPDATE</code>消息。由于在每个心跳包中都有关于发送者<code>configEpoch</code>和所服务的哈希槽集的信息，如果心跳包的接收者发现发送者信息陈旧，它将发送一个包含新信息的数据包，迫使陈旧节点更新其信息。</li>
+</ol>
+<p>心跳或<code>UPDATE</code>消息的接收者使用某些简单的规则来更新其将散列槽映射到节点的表。当一个新的 Redis Cluster 节点被创建时，它的本地哈希槽表被简单地初始化为<code>NULL</code>条目，这样每个哈希槽就不会绑定或链接到任何节点。这看起来类似于以下内容：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> -&gt; <span class="literal">NULL</span></span><br><span class="line"><span class="number">1</span> -&gt; <span class="literal">NULL</span></span><br><span class="line"><span class="number">2</span> -&gt; <span class="literal">NULL</span></span><br><span class="line">...</span><br><span class="line"><span class="number">16383</span> -&gt; <span class="literal">NULL</span></span><br></pre></td></tr></table></figure>
+
+<p>节点为了更新其哈希槽表而遵循的第一条规则如下：</p>
+<p><strong>规则 1</strong> ：如果哈希槽未分配（设置为<code>NULL</code>），并且已知节点声明了它，我将修改我的哈希槽表并将声明的哈希槽关联到它。</p>
+<p>因此，如果我们收到来自节点 A 的心跳，声称为哈希槽 1 和 2 提供配置纪元值为 3 的服务，则该表将被修改为：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> -&gt; NULL</span><br><span class="line"><span class="number">1</span> -&gt; <span class="selector-tag">A</span> <span class="selector-attr">[3]</span></span><br><span class="line"><span class="number">2</span> -&gt; <span class="selector-tag">A</span> <span class="selector-attr">[3]</span></span><br><span class="line">...</span><br><span class="line"><span class="number">16383</span> -&gt; NULL</span><br></pre></td></tr></table></figure>
+
+<p>在创建新的集群时，系统管理员需要手动分配（使用<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-addslots"><code>CLUSTER ADDSLOTS</code></a> 命令，通过redis-cli命令行工具，或通过任何其他方式）每个主节点服务的槽只分配给节点本身，以及信息将在集群中快速传播。</p>
+<p>然而，这条规则还不够。我们知道哈希槽映射可以在两个事件期间发生变化：</p>
+<ol>
+<li>副本在故障转移期间替换其主副本。</li>
+<li>槽从一个节点重新分片到另一个节点。</li>
+</ol>
+<p>现在让我们关注故障转移。当一个副本故障转移到它的主节点上时，它会获得一个配置纪元，该纪元保证大于其主节点的配置纪元（并且通常大于之前生成的任何其他配置纪元）。例如，作为 A 的副本的节点 B 可能会通过配置纪元 4 对 A 进行故障转移。它将开始发送心跳包（第一次在集群范围内进行大量广播）并且由于以下第二条规则，接收者将更新他们的哈希槽表：</p>
+<p><strong>规则 2</strong> ：如果已经分配了哈希槽，并且已知节点正在使用<code>configEpoch</code>大于<code>configEpoch</code>当前与该槽相关联的主节点的 a 对其进行广告，我会将哈希槽重新绑定到新节点。</p>
+<p>因此，在收到来自 B 的消息，该消息声称服务哈希槽 1 和 2 且配置纪元为 4 时，接收方将按以下方式更新其表：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> -&gt; NULL</span><br><span class="line"><span class="number">1</span> -&gt; <span class="selector-tag">B</span> <span class="selector-attr">[4]</span></span><br><span class="line"><span class="number">2</span> -&gt; <span class="selector-tag">B</span> <span class="selector-attr">[4]</span></span><br><span class="line">...</span><br><span class="line"><span class="number">16383</span> -&gt; NULL</span><br></pre></td></tr></table></figure>
+
+<p>Liveness property：由于第二条规则，最终集群中的所有节点都会同意一个插槽的所有者是<code>configEpoch</code>广告它的节点中最大的那个。</p>
+<p>Redis Cluster 中的这种机制称为 <strong>last failover wins</strong> 。</p>
+<p>在重新分片期间也会发生同样的情况。当导入哈希槽的节点完成导入操作时，其配置纪元会增加，以确保更改将在整个集群中传播。</p>
+<h3 id="更新消息，仔细看看"><a href="#更新消息，仔细看看" class="headerlink" title="更新消息，仔细看看"></a>更新消息，仔细看看</h3><p>考虑到上一节，可以更轻松地了解更新消息的工作原理。节点 A 可能会在一段时间后重新加入集群。它将发送心跳数据包，声称它服务于配置时期为 3 的哈希槽 1 和 2。所有具有更新信息的接收者将看到相同的哈希槽与具有更高配置时期的节点 B 相关联。因此，他们将向<code>UPDATE</code>A 发送一条消息，其中包含插槽的新配置。由于上面的 <strong>规则 2</strong> ，A 将更新其配置。</p>
+<h3 id="节点如何重新加入集群"><a href="#节点如何重新加入集群" class="headerlink" title="节点如何重新加入集群"></a>节点如何重新加入集群</h3><p>当节点重新加入集群时，使用相同的基本机制。继续上面的示例，节点 A 将收到通知，哈希槽 1 和 2 现在由 B 提供服务。假设这两个是 A 提供的唯一哈希槽，则 A 提供的哈希槽计数将下降为 0！因此 A 将 <strong>重新配置为新 master 的副本</strong> 。</p>
+<p>实际遵循的规则比这复杂一点。一般情况下，A 可能会在很长时间后重新加入，同时可能会发生原先由 A 服务的哈希槽由多个节点服务，例如哈希槽 1 可能由 B 服务，而哈希槽 2 由 C 服务.</p>
+<p>因此，实际的<em>Redis Cluster 节点角色切换规则</em>是： <strong>主节点将更改其配置以复制（成为副本）窃取其最后一个哈希槽的节点</strong> 。</p>
+<p>在重新配置期间，最终服务的哈希槽数将下降到零，节点将相应地重新配置。请注意，在基本情况下，这仅意味着旧主服务器将是故障转移后替换它的副本的副本。然而，在一般形式下，该规则涵盖了所有可能的情况。</p>
+<p>副本完全相同：它们重新配置以复制窃取其前主节点的最后一个哈希槽的节点。</p>
+<h3 id="副本迁移"><a href="#副本迁移" class="headerlink" title="副本迁移"></a>副本迁移</h3><p>Redis Cluster为了提高系统的可用性，实现了一个叫做 <em>副本迁移的概念。</em> 这个想法是，在具有主副本设置的集群中，如果副本和主副本之间的映射是固定的，那么如果单个节点发生多个独立故障，可用性会随着时间的推移而受到限制。</p>
+<p>例如，在每个主节点都有一个副本的集群中，只要主节点或副本发生故障，集群就可以继续运行，但如果两者同时发生故障则不能。然而，有一类故障是由硬件或软件问题引起的单个节点的独立故障，这些问题会随着时间的推移而累积。例如：</p>
+<ul>
+<li>Master A 有一个副本 A1。</li>
+<li>大师A失败了。A1 被提升为新主人。</li>
+<li>三小时后，A1 以独立方式发生故障（与 A 的故障无关）。由于节点 A 仍处于关闭状态，因此没有其他副本可用于提升。群集无法继续正常操作。</li>
+</ul>
+<p>如果masters和replicas之间的映射是固定的，那么让集群更能抵抗上述场景的唯一方法就是为每个master添加replicas，但是这样做代价高昂，因为它需要执行更多的Redis实例，更多的内存，以及等等。</p>
+<p>另一种方法是在集群中创建不对称性，并让集群布局随时间自动改变。例如，集群可能有三个主节点 A、B、C。A 和 B 各有一个副本，A1 和 B1。然而，主 C 不同，它有两个副本：C1 和 C2。</p>
+<p>副本迁移是自动重新配置副本的过程，以便<em>迁移</em>到不再覆盖的主服务器（没有工作副本）。通过副本迁移，上面提到的场景变成了以下场景：</p>
+<ul>
+<li>大师A失败了。A1 被提升。</li>
+<li>C2 作为 A1 的副本迁移，否则不受任何副本支持。</li>
+<li>三小时后，A1 也发生故障。</li>
+<li>C2 被提升为新的 master 以取代 A1。</li>
+<li>集群可以继续操作。</li>
+</ul>
+<h3 id="副本迁移算法"><a href="#副本迁移算法" class="headerlink" title="副本迁移算法"></a>副本迁移算法</h3><p>迁移算法不使用任何形式的协议，因为 Redis 集群中的副本布局不是需要与配置时代保持一致和&#x2F;或版本化的集群配置的一部分。相反，它使用一种算法来避免在不支持主服务器时大量迁移副本。该算法保证最终（一旦集群配置稳定）每个主节点都将得到至少一个副本的支持。</p>
+<p>这就是算法的工作原理。首先，我们需要在这种情况下定义什么是 <em>好的副本</em><code>FAIL</code>：从给定节点的角度来看，好的副本是不处于状态的副本。</p>
+<p>在检测到至少有一个主节点没有良好副本的每个副本中触发算法的执行。然而，在检测到这种情况的所有副本中，只有一个子集应该采取行动。该子集实际上通常是单个副本，除非不同的副本在给定时刻对其他节点的故障状态的看法略有不同。</p>
+<p><em>acting replica</em>是 masters 中附加的 replica 数量最多的 replica，它没有处于 FAIL 状态并且具有最小的 node ID 。</p>
+<p>因此，例如，如果有 10 个 master，每个 1 个副本，2 个 master，每个 5 个副本，将尝试迁移的副本是 - 在具有 5 个副本的 2 个 master 中 - 具有最低节点 ID 的副本。鉴于没有使用协议，当集群配置不稳定时，可能会出现竞争条件，即多个副本认为自己是具有较低节点 ID 的非故障副本（这在实践中不太可能发生) . 如果发生这种情况，结果是多个副本迁移到同一个主服务器，这是无害的。如果竞争以一种让出的主节点没有副本的方式发生，一旦集群再次稳定，算法将再次重新执行并将副本迁移回原始主节点。</p>
+<p>最终，每个 master 都将得到至少一个 replica 的支持。但是，正常行为是单个副本从具有多个副本的主服务器迁移到孤立的主服务器。</p>
+<p>该算法由一个名为 的用户可配置参数控制 <code>cluster-migration-barrier</code>：在副本可以迁移之前，主服务器必须保留的良好副本的数量。例如，如果此参数设置为 2，则只有当其 master 保留两个工作副本时，副本才能尝试迁移。</p>
+<h3 id="configEpoch冲突解决算法"><a href="#configEpoch冲突解决算法" class="headerlink" title="configEpoch冲突解决算法"></a>configEpoch冲突解决算法</h3><p>当在故障转移期间通过副本提升创建新<code>configEpoch</code>值时，它们保证是唯一的。</p>
+<p>然而，有两个不同的事件，其中新的 configEpoch 值以不安全的方式创建，只是增加<code>currentEpoch</code>本地节点的 local 并希望同时没有冲突。这两个事件都是系统管理员触发的：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-failover"><code>CLUSTER FAILOVER</code></a> 带有选项的命令能够在大多数主节点不可用的情况下<code>TAKEOVER</code>手动将副本节点提升为主节点。例如，这在多数据中心设置中很有用。</li>
+<li>出于性能原因，用于集群重新平衡的插槽迁移也会在本地节点内生成新的配置时期，而无需达成一致。</li>
+</ol>
+<p>具体来说，在手动重新分片过程中，当一个哈希槽从节点 A 迁移到节点 B 时，重新分片程序将强制 B 将其配置升级到集群中最大的 epoch，加 1（除非该节点是已经是具有最大配置时代的那个），而不需要其他节点的同意。通常，真实世界的重新分片涉及移动数百个哈希槽（尤其是在小型集群中）。要求在重新分片期间为每个移动的哈希槽生成新的配置时期达成协议是低效的。此外，它每次都需要在每个集群节点中进行 fsync 以存储新配置。由于它的执行方式，我们只需要在移动第一个哈希槽时创建一个新的配置纪元，这使得它在生产环境中更加高效。</p>
+<p>然而，由于上述两种情况，有可能（尽管不太可能）以具有相同配置时期的多个节点结束。<code>currentEpoch</code>如果传播速度不够快，系统管理员执行的重新分片操作和同时发生的故障转移（再加上很多运气不好）可能会导致冲突。</p>
+<p>此外，软件错误和文件系统损坏也可能导致多个节点具有相同的配置时期。</p>
+<p>当服务于不同哈希槽的 masters 具有相同的<code>configEpoch</code>时，没有问题。更重要的是，故障转移主服务器的副本具有唯一的配置纪元。</p>
+<p>也就是说，手动干预或重新分片可能会以不同方式更改集群配置。Redis Cluster main liveness 属性要求 slot 配置总是收敛的，所以在任何情况下我们都希望所有的 master 节点都有不同的<code>configEpoch</code>.</p>
+<p>为了强制执行这一点，如果两个节点最终具有相同的 . ，则使用<strong>冲突解决算法</strong><code>configEpoch</code>。</p>
+<ul>
+<li>如果一个主节点检测到另一个主节点正在用相同的<code>configEpoch</code>.</li>
+<li>AND IF 与声明相同的其他节点相比，该节点具有字典序较小的节点 ID <code>configEpoch</code>。</li>
+<li>然后它将其递增<code>currentEpoch</code>1，并将其用作新的<code>configEpoch</code>.</li>
+</ul>
+<p>如果有任何一组节点具有相同的<code>configEpoch</code>，则除了具有最大节点 ID 的节点之外的所有节点都将向前移动，从而保证最终每个节点都会选择一个唯一的 configEpoch，而不管发生了什么。</p>
+<p>这种机制还保证在创建新集群后，所有节点都以不同的方式开始<code>configEpoch</code>（即使这实际上没有被使用）因为<code>redis-cli</code>确保<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-set-config-epoch"><code>CLUSTER SET-CONFIG-EPOCH</code></a> 在启动时使用。但是，如果由于某种原因导致节点配置错误，它将自动将其配置更新为不同的配置时期。</p>
+<h3 id="节点重置"><a href="#节点重置" class="headerlink" title="节点重置"></a>节点重置</h3><p>可以对节点进行软件重置（无需重新启动它们），以便在不同的角色或不同的集群中重复使用。这在正常操作、测试和云环境中很有用，在云环境中可以重新配置给定节点以加入不同的节点集以扩大或创建新集群。</p>
+<p>在 Redis 集群中，节点是使用<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-reset"><code>CLUSTER RESET</code></a> 命令重置的。该命令有两种变体：</p>
+<ul>
+<li><code>CLUSTER RESET SOFT</code></li>
+<li><code>CLUSTER RESET HARD</code></li>
+</ul>
+<p>该命令必须直接发送到要重置的节点。如果未提供复位类型，则执行软复位。</p>
+<p>以下是重置执行的操作列表：</p>
+<ol>
+<li>软硬重置：如果节点是副本，则将其变为主节点，并丢弃其数据集。如果该节点是主节点并且包含密钥，则重置操作将中止。</li>
+<li>软硬复位：释放所有槽位，复位手动故障切换状态。</li>
+<li>软硬重置：删除节点表中的所有其他节点，因此该节点不再知道任何其他节点。</li>
+<li>仅限硬复位：<code>currentEpoch</code>、<code>configEpoch</code>和<code>lastVoteEpoch</code>设置为 0。</li>
+<li>仅硬重置：节点 ID 更改为新的随机 ID。</li>
+</ol>
+<p>无法重置具有非空数据集的主节点（因为通常您希望将数据重新分片到其他节点）。但是，在适当的特殊情况下（例如，当一个集群为了创建一个新集群而被完全销毁时），<a target="_blank" rel="noopener" href="https://redis.io/commands/flushall"><code>FLUSHALL</code></a> 必须在继续重置之前执行。</p>
+<h3 id="从集群中删除节点"><a href="#从集群中删除节点" class="headerlink" title="从集群中删除节点"></a>从集群中删除节点</h3><p>通过将所有数据重新分片到其他节点（如果它是主节点）并关闭它，实际上可以从现有集群中删除一个节点。但是，其他节点仍会记住它的节点 ID 和地址，并会尝试与其建立连接。</p>
+<p>出于这个原因，当一个节点被删除时，我们还想从所有其他节点表中删除它的条目。这是通过使用 <code>CLUSTER FORGET &lt;node-id&gt;</code>命令来完成的。</p>
+<p>该命令做了两件事：</p>
+<ol>
+<li>它从节点表中删除具有指定节点 ID 的节点。</li>
+<li>它设置了 60 秒的禁令，以防止重新添加具有相同节点 ID 的节点。</li>
+</ol>
+<p>需要第二个操作，因为 Redis 集群使用八卦来自动发现节点，因此从节点 A 中删除节点 X 可能会导致节点 B 再次向 A 闲聊节点 X。由于 60 秒的禁令，Redis 集群管理工具有 60 秒的时间从所有节点中删除节点，防止由于自动发现而重新添加节点。</p>
+<p>文档中提供了更多信息<a target="_blank" rel="noopener" href="https://redis.io/commands/cluster-forget"><code>CLUSTER FORGET</code></a> 。</p>
+<h2 id="发布-x2F-订阅"><a href="#发布-x2F-订阅" class="headerlink" title="发布&#x2F;订阅"></a>发布&#x2F;订阅</h2><p>在 Redis 集群中，客户端可以订阅每个节点，也可以发布到每个其他节点。集群将确保发布的消息在需要时被转发。</p>
+<p>客户端可以向任何节点发送 SUBSCRIBE，也可以向任何节点发送 PUBLISH。它会简单地将每条发布的消息广播到所有其他节点。</p>
+<p>Redis 7.0 及更高版本具有分片发布&#x2F;订阅功能，其中分片通道通过用于将键分配给插槽的相同算法分配给插槽。分片消息必须发送到拥有分片通道散列到的槽的节点。集群确保已发布的分片消息被转发到分片中的所有节点，因此客户端可以通过连接到负责插槽的主节点或其任何副本来订阅分片通道。</p>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><h3 id="附录-A：ANSI-C-中的-CRC16-参考实现"><a href="#附录-A：ANSI-C-中的-CRC16-参考实现" class="headerlink" title="附录 A：ANSI C 中的 CRC16 参考实现"></a>附录 A：ANSI C 中的 CRC16 参考实现</h3><figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line">/<span class="emphasis">*</span></span><br><span class="line"><span class="emphasis"> *</span> Copyright 2001-2010 Georges Menie (www.menie.org) </span><br><span class="line"><span class="bullet"> *</span> Copyright 2010 Salvatore Sanfilippo (adapted to Redis coding style) </span><br><span class="line"><span class="bullet"> *</span> All rights reserved.</span><br><span class="line"><span class="bullet"> *</span> Redistribution and use in source and binary forms, with or without</span><br><span class="line"><span class="bullet"> *</span> modification, are permitted provided that the following conditions are met:</span><br><span class="line"><span class="bullet"> *</span></span><br><span class="line"> <span class="emphasis">*     *</span> Redistributions of source code must retain the above copyright</span><br><span class="line"><span class="bullet"> *</span>       notice, this list of conditions and the following disclaimer.</span><br><span class="line"><span class="bullet"> *</span>     <span class="emphasis">* Redistributions in binary form must reproduce the above copyright</span></span><br><span class="line"><span class="emphasis"> *</span>       notice, this list of conditions and the following disclaimer in the</span><br><span class="line"><span class="bullet"> *</span>       documentation and/or other materials provided with the distribution.</span><br><span class="line"><span class="bullet"> *</span>     <span class="emphasis">* Neither the name of the University of California, Berkeley nor the</span></span><br><span class="line"><span class="emphasis"> *</span>       names of its contributors may be used to endorse or promote products</span><br><span class="line"><span class="bullet"> *</span>       derived from this software without specific prior written permission.</span><br><span class="line"><span class="bullet"> *</span></span><br><span class="line"> <span class="emphasis">* THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS&#x27;&#x27; AND ANY</span></span><br><span class="line"><span class="emphasis"> *</span> EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED</span><br><span class="line"><span class="bullet"> *</span> WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</span><br><span class="line"><span class="bullet"> *</span> DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY</span><br><span class="line"><span class="bullet"> *</span> DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES</span><br><span class="line"><span class="bullet"> *</span> (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span><br><span class="line"><span class="bullet"> *</span> LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)  HOWEVER CAUSED AND</span><br><span class="line"><span class="bullet"> *</span> ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span><br><span class="line"><span class="bullet"> *</span> (INCLUDING NEGLIGENCE OR OTHERWISE)  ARISING IN ANY WAY OUT OF THE USE OF THIS</span><br><span class="line"><span class="bullet"> *</span> SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span><br><span class="line"> <span class="emphasis">*/</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">/*</span> CRC16 implementation according to CCITT standards.</span><br><span class="line"><span class="bullet"> *</span></span><br><span class="line"> <span class="emphasis">* Note by @antirez: this is actually the XMODEM CRC 16 algorithm, using the</span></span><br><span class="line"><span class="emphasis"> *</span> following parameters:</span><br><span class="line"><span class="bullet"> *</span></span><br><span class="line"> <span class="emphasis">* Name                       : &quot;XMODEM&quot;, also known as &quot;ZMODEM&quot;, &quot;CRC-16/ACORN&quot;</span></span><br><span class="line"><span class="emphasis"> *</span> Width                      : 16 bit</span><br><span class="line"><span class="bullet"> *</span> Poly                       : 1021 (That is actually x^16 + x^12 + x^5 + 1) </span><br><span class="line"><span class="bullet"> *</span> Initialization             : 0000</span><br><span class="line"><span class="bullet"> *</span> Reflect Input byte         : False</span><br><span class="line"><span class="bullet"> *</span> Reflect Output CRC         : False</span><br><span class="line"><span class="bullet"> *</span> Xor constant to output CRC : 0000</span><br><span class="line"><span class="bullet"> *</span> Output for &quot;123456789&quot;     : 31C3</span><br><span class="line"> <span class="emphasis">*/</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">static const uint16_t crc16tab[256]= &#123;</span></span><br><span class="line"><span class="emphasis">    0x0000,0x1021,0x2042,0x3063,0x4084,0x50a5,0x60c6,0x70e7,</span></span><br><span class="line"><span class="emphasis">    0x8108,0x9129,0xa14a,0xb16b,0xc18c,0xd1ad,0xe1ce,0xf1ef,</span></span><br><span class="line"><span class="emphasis">    0x1231,0x0210,0x3273,0x2252,0x52b5,0x4294,0x72f7,0x62d6,</span></span><br><span class="line"><span class="emphasis">    0x9339,0x8318,0xb37b,0xa35a,0xd3bd,0xc39c,0xf3ff,0xe3de,</span></span><br><span class="line"><span class="emphasis">    0x2462,0x3443,0x0420,0x1401,0x64e6,0x74c7,0x44a4,0x5485,</span></span><br><span class="line"><span class="emphasis">    0xa56a,0xb54b,0x8528,0x9509,0xe5ee,0xf5cf,0xc5ac,0xd58d,</span></span><br><span class="line"><span class="emphasis">    0x3653,0x2672,0x1611,0x0630,0x76d7,0x66f6,0x5695,0x46b4,</span></span><br><span class="line"><span class="emphasis">    0xb75b,0xa77a,0x9719,0x8738,0xf7df,0xe7fe,0xd79d,0xc7bc,</span></span><br><span class="line"><span class="emphasis">    0x48c4,0x58e5,0x6886,0x78a7,0x0840,0x1861,0x2802,0x3823,</span></span><br><span class="line"><span class="emphasis">    0xc9cc,0xd9ed,0xe98e,0xf9af,0x8948,0x9969,0xa90a,0xb92b,</span></span><br><span class="line"><span class="emphasis">    0x5af5,0x4ad4,0x7ab7,0x6a96,0x1a71,0x0a50,0x3a33,0x2a12,</span></span><br><span class="line"><span class="emphasis">    0xdbfd,0xcbdc,0xfbbf,0xeb9e,0x9b79,0x8b58,0xbb3b,0xab1a,</span></span><br><span class="line"><span class="emphasis">    0x6ca6,0x7c87,0x4ce4,0x5cc5,0x2c22,0x3c03,0x0c60,0x1c41,</span></span><br><span class="line"><span class="emphasis">    0xedae,0xfd8f,0xcdec,0xddcd,0xad2a,0xbd0b,0x8d68,0x9d49,</span></span><br><span class="line"><span class="emphasis">    0x7e97,0x6eb6,0x5ed5,0x4ef4,0x3e13,0x2e32,0x1e51,0x0e70,</span></span><br><span class="line"><span class="emphasis">    0xff9f,0xefbe,0xdfdd,0xcffc,0xbf1b,0xaf3a,0x9f59,0x8f78,</span></span><br><span class="line"><span class="emphasis">    0x9188,0x81a9,0xb1ca,0xa1eb,0xd10c,0xc12d,0xf14e,0xe16f,</span></span><br><span class="line"><span class="emphasis">    0x1080,0x00a1,0x30c2,0x20e3,0x5004,0x4025,0x7046,0x6067,</span></span><br><span class="line"><span class="emphasis">    0x83b9,0x9398,0xa3fb,0xb3da,0xc33d,0xd31c,0xe37f,0xf35e,</span></span><br><span class="line"><span class="emphasis">    0x02b1,0x1290,0x22f3,0x32d2,0x4235,0x5214,0x6277,0x7256,</span></span><br><span class="line"><span class="emphasis">    0xb5ea,0xa5cb,0x95a8,0x8589,0xf56e,0xe54f,0xd52c,0xc50d,</span></span><br><span class="line"><span class="emphasis">    0x34e2,0x24c3,0x14a0,0x0481,0x7466,0x6447,0x5424,0x4405,</span></span><br><span class="line"><span class="emphasis">    0xa7db,0xb7fa,0x8799,0x97b8,0xe75f,0xf77e,0xc71d,0xd73c,</span></span><br><span class="line"><span class="emphasis">    0x26d3,0x36f2,0x0691,0x16b0,0x6657,0x7676,0x4615,0x5634,</span></span><br><span class="line"><span class="emphasis">    0xd94c,0xc96d,0xf90e,0xe92f,0x99c8,0x89e9,0xb98a,0xa9ab,</span></span><br><span class="line"><span class="emphasis">    0x5844,0x4865,0x7806,0x6827,0x18c0,0x08e1,0x3882,0x28a3,</span></span><br><span class="line"><span class="emphasis">    0xcb7d,0xdb5c,0xeb3f,0xfb1e,0x8bf9,0x9bd8,0xabbb,0xbb9a,</span></span><br><span class="line"><span class="emphasis">    0x4a75,0x5a54,0x6a37,0x7a16,0x0af1,0x1ad0,0x2ab3,0x3a92,</span></span><br><span class="line"><span class="emphasis">    0xfd2e,0xed0f,0xdd6c,0xcd4d,0xbdaa,0xad8b,0x9de8,0x8dc9,</span></span><br><span class="line"><span class="emphasis">    0x7c26,0x6c07,0x5c64,0x4c45,0x3ca2,0x2c83,0x1ce0,0x0cc1,</span></span><br><span class="line"><span class="emphasis">    0xef1f,0xff3e,0xcf5d,0xdf7c,0xaf9b,0xbfba,0x8fd9,0x9ff8,</span></span><br><span class="line"><span class="emphasis">    0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0</span></span><br><span class="line"><span class="emphasis">&#125;;</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">uint16_t crc16(const char *</span>buf, int len)  &#123;</span><br><span class="line"><span class="code">    int counter;</span></span><br><span class="line"><span class="code">    uint16_t crc = 0;</span></span><br><span class="line"><span class="code">    for (counter = 0; counter &lt; len; counter++) </span></span><br><span class="line"><span class="code">            crc = (crc&lt;&lt;8)  ^ crc16tab[((crc&gt;&gt;8)  ^ *buf++) &amp;0x00FF];</span></span><br><span class="line"><span class="code">    return crc;</span></span><br><span class="line"><span class="code">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://redis.io/docs/reference/cluster-spec/">https://redis.io/docs/reference/cluster-spec/</a></p>
+</blockquote>
+ 
+      <!-- reward -->
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>Copyright： </strong>
+          
+          Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/CPyeah/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis/" rel="tag">redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis-cluster/" rel="tag">redis cluster</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+      <a href="/2022/04/28/database/Redis%20Sentinel%20%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            Redis Sentinel 的高可用性
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">深入理解Java虚拟机</div>
+      </a>
+    
+  </nav>
+
+  
+   
+    
+    <script src="https://cdn.staticfile.org/twikoo/1.4.18/twikoo.all.min.js"></script>
+    <div id="twikoo" class="twikoo"></div>
+    <script>
+        twikoo.init({
+            envId: ""
+        })
+    </script>
+ 
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020-2022
+        <i class="ri-heart-fill heart_icon"></i> chengpeng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></span>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>    
+    </main>
+    <div class="float_btns">
+      <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+    </div>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="chengpeng&#39;s blogs"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/java">JAVA</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/go">GO</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/database">数据库</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/system-design">系统设计</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/algorithm">算法</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/devops">DevOps</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories/english">英语学习</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-3.6.0.min.js"></script>
+ 
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+ 
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: ".tocbot",
+    contentSelector: ".article-entry",
+    headingSelector: "h1, h2, h3, h4, h5, h6",
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: "main",
+    positionFixedSelector: ".tocbot",
+    positionFixedClass: "is-position-fixed",
+    fixedSidebarOffset: "auto",
+  });
+</script>
+
+<script src="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdn.staticfile.org/jquery-modal/0.9.2/jquery.modal.min.css"
+/>
+<script src="https://cdn.staticfile.org/justifiedGallery/3.8.1/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+ <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.staticfile.org/photoswipe/4.1.3/default-skin/default-skin.min.css">
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe.min.js"></script>
+<script src="https://cdn.staticfile.org/photoswipe/4.1.3/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script> 
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+ 
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+ 
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+ 
+<link rel="stylesheet" href="/css/clipboard.css">
+ <script src="https://cdn.staticfile.org/clipboard.js/2.0.10/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+ 
+<!-- CanvasBackground -->
+
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ theme: "forest" });
+  }
+</script>
+
+
+    
+    
+
+  </div>
+</body>
+
+</html>
