@@ -305,11 +305,19 @@
 <h3 id="Parallel-Scavenge收集器（年轻代）"><a href="#Parallel-Scavenge收集器（年轻代）" class="headerlink" title="Parallel Scavenge收集器（年轻代）"></a>Parallel Scavenge收集器（年轻代）</h3><p>他和ParNew收集器类似，但他有两个重要的特性：</p>
 <ol>
 <li>第一点就是它可以控制每次GC时STW的时间，和吞吐量的比率，但是如果配置的过小，它GC的就会更加频繁。</li>
-<li>第二点就是，它有个自适应开关，打开了之后，我们就不用配置年轻代的大小了，它会根据监控数据，自动适应。<h3 id="Serial-Old收集器（老年代）"><a href="#Serial-Old收集器（老年代）" class="headerlink" title="Serial Old收集器（老年代）"></a>Serial Old收集器（老年代）</h3>老年代，单线程，串型收集器， 标记-整理。<br>主要是为了和Parallel Scavenge收集器搭配使用。  还有个用途，就是做CMS的后备收集器。<h3 id="Parallel-Old收集器（老年代）"><a href="#Parallel-Old收集器（老年代）" class="headerlink" title="Parallel Old收集器（老年代）"></a>Parallel Old收集器（老年代）</h3>Parallel Scavenge收集器的老年代版本， 标记-整理，注重吞吐量和单次GC时间。和Parallel Scavenge搭配使用。<h3 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h3>java9之前最经典的收集器，STW的时间非常短。它的特点就是可以GC线程和用户线程的并发。<br>它在一次GC的过程中共有四个阶段：</li>
+<li>第二点就是，它有个自适应开关，打开了之后，我们就不用配置年轻代的大小了，它会根据监控数据，自动适应。</li>
+</ol>
+<h3 id="Serial-Old收集器（老年代）"><a href="#Serial-Old收集器（老年代）" class="headerlink" title="Serial Old收集器（老年代）"></a>Serial Old收集器（老年代）</h3><p>老年代，单线程，串型收集器， 标记-整理。<br>主要是为了和Parallel Scavenge收集器搭配使用。  还有个用途，就是做CMS的后备收集器。</p>
+<h3 id="Parallel-Old收集器（老年代）"><a href="#Parallel-Old收集器（老年代）" class="headerlink" title="Parallel Old收集器（老年代）"></a>Parallel Old收集器（老年代）</h3><p>Parallel Scavenge收集器的老年代版本， 标记-整理，注重吞吐量和单次GC时间。和Parallel Scavenge搭配使用。</p>
+<h3 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h3><p>java9之前最经典的收集器，STW的时间非常短。它的特点就是可以GC线程和用户线程的并发。<br>它在一次GC的过程中共有四个阶段：</p>
+<ol>
 <li>找到所有的GCRoot（STW）</li>
 <li>并发标记</li>
 <li>二次标记（STW）</li>
-<li>并发清除<br>优点：它只需要很短的时间STW来做一些标记工作，标记-清理算法，快。<br>缺点：需要额外的内存，来存放在并发期间的新对象。内存不足会抛异常。会执行Serial Old收集。    需要间隔的执行内存整理，防止内存碎片。<h3 id="G1收集器"><a href="#G1收集器" class="headerlink" title="G1收集器"></a>G1收集器</h3>它是在java9之后主要的收集器，在以后也会慢慢的替换掉CMS。它的内存模型有一个比较大的改变，它是把整个的JVM内存分成一个一个的region来管理。每个region可以有不同的角色，比如edian、surivior、老年代和大对象区域。<br>然后每次回收都会选择性的清理一部分的region，根据配置，来选择清理效率最高的一些region。<br>它的GC过程主要分成四步：</li>
+<li>并发清除<br>优点：它只需要很短的时间STW来做一些标记工作，标记-清理算法，快。<br>缺点：需要额外的内存，来存放在并发期间的新对象。内存不足会抛异常。会执行Serial Old收集。    需要间隔的执行内存整理，防止内存碎片。</li>
+</ol>
+<h3 id="G1收集器"><a href="#G1收集器" class="headerlink" title="G1收集器"></a>G1收集器</h3><p>它是在java9之后主要的收集器，在以后也会慢慢的替换掉CMS。它的内存模型有一个比较大的改变，它是把整个的JVM内存分成一个一个的region来管理。每个region可以有不同的角色，比如edian、surivior、老年代和大对象区域。<br>然后每次回收都会选择性的清理一部分的region，根据配置，来选择清理效率最高的一些region。<br>它的GC过程主要分成四步：</p>
+<ol>
 <li>初始标记（STW）<br>这一步主要是找GCRoot，耗时会比较短，因为会跨区域收集，所以每个region里面都会维护一个记忆集，是用来找到持有该region引用的内存区域。</li>
 <li>并发标记<br>这一步是和用户线程并发执行了，耗时会比较长。<br>会维护两个区域，一个是在此过程中，新new出对象存放的区域，这次GC不会被清理。  还有一个就是在此过程中，指针有变换的对象，通过写屏障，就是对赋值操作的切面。会在下一步最终标记里面，再检查一次。</li>
 <li>最终标记（STW）<br>这一步就是对在并发标记过程中，指针有变化的对象，再做一次确定操作，这一步也是需要STW的，保证不会把不是垃圾的对象收集掉。</li>
@@ -389,7 +397,9 @@
 <h2 id="你知道的字节码指令有哪些？"><a href="#你知道的字节码指令有哪些？" class="headerlink" title="你知道的字节码指令有哪些？"></a>你知道的字节码指令有哪些？</h2><h4 id="加载、存储指令"><a href="#加载、存储指令" class="headerlink" title="加载、存储指令"></a>加载、存储指令</h4><ul>
 <li>load：从局部变量表 加载 到操作数栈（入栈）</li>
 <li>store：从操作数栈 存储数据到局部变量表（出栈）</li>
-<li>const：加载一个常量到操作数栈（入栈）<h4 id="运算指令"><a href="#运算指令" class="headerlink" title="运算指令"></a>运算指令</h4></li>
+<li>const：加载一个常量到操作数栈（入栈）</li>
+</ul>
+<h4 id="运算指令"><a href="#运算指令" class="headerlink" title="运算指令"></a>运算指令</h4><ul>
 <li>加：add</li>
 <li>减：sub</li>
 <li>乘：mul</li>
@@ -400,22 +410,34 @@
 <li>按位与、或：and、or</li>
 <li>按位异或：xor</li>
 <li>局部变量自增：inc</li>
-<li>比较：cmpg、cmpl<h4 id="对象创建与访问指令"><a href="#对象创建与访问指令" class="headerlink" title="对象创建与访问指令"></a>对象创建与访问指令</h4></li>
+<li>比较：cmpg、cmpl</li>
+</ul>
+<h4 id="对象创建与访问指令"><a href="#对象创建与访问指令" class="headerlink" title="对象创建与访问指令"></a>对象创建与访问指令</h4><ul>
 <li>创建对象：new</li>
 <li>创建数组：newarray</li>
 <li>访问对象属性：getfield、putfield、getstatic、putstatic</li>
-<li>数组操作：aload、astore<h4 id="操作数栈管理指令"><a href="#操作数栈管理指令" class="headerlink" title="操作数栈管理指令"></a>操作数栈管理指令</h4></li>
+<li>数组操作：aload、astore</li>
+</ul>
+<h4 id="操作数栈管理指令"><a href="#操作数栈管理指令" class="headerlink" title="操作数栈管理指令"></a>操作数栈管理指令</h4><ul>
 <li>出栈：pop、pop2</li>
 <li>复制栈顶的值：dup、dup2</li>
-<li>栈顶两个元素交换位置：swap<h4 id="控制转移指令"><a href="#控制转移指令" class="headerlink" title="控制转移指令"></a>控制转移指令</h4></li>
+<li>栈顶两个元素交换位置：swap</li>
+</ul>
+<h4 id="控制转移指令"><a href="#控制转移指令" class="headerlink" title="控制转移指令"></a>控制转移指令</h4><ul>
 <li>if</li>
 <li>switch</li>
-<li>goto<h4 id="方法调用和返回指令"><a href="#方法调用和返回指令" class="headerlink" title="方法调用和返回指令"></a>方法调用和返回指令</h4></li>
+<li>goto</li>
+</ul>
+<h4 id="方法调用和返回指令"><a href="#方法调用和返回指令" class="headerlink" title="方法调用和返回指令"></a>方法调用和返回指令</h4><ul>
 <li><strong>invokevirtual</strong></li>
 <li>invokeinterface</li>
 <li>invokespecial</li>
-<li><strong>invokedynamic</strong><h4 id="异常指令"><a href="#异常指令" class="headerlink" title="异常指令"></a>异常指令</h4></li>
-<li>athrow<h4 id="同步指令（synchronized）"><a href="#同步指令（synchronized）" class="headerlink" title="同步指令（synchronized）"></a>同步指令（synchronized）</h4></li>
+<li><strong>invokedynamic</strong></li>
+</ul>
+<h4 id="异常指令"><a href="#异常指令" class="headerlink" title="异常指令"></a>异常指令</h4><ul>
+<li>athrow</li>
+</ul>
+<h4 id="同步指令（synchronized）"><a href="#同步指令（synchronized）" class="headerlink" title="同步指令（synchronized）"></a>同步指令（synchronized）</h4><ul>
 <li>monitor enter</li>
 <li>monitor exit</li>
 </ul>

@@ -6,7 +6,7 @@
   <link href="https://github.com/CPyeah/atom.xml" rel="self"/>
   
   <link href="https://github.com/CPyeah/"/>
-  <updated>2022-11-21T03:24:16.808Z</updated>
+  <updated>2022-11-21T03:26:22.873Z</updated>
   <id>https://github.com/CPyeah/</id>
   
   <author>
@@ -21,7 +21,7 @@
     <link href="https://github.com/CPyeah/2022/06/07/database/Dynamo%20paper/"/>
     <id>https://github.com/CPyeah/2022/06/07/database/Dynamo%20paper/</id>
     <published>2022-06-07T12:31:15.000Z</published>
-    <updated>2022-11-21T03:24:16.808Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;摘要&quot;&gt;&lt;a href=&quot;#摘要&quot; class=&quot;headerlink&quot; title=&quot;摘要&quot;&gt;&lt;/a&gt;摘要&lt;/h2&gt;&lt;p&gt;Amazon 是世界上最大的电商之一。&lt;/p&gt;
@@ -44,7 +44,7 @@
     <link href="https://github.com/CPyeah/2022/05/01/database/Redis%20%E9%9B%86%E7%BE%A4/"/>
     <id>https://github.com/CPyeah/2022/05/01/database/Redis%20%E9%9B%86%E7%BE%A4/</id>
     <published>2022-05-01T08:22:31.000Z</published>
-    <updated>2022-11-21T03:22:40.403Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;p&gt;使用 Redis 集群进行横向扩展&lt;/p&gt;
@@ -67,7 +67,7 @@
     <link href="https://github.com/CPyeah/2022/04/28/database/Redis%20Sentinel%20%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7/"/>
     <id>https://github.com/CPyeah/2022/04/28/database/Redis%20Sentinel%20%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7/</id>
     <published>2022-04-28T12:11:45.000Z</published>
-    <updated>2022-11-21T03:22:40.375Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;p&gt;非集群Redis的高可用&lt;/p&gt;
@@ -97,7 +97,7 @@
     <link href="https://github.com/CPyeah/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/"/>
     <id>https://github.com/CPyeah/2022/04/21/database/Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E8%8C%83/</id>
     <published>2022-04-21T14:35:23.000Z</published>
-    <updated>2022-11-21T02:55:59.668Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;设计的主要特性和原理&quot;&gt;&lt;a href=&quot;#设计的主要特性和原理&quot; class=&quot;headerlink&quot; title=&quot;设计的主要特性和原理&quot;&gt;&lt;/a&gt;设计的主要特性和原理&lt;/h2&gt;&lt;h3 id=&quot;Redis-集群目标&quot;&gt;&lt;a href=&quot;#Redis-集群目标&quot; class=&quot;headerlink&quot; title=&quot;Redis 集群目标&quot;&gt;&lt;/a&gt;Redis 集群目标&lt;/h3&gt;&lt;p&gt;Redis Cluster 是 Redis 的分布式实现，按照设计中的重要性顺序具有以下目标：&lt;/p&gt;
@@ -124,7 +124,7 @@
     <link href="https://github.com/CPyeah/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/"/>
     <id>https://github.com/CPyeah/2022/03/05/java/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA/</id>
     <published>2022-03-05T12:54:21.000Z</published>
-    <updated>2022-11-17T15:23:18.961Z</updated>
+    <updated>2022-11-21T03:26:22.941Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这边文章我们深入了解一下Java虚拟机。&lt;br&gt;我会了解到：&lt;/p&gt;
@@ -170,7 +170,7 @@
     <link href="https://github.com/CPyeah/2021/12/25/java/Java%E4%B9%8BNetty/"/>
     <id>https://github.com/CPyeah/2021/12/25/java/Java%E4%B9%8BNetty/</id>
     <published>2021-12-25T02:18:43.000Z</published>
-    <updated>2022-11-17T15:23:18.920Z</updated>
+    <updated>2022-11-21T03:26:22.913Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;Netty是一套支持NIO的客户端-服务器框架。&lt;br&gt;高性能、高并发。&lt;br&gt;支持异步通信。&lt;br&gt;他是使用Java编写的。&lt;br&gt;在Java领域中，他是IO界的老大，特别是网络IO。&lt;br&gt;很多项目都用它，比如Dubbo，RocketMQ，Cassandra等等。&lt;/p&gt;
@@ -199,7 +199,7 @@
     <link href="https://github.com/CPyeah/2021/11/27/go/basic-grammar/"/>
     <id>https://github.com/CPyeah/2021/11/27/go/basic-grammar/</id>
     <published>2021-11-27T07:29:29.000Z</published>
-    <updated>2022-11-17T15:23:18.919Z</updated>
+    <updated>2022-11-21T03:26:22.913Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;最近觉得Go语言很有前途，语法灵活，容器化部署方便，资源消耗小。&lt;br&gt;而且还有强力的并发能力：Goroutines&lt;br&gt;所以决定从今天开始，学习Go语言。&lt;/p&gt;
@@ -229,7 +229,7 @@
     <link href="https://github.com/CPyeah/2021/10/18/system_design/open_platform/"/>
     <id>https://github.com/CPyeah/2021/10/18/system_design/open_platform/</id>
     <published>2021-10-18T09:38:34.000Z</published>
-    <updated>2022-11-17T15:23:18.961Z</updated>
+    <updated>2022-11-21T03:26:22.941Z</updated>
     
     
     <summary type="html">&lt;blockquote&gt;
@@ -257,7 +257,7 @@
     <link href="https://github.com/CPyeah/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/"/>
     <id>https://github.com/CPyeah/2021/09/11/database/MySQL%E8%B0%83%E4%BC%98/</id>
     <published>2021-09-11T05:47:39.000Z</published>
-    <updated>2022-11-17T15:23:18.910Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这篇文章，我们将谈到SQL优化的相关知识。&lt;/p&gt;
@@ -284,7 +284,7 @@
     <link href="https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/"/>
     <id>https://github.com/CPyeah/2021/08/25/database/MySQL%E4%BA%8B%E7%89%A9%E5%8E%9F%E7%90%86/</id>
     <published>2021-08-25T01:12:24.000Z</published>
-    <updated>2022-11-17T15:23:18.909Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;什么是事务？！&lt;/p&gt;
@@ -305,7 +305,7 @@
     <link href="https://github.com/CPyeah/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
     <id>https://github.com/CPyeah/2021/08/13/database/MySQL%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-08-13T03:06:53.000Z</published>
-    <updated>2022-11-17T15:23:18.909Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;从今天开始，我们将学习目前最流行的一个数据库MySQL。&lt;/p&gt;
@@ -332,7 +332,7 @@
     <link href="https://github.com/CPyeah/2021/07/18/english/clean-room/"/>
     <id>https://github.com/CPyeah/2021/07/18/english/clean-room/</id>
     <published>2021-07-18T02:00:51.000Z</published>
-    <updated>2022-11-17T15:23:18.910Z</updated>
+    <updated>2022-11-21T03:26:22.905Z</updated>
     
     
     <summary type="html">&lt;h4 id=&quot;&quot;&gt;&lt;a href=&quot;#&quot; class=&quot;headerlink&quot; title=&quot;&quot;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;使用下面的关键词，写一篇小短文。&lt;/p&gt;
@@ -382,7 +382,7 @@
     <link href="https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
     <id>https://github.com/CPyeah/2021/07/06/algorithm/%E5%8D%81%E5%A4%A7%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</id>
     <published>2021-07-06T01:52:41.000Z</published>
-    <updated>2022-11-17T15:23:18.803Z</updated>
+    <updated>2022-11-21T03:26:22.765Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;今天开启我们的算法系列，争取说简单➕通俗易懂。&lt;br&gt;我们从经典的排序算法开始。学习十大排序算法。&lt;br&gt;&lt;img src=&quot;https://cp-images.oss-cn-hangzhou.aliyuncs.com/zoOH3H.png&quot;&gt;&lt;/p&gt;
@@ -395,11 +395,11 @@
     <category term="algorithm" scheme="https://github.com/CPyeah/categories/algorithm/"/>
     
     
-    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
-    
     <category term="算法" scheme="https://github.com/CPyeah/tags/%E7%AE%97%E6%B3%95/"/>
     
     <category term="排序算法" scheme="https://github.com/CPyeah/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/"/>
+    
+    <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
     
   </entry>
   
@@ -408,7 +408,7 @@
     <link href="https://github.com/CPyeah/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/"/>
     <id>https://github.com/CPyeah/2021/06/11/java/Java%E6%93%8D%E4%BD%9CElasticSearch/</id>
     <published>2021-06-11T05:44:15.000Z</published>
-    <updated>2022-11-17T15:23:18.920Z</updated>
+    <updated>2022-11-21T03:26:22.913Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;今天我们将使用Java来操作ElasticSearch。&lt;br&gt;我们将：&lt;/p&gt;
@@ -424,9 +424,9 @@
     <category term="java" scheme="https://github.com/CPyeah/categories/java/"/>
     
     
-    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
-    
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
     <category term="springboot" scheme="https://github.com/CPyeah/tags/springboot/"/>
     
@@ -441,7 +441,7 @@
     <link href="https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/"/>
     <id>https://github.com/CPyeah/2021/05/27/database/ElasticSearch%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/</id>
     <published>2021-05-27T07:29:29.000Z</published>
-    <updated>2022-11-17T15:23:18.909Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;这篇文章我们一起来学习一下最最流行的搜索引擎 - &lt;code&gt;ElasticSearch&lt;/code&gt;&lt;br&gt;我们将学习到：&lt;/p&gt;
@@ -461,9 +461,9 @@
     <category term="database" scheme="https://github.com/CPyeah/categories/database/"/>
     
     
-    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
-    
     <category term="java" scheme="https://github.com/CPyeah/tags/java/"/>
+    
+    <category term="elasticsearch" scheme="https://github.com/CPyeah/tags/elasticsearch/"/>
     
   </entry>
   
@@ -472,7 +472,7 @@
     <link href="https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
     <id>https://github.com/CPyeah/2021/04/26/database/Redis%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</id>
     <published>2021-04-26T07:15:43.000Z</published>
-    <updated>2022-11-17T15:23:18.910Z</updated>
+    <updated>2022-11-21T03:26:22.873Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;这篇文章介绍一下高级Redis数据结构，及其用法。&lt;/p&gt;
@@ -505,7 +505,7 @@
     <link href="https://github.com/CPyeah/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/"/>
     <id>https://github.com/CPyeah/2021/03/25/java/Java%E6%93%8D%E4%BD%9CRedis/</id>
     <published>2021-03-25T02:18:43.000Z</published>
-    <updated>2022-11-17T15:23:18.920Z</updated>
+    <updated>2022-11-21T03:26:22.913Z</updated>
     
     
     <summary type="html">&lt;h2 id=&quot;介绍&quot;&gt;&lt;a href=&quot;#介绍&quot; class=&quot;headerlink&quot; title=&quot;介绍&quot;&gt;&lt;/a&gt;介绍&lt;/h2&gt;&lt;p&gt;Redis是目前最流行的缓存数据库，完全基于内存操作，速度非常快。&lt;br&gt;它是我们互联网公司高性能，高并发的基石。&lt;br&gt;它的功能包括但不限于：提供中央缓存功能，分布式锁，还有特殊数据结构的特殊应用。&lt;br&gt;本篇文章都会一一说到。&lt;/p&gt;

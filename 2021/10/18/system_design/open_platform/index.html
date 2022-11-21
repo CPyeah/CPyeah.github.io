@@ -169,18 +169,26 @@
 <li>用户管理</li>
 <li>appId、appSecret管理</li>
 <li>token管理</li>
-<li>内部系统用户与client绑定管理<h3 id="权限认证服务（OAuth2-server）"><a href="#权限认证服务（OAuth2-server）" class="headerlink" title="权限认证服务（OAuth2 server）"></a>权限认证服务（OAuth2 server）</h3></li>
+<li>内部系统用户与client绑定管理</li>
+</ul>
+<h3 id="权限认证服务（OAuth2-server）"><a href="#权限认证服务（OAuth2-server）" class="headerlink" title="权限认证服务（OAuth2 server）"></a>权限认证服务（OAuth2 server）</h3><ul>
 <li>客户端获取token</li>
-<li>token校验<h3 id="接口服务（API-server）"><a href="#接口服务（API-server）" class="headerlink" title="接口服务（API server）"></a>接口服务（API server）</h3></li>
+<li>token校验</li>
+</ul>
+<h3 id="接口服务（API-server）"><a href="#接口服务（API-server）" class="headerlink" title="接口服务（API server）"></a>接口服务（API server）</h3><ul>
 <li>类似一个网关</li>
 <li>客户端参照文档，调用接口（同步）</li>
 <li>校验token，验证签名</li>
 <li>调用内部系统的接口</li>
 <li>消息订阅</li>
-<li>请求返回信息给分析服务（异步）<h3 id="分析服务（analysis-server）"><a href="#分析服务（analysis-server）" class="headerlink" title="分析服务（analysis server）"></a>分析服务（analysis server）</h3></li>
+<li>请求返回信息给分析服务（异步）</li>
+</ul>
+<h3 id="分析服务（analysis-server）"><a href="#分析服务（analysis-server）" class="headerlink" title="分析服务（analysis server）"></a>分析服务（analysis server）</h3><ul>
 <li>接受所有的请求、消息</li>
 <li>记录分析、生成仪表板</li>
-<li>大数据<h3 id="消息服务（message-server）"><a href="#消息服务（message-server）" class="headerlink" title="消息服务（message server）"></a>消息服务（message server）</h3></li>
+<li>大数据</li>
+</ul>
+<h3 id="消息服务（message-server）"><a href="#消息服务（message-server）" class="headerlink" title="消息服务（message server）"></a>消息服务（message server）</h3><ul>
 <li>监听内部系统消息</li>
 <li>消息记录（状态：Queue｜Sent｜Fail）</li>
 <li>客户端消息订阅查看</li>
